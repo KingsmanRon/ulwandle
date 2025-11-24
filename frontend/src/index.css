@@ -1,0 +1,201 @@
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* Common styles for all views */
+.districts-grid,
+.valves-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.district-card,
+.valve-card,
+.prediction-card,
+.alert-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  transition: transform 0.2s;
+}
+
+.district-card:hover,
+.valve-card:hover,
+.prediction-card:hover,
+.alert-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.district-card h3,
+.valve-card h3,
+.prediction-card h3,
+.alert-card h3 {
+  margin-bottom: 1rem;
+  color: #1f2937;
+}
+
+.district-card p,
+.valve-card p,
+.prediction-card p {
+  margin: 0.5rem 0;
+  color: #6b7280;
+}
+
+.valve-status,
+.district-status {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  margin-top: 0.75rem;
+}
+
+.valve-status.open {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.valve-status.closed {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.valve-status.fault {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.warning-banner {
+  background-color: #fef3c7;
+  border-left: 4px solid #f59e0b;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  border-radius: 8px;
+}
+
+.districts-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.district-quality {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  border-left: 4px solid;
+}
+
+.district-quality.status-green {
+  border-left-color: #10b981;
+}
+
+.district-quality.status-yellow {
+  border-left-color: #f59e0b;
+}
+
+.district-quality.status-red {
+  border-left-color: #ef4444;
+}
+
+.stats-row {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.stat {
+  background: white;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  font-weight: 600;
+}
+
+.predictions-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.summary {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+  font-size: 0.9rem;
+  color: #4b5563;
+}
+
+.alerts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.alert-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.alert-level {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.alert-level.info {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.alert-level.warning {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.alert-level.critical,
+.alert-level.emergency {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.alert-meta {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-top: 0.75rem;
+}
+
+.resolved-badge {
+  color: #059669;
+  font-weight: 600;
+}
+
+.alert-card.resolved {
+  opacity: 0.7;
+}

@@ -51,8 +51,5 @@ pytest==7.4.4
 pytest-asyncio==0.23.3
 httpx==0.26.0
 
-# CORS
-python-cors==1.0.0
-
 # Background tasks
 celery==5.3.4

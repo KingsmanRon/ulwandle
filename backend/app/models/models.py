@@ -226,7 +226,7 @@ class Alert(Base):
     message = Column(Text, nullable=False)
 
     # Additional data
-    metadata = Column(JSON)
+    alert_metadata = Column(JSON)
 
     # Status
     is_resolved = Column(Boolean, default=False)

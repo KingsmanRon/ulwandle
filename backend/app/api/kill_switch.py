@@ -256,7 +256,7 @@ async def operate_valve(
         level=alert_level,
         title=f"Kill Switch Activated: {valve.name}",
         message=f"Valve {valve.name} has been {operation.action}ED by {operation.operator_name}. Reason: {operation.reason}",
-        metadata={
+        alert_metadata={
             "valve_id": valve.valve_id,
             "action": operation.action,
             "operator": operation.operator_name,

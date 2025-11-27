@@ -463,7 +463,7 @@ async def create_leak_alert(district_id: int, analysis: dict, db: Session):
             level=AlertLevel.WARNING,
             title=f"Potential Leak Detected - {district.name}",
             message=f"AI analysis detected potential water leak. Estimated loss: {leak_data.get('estimated_loss_lpm', 0)} L/min. Confidence: {leak_data.get('confidence_score', 0)*100}%",
-            metadata={"leak_data": leak_data}
+            alert_metadata={"leak_data": leak_data}
         )
         db.add(alert)
         db.commit()

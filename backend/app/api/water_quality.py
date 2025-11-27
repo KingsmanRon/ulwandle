@@ -222,7 +222,7 @@ async def analyze_water_quality(
                     level=AlertLevel.CRITICAL,
                     title=f"CRITICAL: Water Quality Alert - {district.name}",
                     message=analysis.get("summary", "Water quality has deteriorated to unsafe levels"),
-                    metadata={"analysis": analysis}
+                    alert_metadata={"analysis": analysis}
                 )
                 db.add(alert)
                 db.commit()

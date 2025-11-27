@@ -84,7 +84,7 @@ async def get_alert_details(
                 "name": district.name,
                 "municipality": district.municipality
             } if district else None,
-            "metadata": alert.metadata,
+            "alert_metadata": alert.alert_metadata,
             "is_resolved": alert.is_resolved,
             "resolved_at": alert.resolved_at.isoformat() if alert.resolved_at else None,
             "resolved_by": alert.resolved_by,

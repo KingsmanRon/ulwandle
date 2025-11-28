@@ -5,6 +5,7 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: #f0f9ff;
 }
 
 code {
@@ -28,7 +29,8 @@ code {
   background: white;
   padding: 1.5rem;
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(2, 132, 199, 0.1);
+  border-left: 4px solid #0284c7;
   transition: transform 0.2s;
 }
 
@@ -37,7 +39,7 @@ code {
 .prediction-card:hover,
 .alert-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.2);
 }
 
 .district-card h3,
@@ -45,7 +47,7 @@ code {
 .prediction-card h3,
 .alert-card h3 {
   margin-bottom: 1rem;
-  color: #1f2937;
+  color: #0c4a6e;
 }
 
 .district-card p,

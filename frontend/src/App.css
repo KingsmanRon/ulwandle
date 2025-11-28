@@ -10,7 +10,7 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f0f2f5;
+  background-color: #f0f9ff;
 }
 
 .App {
@@ -20,13 +20,13 @@ body {
 }
 
 .app-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
   color: white;
   padding: 1.5rem 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.3);
 }
 
 .header-content h1 {
@@ -36,7 +36,7 @@ body {
 
 .tagline {
   font-size: 0.9rem;
-  opacity: 0.9;
+  opacity: 0.95;
 }
 
 .header-status {
@@ -54,12 +54,13 @@ body {
 }
 
 .status-operational {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
 }
 
 .status-time {
   font-size: 0.75rem;
-  opacity: 0.8;
+  opacity: 0.9;
 }
 
 .app-nav {
@@ -75,7 +76,7 @@ body {
   padding: 0.75rem 1.5rem;
   border: none;
   background-color: transparent;
-  color: #333;
+  color: #334155;
   cursor: pointer;
   font-size: 0.95rem;
   font-weight: 500;
@@ -85,12 +86,14 @@ body {
 }
 
 .app-nav button:hover {
-  background-color: #f0f2f5;
+  background-color: #e0f2fe;
+  color: #0284c7;
 }
 
 .app-nav button.active {
-  background-color: #667eea;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
   color: white;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.3);
 }
 
 .app-content {
@@ -102,7 +105,7 @@ body {
 }
 
 .app-footer {
-  background-color: #2d3748;
+  background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
   color: white;
   padding: 1.5rem 2rem;
   text-align: center;
@@ -117,7 +120,7 @@ body {
   text-align: center;
   padding: 3rem;
   font-size: 1.1rem;
-  color: #666;
+  color: #0369a1;
 }
 
 /* Status badges */

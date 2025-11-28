@@ -105,11 +105,12 @@ body {
 }
 
 .app-footer {
-  background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
   color: white;
   padding: 1.5rem 2rem;
   text-align: center;
 }
+
 
 .app-footer p {
   margin: 0.25rem 0;

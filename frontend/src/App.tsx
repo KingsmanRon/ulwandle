@@ -7,6 +7,7 @@ import MetroSelector from './components/MetroSelector';
 import MetroDashboard from './components/MetroDashboard';
 import ClaudeRecommendationsPanel, { ClaudeRecommendationsData } from './components/ClaudeRecommendations';
 import { Metro, MetroWaterData, generateMetroWaterData } from './constants/saMetros';
+import { blockchainVerifier } from './services/blockchainService';
 
 function App() {
   const [systemStatus, setSystemStatus] = useState<any>(null);
@@ -78,6 +79,11 @@ function App() {
 
     // Generate current data
     const data = generateMetroWaterData(metro);
+
+    // Create blockchain block for data integrity
+    const block = await blockchainVerifier.createBlock(data);
+    data.blockchainHash = block.hash;
+
     setCurrentMetroData(data);
 
     // Generate historical data (7 days)

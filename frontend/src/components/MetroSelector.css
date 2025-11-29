@@ -6,14 +6,59 @@
   margin-bottom: 24px;
 }
 
+.metro-selector-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
 .metro-selector-title {
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 20px;
   font-weight: bold;
-  margin: 0 0 16px 0;
+  margin: 0;
   color: #1f2937;
+}
+
+.selection-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.selection-count {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2563eb;
+  background: #eff6ff;
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+
+.clear-selection-btn {
+  font-size: 13px;
+  font-weight: 600;
+  color: #dc2626;
+  background: #fee2e2;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.clear-selection-btn:hover {
+  background: #fecaca;
+}
+
+.metro-hint {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0 0 16px 0;
+  font-style: italic;
 }
 
 .map-icon {
@@ -27,6 +72,7 @@
 }
 
 .metro-card {
+  position: relative;
   padding: 16px;
   border-radius: 8px;
   border: 2px solid #e5e7eb;
@@ -45,6 +91,19 @@
 .metro-card.selected {
   border-color: #2563eb;
   background: #eff6ff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+}
+
+.selected-indicator {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  color: #2563eb;
+  background: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .metro-name {
@@ -67,6 +126,17 @@
 }
 
 @media (max-width: 768px) {
+  .metro-selector-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .selection-info {
+    width: 100%;
+    justify-content: space-between;
+  }
+
   .metros-grid {
     grid-template-columns: repeat(2, 1fr);
   }

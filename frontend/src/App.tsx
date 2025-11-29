@@ -18,8 +18,10 @@ function App() {
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
 
   // Metro monitoring state
+  const [selectedMetros, setSelectedMetros] = useState<Metro[]>([]);
   const [selectedMetro, setSelectedMetro] = useState<Metro | null>(null);
   const [currentMetroData, setCurrentMetroData] = useState<MetroWaterData | null>(null);
+  const [allMetroData, setAllMetroData] = useState<MetroWaterData[]>([]);
   const [historicalData, setHistoricalData] = useState<any[]>([]);
   const [claudeRecommendations, setClaudeRecommendations] = useState<ClaudeRecommendationsData | null>(null);
   const [loadingRecommendations, setLoadingRecommendations] = useState<boolean>(false);
@@ -74,39 +76,55 @@ function App() {
     }
   };
 
-  // Metro Selection Handler
-  const handleMetroSelect = useCallback(async (metro: Metro) => {
-    setSelectedMetro(metro);
+  // Metro Multi-Select Handler
+  const handleMetroMultiSelect = useCallback(async (metros: Metro[]) => {
+    setSelectedMetros(metros);
 
-    // Generate current data
-    const data = generateMetroWaterData(metro);
-
-    // Create blockchain block for data integrity
-    const block = await blockchainVerifier.createBlock(data);
-    data.blockchainHash = block.hash;
-
-    setCurrentMetroData(data);
-
-    // Generate historical data (7 days)
-    const historical = [];
-    for (let i = 6; i >= 0; i--) {
-      const dayData = generateMetroWaterData(metro);
-      historical.push({
-        day: i === 0 ? 'Today' : `${i}d ago`,
-        intake: dayData.intake,
-        usage: dayData.usage,
-        wastage: dayData.wastage
-      });
+    // Generate data for all selected metros
+    const allData: MetroWaterData[] = [];
+    for (const metro of metros) {
+      const data = generateMetroWaterData(metro);
+      const block = await blockchainVerifier.createBlock(data);
+      data.blockchainHash = block.hash;
+      allData.push(data);
     }
-    setHistoricalData(historical);
+    setAllMetroData(allData);
 
-    // Get Claude recommendations (simulated for now)
-    setLoadingRecommendations(true);
-    setTimeout(() => {
-      setClaudeRecommendations(getFallbackRecommendations(data));
-      setLoadingRecommendations(false);
-    }, 1500);
+    // Set the first metro as the primary for display
+    if (metros.length > 0) {
+      setSelectedMetro(metros[0]);
+      setCurrentMetroData(allData[0]);
+
+      // Generate historical data for first metro
+      const historical = [];
+      for (let i = 6; i >= 0; i--) {
+        const dayData = generateMetroWaterData(metros[0]);
+        historical.push({
+          day: i === 0 ? 'Today' : `${i}d ago`,
+          intake: dayData.intake,
+          usage: dayData.usage,
+          wastage: dayData.wastage
+        });
+      }
+      setHistoricalData(historical);
+
+      // Get Claude recommendations
+      setLoadingRecommendations(true);
+      setTimeout(() => {
+        setClaudeRecommendations(getFallbackRecommendations(allData[0]));
+        setLoadingRecommendations(false);
+      }, 1500);
+    } else {
+      setSelectedMetro(null);
+      setCurrentMetroData(null);
+      setAllMetroData([]);
+    }
   }, []);
+
+  // Single Metro Selection Handler (for backward compatibility)
+  const handleMetroSelect = useCallback(async (metro: Metro) => {
+    await handleMetroMultiSelect([metro]);
+  }, [handleMetroMultiSelect]);
 
   // Auto-update metro data
   useEffect(() => {
@@ -154,11 +172,18 @@ function App() {
     };
   };
 
-  // Smooth scroll to section
+  // Smooth scroll to section with offset for sticky nav
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const navHeight = 80; // Height of sticky nav bar
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - navHeight;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
     }
   };
 
@@ -196,9 +221,6 @@ function App() {
       </header>
 
       <nav className="quick-nav">
-        <button onClick={() => scrollToSection('export-section')} className="nav-btn">
-          📊 Export Data
-        </button>
         <button onClick={() => scrollToSection('metro-section')} className="nav-btn">
           🏙️ Select Metro
         </button>
@@ -214,17 +236,15 @@ function App() {
       </nav>
 
       <main className="app-content">
-        <div id="export-section">
-          <WorldBankCompliancePanel
-            metroData={currentMetroData}
-          />
-        </div>
         <div id="metro-section">
           <MetroSelector
-            selectedMetro={selectedMetro}
-            onSelect={handleMetroSelect}
+            selectedMetros={selectedMetros}
+            onMultiSelect={handleMetroMultiSelect}
           />
         </div>
+        <WorldBankCompliancePanel
+          allMetroData={allMetroData}
+        />
         {currentMetroData && (
           <>
             <div id="dashboard-section">

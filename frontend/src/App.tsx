@@ -6,6 +6,7 @@ import WorldBankCompliancePanel from './components/WorldBankCompliance';
 import MetroSelector from './components/MetroSelector';
 import MetroDashboard from './components/MetroDashboard';
 import ClaudeRecommendationsPanel, { ClaudeRecommendationsData } from './components/ClaudeRecommendations';
+import ShutdownNotification from './components/ShutdownNotification';
 import { Metro, MetroWaterData, generateMetroWaterData } from './constants/saMetros';
 import { blockchainVerifier } from './services/blockchainService';
 
@@ -204,6 +205,9 @@ function App() {
         <button onClick={() => scrollToSection('dashboard-section')} className="nav-btn">
           📈 Dashboard
         </button>
+        <button onClick={() => scrollToSection('shutdown-section')} className="nav-btn">
+          🚨 Shutdown Notice
+        </button>
         <button onClick={() => scrollToSection('recommendations-section')} className="nav-btn">
           🤖 AI Recommendations
         </button>
@@ -227,6 +231,11 @@ function App() {
               <MetroDashboard
                 metroData={currentMetroData}
                 historicalData={historicalData}
+              />
+            </div>
+            <div id="shutdown-section">
+              <ShutdownNotification
+                metroData={currentMetroData}
               />
             </div>
             <div id="recommendations-section">

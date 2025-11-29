@@ -1,172 +1,76 @@
 .world-bank-compliance {
-  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-  color: white;
+  background: white;
   border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   padding: 24px;
   margin-bottom: 24px;
 }
 
-.compliance-header {
+.export-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 24px;
+  align-items: center;
+  gap: 20px;
 }
 
-.compliance-title {
+.export-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
   flex: 1;
 }
 
-.title-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 8px;
+.export-info svg {
+  color: #0284c7;
+  flex-shrink: 0;
 }
 
-.shield-icon {
-  color: white;
+.export-info h3 {
+  margin: 0 0 4px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
 }
 
-.compliance-title h2 {
-  margin: 0;
-  font-size: 24px;
-  font-weight: bold;
-}
-
-.subtitle {
-  color: #e0f2fe;
+.export-info p {
   margin: 0;
   font-size: 14px;
+  color: #6b7280;
 }
 
-.compliance-status {
-  text-align: right;
-}
-
-.status-row {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.status-icon.verified {
-  color: #4ade80;
-}
-
-.status-icon.pending {
-  color: #f87171;
-}
-
-.status-text {
-  font-weight: bold;
-  font-size: 16px;
-}
-
-.status-text.verified {
-  color: #4ade80;
-}
-
-.status-text.pending {
-  color: #f87171;
-}
-
-.blocks-count,
-.last-check {
-  font-size: 13px;
-  color: #e0f2fe;
-  margin: 4px 0;
-}
-
-.compliance-metrics {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.metric-card {
-  background: rgba(2, 132, 199, 0.3);
-  border-radius: 6px;
-  padding: 12px;
-}
-
-.metric-label {
-  font-size: 11px;
-  color: #e0f2fe;
-  margin: 0 0 4px 0;
-}
-
-.metric-value {
-  font-size: 18px;
-  font-weight: bold;
-  margin: 0;
-}
-
-.compliance-actions {
-  display: flex;
-  gap: 12px;
-}
-
-.export-button,
-.view-chain-button {
+.export-button {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 16px;
+  padding: 12px 20px;
   border-radius: 6px;
   border: none;
   cursor: pointer;
   font-weight: 600;
   transition: all 0.2s;
   font-size: 14px;
-}
-
-.export-button {
-  background: white;
-  color: #0284c7;
-}
-
-.export-button:hover {
-  background: #e0f2fe;
-}
-
-.view-chain-button {
-  background: rgba(2, 132, 199, 0.3);
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
   color: white;
+  white-space: nowrap;
 }
 
-.view-chain-button:hover {
-  background: rgba(2, 132, 199, 0.5);
+.export-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+}
+
+.export-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 @media (max-width: 768px) {
-  .compliance-header {
+  .export-header {
     flex-direction: column;
-    gap: 16px;
+    align-items: flex-start;
   }
 
-  .compliance-status {
-    text-align: left;
-  }
-
-  .status-row {
-    justify-content: flex-start;
-  }
-
-  .compliance-metrics {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .compliance-actions {
-    flex-direction: column;
-  }
-
-  .export-button,
-  .view-chain-button {
+  .export-button {
     width: 100%;
     justify-content: center;
   }

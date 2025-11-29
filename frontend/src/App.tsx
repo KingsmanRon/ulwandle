@@ -7,7 +7,6 @@ import MetroSelector from './components/MetroSelector';
 import MetroDashboard from './components/MetroDashboard';
 import ClaudeRecommendationsPanel, { ClaudeRecommendationsData } from './components/ClaudeRecommendations';
 import { Metro, MetroWaterData, generateMetroWaterData } from './constants/saMetros';
-import { blockchainVerifier, VerificationResult } from './services/blockchainService';
 
 function App() {
   const [systemStatus, setSystemStatus] = useState<any>(null);
@@ -20,10 +19,6 @@ function App() {
   const [selectedMetro, setSelectedMetro] = useState<Metro | null>(null);
   const [currentMetroData, setCurrentMetroData] = useState<MetroWaterData | null>(null);
   const [historicalData, setHistoricalData] = useState<any[]>([]);
-  const [verificationStatus, setVerificationStatus] = useState<VerificationResult>({
-    valid: false,
-    totalBlocks: 0
-  });
   const [claudeRecommendations, setClaudeRecommendations] = useState<ClaudeRecommendationsData | null>(null);
   const [loadingRecommendations, setLoadingRecommendations] = useState<boolean>(false);
 
@@ -83,11 +78,6 @@ function App() {
 
     // Generate current data
     const data = generateMetroWaterData(metro);
-
-    // Create verified blockchain entry
-    const block = await blockchainVerifier.createBlock(data);
-    data.blockchainHash = block.hash;
-
     setCurrentMetroData(data);
 
     // Generate historical data (7 days)
@@ -102,10 +92,6 @@ function App() {
       });
     }
     setHistoricalData(historical);
-
-    // Verify blockchain
-    const verification = await blockchainVerifier.verifyChain();
-    setVerificationStatus(verification);
 
     // Get Claude recommendations (simulated for now)
     setLoadingRecommendations(true);
@@ -126,17 +112,6 @@ function App() {
     }
   }, [selectedMetro, handleMetroSelect]);
 
-  // Export for World Bank
-  const handleExportForWorldBank = useCallback(() => {
-    const exportData = blockchainVerifier.exportForWorldBank();
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `world-bank-verification-${Date.now()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }, []);
 
   const getFallbackRecommendations = (metroData: MetroWaterData): ClaudeRecommendationsData => {
     return {
@@ -207,8 +182,6 @@ function App() {
 
       <main className="app-content">
         <WorldBankCompliancePanel
-          verificationStatus={verificationStatus}
-          onExport={handleExportForWorldBank}
           metroData={currentMetroData}
         />
         <MetroSelector
@@ -232,7 +205,7 @@ function App() {
 
       <footer className="app-footer">
         <p>Ulwandle Tech - Built for South Africa's Water Infrastructure</p>
-        <p>Powered by Claude AI | South Africa Program-for-Results</p>
+        <p>Powered by Claude AI</p>
       </footer>
     </div>
   );

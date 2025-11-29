@@ -155,8 +155,6 @@ export interface MetroWaterData {
   wastagePercentage: number;
   perCapita: number; // Liters per person per day
   stressLevel: WaterStressLevel;
-  verified: boolean;
-  blockchainHash: string | null;
 }
 
 export function generateMetroWaterData(metro: Metro): MetroWaterData {
@@ -181,8 +179,6 @@ export function generateMetroWaterData(metro: Metro): MetroWaterData {
     wastage: parseFloat(wastage.toFixed(2)),
     wastagePercentage: parseFloat(wastagePercent.toFixed(1)),
     perCapita: parseFloat(perCapita.toFixed(1)),
-    stressLevel: getWaterStressLevel(perCapita),
-    verified: true,
-    blockchainHash: null
+    stressLevel: getWaterStressLevel(perCapita)
   };
 }

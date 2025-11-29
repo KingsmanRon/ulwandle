@@ -102,62 +102,6 @@
   margin: 0 0 16px 0;
 }
 
-.verification-card {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  padding: 24px;
-  margin-bottom: 24px;
-}
-
-.verification-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-
-.verification-title {
-  font-size: 20px;
-  font-weight: bold;
-  color: #1f2937;
-  margin: 0 0 8px 0;
-}
-
-.verification-subtitle {
-  color: #6b7280;
-  margin: 0;
-  max-width: 600px;
-}
-
-.verification-status {
-  text-align: right;
-}
-
-.status-row {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.verified-icon {
-  color: #10b981;
-}
-
-.verified-text {
-  font-size: 24px;
-  font-weight: bold;
-  color: #10b981;
-}
-
-.hash-info,
-.timestamp-info {
-  font-size: 13px;
-  color: #9ca3af;
-  margin: 4px 0;
-}
-
 .stress-level-card {
   border-radius: 8px;
   padding: 20px;
@@ -225,18 +169,5 @@
 
   .charts-grid {
     grid-template-columns: 1fr;
-  }
-
-  .verification-content {
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .verification-status {
-    text-align: left;
-  }
-
-  .status-row {
-    justify-content: flex-start;
   }
 }

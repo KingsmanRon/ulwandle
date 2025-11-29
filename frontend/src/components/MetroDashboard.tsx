@@ -155,31 +155,6 @@ const MetroDashboard: React.FC<MetroDashboardProps> = ({ metroData, historicalDa
         </div>
       </div>
 
-      {/* Verification Status */}
-      <div className="verification-card">
-        <div className="verification-content">
-          <div>
-            <h3 className="verification-title">Data Verification Status</h3>
-            <p className="verification-subtitle">
-              This data is cryptographically verified and compliant with World Bank PforR
-              requirements
-            </p>
-          </div>
-          <div className="verification-status">
-            <div className="status-row">
-              <CheckCircle className="verified-icon" size={32} />
-              <span className="verified-text">VERIFIED</span>
-            </div>
-            <p className="hash-info">
-              Blockchain Hash: {metroData.blockchainHash?.substring(0, 16)}...
-            </p>
-            <p className="timestamp-info">
-              Timestamp: {new Date(metroData.timestamp).toLocaleString()}
-            </p>
-          </div>
-        </div>
-      </div>
-
       {/* Water Stress Level Indicator */}
       <div className={`stress-level-card stress-${metroData.stressLevel.toLowerCase()}`}>
         <h4>Water Stress Level: {metroData.stressLevel}</h4>

@@ -1,5 +1,5 @@
 .world-bank-compliance {
-  background: linear-gradient(to right, #2563eb, #1e40af);
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
   color: white;
   border-radius: 8px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -36,7 +36,7 @@
 }
 
 .subtitle {
-  color: #bfdbfe;
+  color: #e0f2fe;
   margin: 0;
   font-size: 14px;
 }
@@ -77,7 +77,7 @@
 .blocks-count,
 .last-check {
   font-size: 13px;
-  color: #bfdbfe;
+  color: #e0f2fe;
   margin: 4px 0;
 }
 
@@ -89,14 +89,14 @@
 }
 
 .metric-card {
-  background: rgba(30, 64, 175, 0.5);
+  background: rgba(2, 132, 199, 0.3);
   border-radius: 6px;
   padding: 12px;
 }
 
 .metric-label {
   font-size: 11px;
-  color: #bfdbfe;
+  color: #e0f2fe;
   margin: 0 0 4px 0;
 }
 
@@ -127,20 +127,20 @@
 
 .export-button {
   background: white;
-  color: #2563eb;
+  color: #0284c7;
 }
 
 .export-button:hover {
-  background: #eff6ff;
+  background: #e0f2fe;
 }
 
 .view-chain-button {
-  background: #1e40af;
+  background: rgba(2, 132, 199, 0.3);
   color: white;
 }
 
 .view-chain-button:hover {
-  background: #1e3a8a;
+  background: rgba(2, 132, 199, 0.5);
 }
 
 @media (max-width: 768px) {

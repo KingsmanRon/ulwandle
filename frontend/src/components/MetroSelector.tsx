@@ -25,7 +25,7 @@ const MetroSelector: React.FC<MetroSelectorProps> = ({ selectedMetro, onSelect }
             <p className="metro-name">{metro.name}</p>
             <p className="metro-province">{metro.province}</p>
             <p className="metro-population">
-              Pop: {(metro.population / 1000000).toFixed(1)}M
+              Population: {(metro.population / 1000000).toFixed(1)}M
             </p>
           </button>
         ))}

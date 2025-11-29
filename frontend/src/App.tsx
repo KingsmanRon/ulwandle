@@ -211,7 +211,7 @@ function App() {
 
       <footer className="app-footer">
         <p>Ulwandle Tech - Built for South Africa's Water Infrastructure</p>
-        <p>Powered by Claude AI</p>
+        <p>Powered by Claude AI | South Africa Program-for-Results</p>
       </footer>
     </div>
   );

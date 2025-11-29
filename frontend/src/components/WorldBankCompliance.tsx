@@ -1,26 +1,67 @@
 import React from 'react';
 import { Shield, CheckCircle, AlertTriangle, Download, Lock } from 'lucide-react';
 import { VerificationResult } from '../services/blockchainService';
+import * as XLSX from 'xlsx';
 import './WorldBankCompliance.css';
 
 interface WorldBankCompliancePanelProps {
   verificationStatus: VerificationResult;
   onExport: () => void;
+  metroData?: any;
 }
 
 const WorldBankCompliancePanel: React.FC<WorldBankCompliancePanelProps> = ({
   verificationStatus,
-  onExport
+  onExport,
+  metroData
 }) => {
+
+  const handleExcelExport = () => {
+    if (!metroData) {
+      alert('Please select a metro first');
+      return;
+    }
+
+    // Prepare data for Excel
+    const excelData = [
+      {
+        'Metro': metroData.metro,
+        'Province': metroData.province,
+        'Population': metroData.population,
+        'Daily Intake (ML)': metroData.intake,
+        'Actual Usage (ML)': metroData.usage,
+        'Wastage (ML)': metroData.wastage,
+        'Wastage %': metroData.wastagePercentage,
+        'Per Capita (L/day)': metroData.perCapita,
+        'Water Stress Level': metroData.stressLevel,
+        'Timestamp': new Date(metroData.timestamp).toLocaleString(),
+        'Blockchain Hash': metroData.blockchainHash || 'N/A',
+        'Verified': metroData.verified ? 'Yes' : 'No'
+      }
+    ];
+
+    // Create workbook
+    const ws = XLSX.utils.json_to_sheet(excelData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Water Data');
+
+    // Auto-size columns
+    const maxWidth = excelData.reduce((w, r) => Math.max(w, r.Metro.length), 10);
+    ws['!cols'] = [{ wch: maxWidth }];
+
+    // Export
+    XLSX.writeFile(wb, `${metroData.metro.replace(/\s+/g, '_')}_Water_Data_${Date.now()}.xlsx`);
+  };
+
   return (
     <div className="world-bank-compliance">
       <div className="compliance-header">
         <div className="compliance-title">
           <div className="title-row">
             <Shield className="shield-icon" size={32} />
-            <h2>World Bank PforR Compliance</h2>
+            <h2>Data Verification & Export</h2>
           </div>
-          <p className="subtitle">$925 Million Program-for-Results Verification System</p>
+          <p className="subtitle">Cryptographically verified water monitoring data</p>
         </div>
         <div className="compliance-status">
           <div className="status-row">
@@ -62,17 +103,17 @@ const WorldBankCompliancePanel: React.FC<WorldBankCompliancePanelProps> = ({
           <p className="metric-value">VALID</p>
         </div>
         <div className="metric-card">
-          <p className="metric-label">Compliance</p>
-          <p className="metric-value">PforR</p>
+          <p className="metric-label">Data Points</p>
+          <p className="metric-value">{verificationStatus.totalBlocks || 0}</p>
         </div>
       </div>
 
       <div className="compliance-actions">
-        <button onClick={onExport} className="export-button">
+        <button onClick={handleExcelExport} className="export-button">
           <Download size={18} />
-          Export for World Bank
+          Export Data to Excel
         </button>
-        <button className="view-chain-button">
+        <button onClick={onExport} className="view-chain-button">
           <Lock size={18} />
           View Verification Chain
         </button>

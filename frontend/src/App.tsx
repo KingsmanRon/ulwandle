@@ -2,12 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import './App.css';
 import { Download, AlertTriangle } from 'lucide-react';
 import { apiService } from './services/apiService';
-import Dashboard from './components/Dashboard';
-import DistrictMap from './components/DistrictMap';
-import WaterQuality from './components/WaterQuality';
-import KillSwitch from './components/KillSwitch';
-import Predictions from './components/Predictions';
-import Alerts from './components/Alerts';
 import WorldBankCompliancePanel from './components/WorldBankCompliance';
 import MetroSelector from './components/MetroSelector';
 import MetroDashboard from './components/MetroDashboard';
@@ -16,7 +10,6 @@ import { Metro, MetroWaterData, generateMetroWaterData } from './constants/saMet
 import { blockchainVerifier, VerificationResult } from './services/blockchainService';
 
 function App() {
-  const [currentView, setCurrentView] = useState<string>('metros');
   const [systemStatus, setSystemStatus] = useState<any>(null);
 
   // PWA state
@@ -124,14 +117,14 @@ function App() {
 
   // Auto-update metro data
   useEffect(() => {
-    if (selectedMetro && currentView === 'metros') {
+    if (selectedMetro) {
       const interval = setInterval(() => {
         handleMetroSelect(selectedMetro);
       }, 30000); // Update every 30 seconds
 
       return () => clearInterval(interval);
     }
-  }, [selectedMetro, currentView, handleMetroSelect]);
+  }, [selectedMetro, handleMetroSelect]);
 
   // Export for World Bank
   const handleExportForWorldBank = useCallback(() => {
@@ -179,51 +172,6 @@ function App() {
     };
   };
 
-  const renderView = () => {
-    switch (currentView) {
-      case 'metros':
-        return (
-          <>
-            <WorldBankCompliancePanel
-              verificationStatus={verificationStatus}
-              onExport={handleExportForWorldBank}
-            />
-            <MetroSelector
-              selectedMetro={selectedMetro}
-              onSelect={handleMetroSelect}
-            />
-            {currentMetroData && (
-              <>
-                <MetroDashboard
-                  metroData={currentMetroData}
-                  historicalData={historicalData}
-                />
-                <ClaudeRecommendationsPanel
-                  recommendations={claudeRecommendations}
-                  loading={loadingRecommendations}
-                  onRefresh={() => handleMetroSelect(selectedMetro!)}
-                />
-              </>
-            )}
-          </>
-        );
-      case 'dashboard':
-        return <Dashboard />;
-      case 'districts':
-        return <DistrictMap />;
-      case 'quality':
-        return <WaterQuality />;
-      case 'killswitch':
-        return <KillSwitch />;
-      case 'predictions':
-        return <Predictions />;
-      case 'alerts':
-        return <Alerts />;
-      default:
-        return <Dashboard />;
-    }
-  };
-
   return (
     <div className="App">
       <header className="app-header">
@@ -257,58 +205,34 @@ function App() {
         </div>
       </header>
 
-      <nav className="app-nav">
-        <button
-          className={currentView === 'metros' ? 'active' : ''}
-          onClick={() => setCurrentView('metros')}
-        >
-          🌍 SA Metros
-        </button>
-        <button
-          className={currentView === 'dashboard' ? 'active' : ''}
-          onClick={() => setCurrentView('dashboard')}
-        >
-          📊 Dashboard
-        </button>
-        <button
-          className={currentView === 'districts' ? 'active' : ''}
-          onClick={() => setCurrentView('districts')}
-        >
-          🗺️ Districts
-        </button>
-        <button
-          className={currentView === 'quality' ? 'active' : ''}
-          onClick={() => setCurrentView('quality')}
-        >
-          💧 Water Quality
-        </button>
-        <button
-          className={currentView === 'killswitch' ? 'active' : ''}
-          onClick={() => setCurrentView('killswitch')}
-        >
-          🔴 Kill Switch
-        </button>
-        <button
-          className={currentView === 'predictions' ? 'active' : ''}
-          onClick={() => setCurrentView('predictions')}
-        >
-          🤖 AI Predictions
-        </button>
-        <button
-          className={currentView === 'alerts' ? 'active' : ''}
-          onClick={() => setCurrentView('alerts')}
-        >
-          🚨 Alerts
-        </button>
-      </nav>
-
       <main className="app-content">
-        {renderView()}
+        <WorldBankCompliancePanel
+          verificationStatus={verificationStatus}
+          onExport={handleExportForWorldBank}
+          metroData={currentMetroData}
+        />
+        <MetroSelector
+          selectedMetro={selectedMetro}
+          onSelect={handleMetroSelect}
+        />
+        {currentMetroData && (
+          <>
+            <MetroDashboard
+              metroData={currentMetroData}
+              historicalData={historicalData}
+            />
+            <ClaudeRecommendationsPanel
+              recommendations={claudeRecommendations}
+              loading={loadingRecommendations}
+              onRefresh={() => handleMetroSelect(selectedMetro!)}
+            />
+          </>
+        )}
       </main>
 
       <footer className="app-footer">
         <p>Ulwandle Tech - Built for South Africa's Water Infrastructure</p>
-        <p>Powered by Claude AI | World Bank PforR Program | South Africa Program-for-Results</p>
+        <p>Powered by Claude AI | South Africa Program-for-Results</p>
       </footer>
     </div>
   );

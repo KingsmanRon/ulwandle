@@ -153,6 +153,14 @@ function App() {
     };
   };
 
+  // Smooth scroll to section
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   return (
     <div className="App">
       <header className="app-header">
@@ -186,25 +194,48 @@ function App() {
         </div>
       </header>
 
+      <nav className="quick-nav">
+        <button onClick={() => scrollToSection('export-section')} className="nav-btn">
+          📊 Export Data
+        </button>
+        <button onClick={() => scrollToSection('metro-section')} className="nav-btn">
+          🏙️ Select Metro
+        </button>
+        <button onClick={() => scrollToSection('dashboard-section')} className="nav-btn">
+          📈 Dashboard
+        </button>
+        <button onClick={() => scrollToSection('recommendations-section')} className="nav-btn">
+          🤖 AI Recommendations
+        </button>
+      </nav>
+
       <main className="app-content">
-        <WorldBankCompliancePanel
-          metroData={currentMetroData}
-        />
-        <MetroSelector
-          selectedMetro={selectedMetro}
-          onSelect={handleMetroSelect}
-        />
+        <div id="export-section">
+          <WorldBankCompliancePanel
+            metroData={currentMetroData}
+          />
+        </div>
+        <div id="metro-section">
+          <MetroSelector
+            selectedMetro={selectedMetro}
+            onSelect={handleMetroSelect}
+          />
+        </div>
         {currentMetroData && (
           <>
-            <MetroDashboard
-              metroData={currentMetroData}
-              historicalData={historicalData}
-            />
-            <ClaudeRecommendationsPanel
-              recommendations={claudeRecommendations}
-              loading={loadingRecommendations}
-              onRefresh={() => handleMetroSelect(selectedMetro!)}
-            />
+            <div id="dashboard-section">
+              <MetroDashboard
+                metroData={currentMetroData}
+                historicalData={historicalData}
+              />
+            </div>
+            <div id="recommendations-section">
+              <ClaudeRecommendationsPanel
+                recommendations={claudeRecommendations}
+                loading={loadingRecommendations}
+                onRefresh={() => handleMetroSelect(selectedMetro!)}
+              />
+            </div>
           </>
         )}
       </main>

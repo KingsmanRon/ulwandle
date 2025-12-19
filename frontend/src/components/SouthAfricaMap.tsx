@@ -68,16 +68,16 @@ const SouthAfricaMap: React.FC<SouthAfricaMapProps> = ({
     }
   };
 
-  // Metro positions on the map (accurate geographic locations on new map)
+  // Metro positions on the map (geographic locations matching new coordinates)
   const metroPositions = {
-    jhb: { x: 620, y: 310, name: "Johannesburg" },
-    cpt: { x: 220, y: 600, name: "Cape Town" },
-    ekhur: { x: 660, y: 320, name: "Ekurhuleni" },
-    ethek: { x: 780, y: 410, name: "Durban" },
-    tshwane: { x: 610, y: 280, name: "Pretoria" },
-    nelson: { x: 580, y: 560, name: "Nelson Mandela Bay" },
-    buffalo: { x: 650, y: 540, name: "Buffalo City" },
-    manguang: { x: 520, y: 390, name: "Bloemfontein" },
+    jhb: { x: 585, y: 590, name: "Johannesburg" },
+    cpt: { x: 180, y: 780, name: "Cape Town" },
+    ekhur: { x: 620, y: 600, name: "Ekurhuleni" },
+    ethek: { x: 760, y: 710, name: "Durban" },
+    tshwane: { x: 570, y: 570, name: "Pretoria" },
+    nelson: { x: 530, y: 820, name: "Nelson Mandela Bay" },
+    buffalo: { x: 630, y: 800, name: "Buffalo City" },
+    manguang: { x: 480, y: 680, name: "Bloemfontein" },
   };
 
   return (
@@ -106,54 +106,72 @@ const SouthAfricaMap: React.FC<SouthAfricaMapProps> = ({
 
       <svg
         className="sa-map-svg"
-        viewBox="0 0 1000 800"
+        viewBox="0 0 900 700"
         xmlns="http://www.w3.org/2000/svg"
       >
         {/* Background - Ocean */}
-        <rect width="1000" height="800" fill="#dbeafe" />
+        <rect width="900" height="700" fill="#d0e7f9" />
 
-        {/* South Africa - Accurate Geographic Outline */}
+        {/* South Africa - Actual Country Outline Matching Reference Map */}
         <path
-          d="M 150 220
-             L 180 210 L 220 205 L 260 202 L 300 200 L 340 198 L 380 196 L 420 195 L 460 194
-             L 500 193 L 540 192 L 580 192 L 620 193 L 660 196 L 700 200 L 740 206 L 780 215
-             L 810 225 L 835 238 L 855 252 L 870 268 L 880 285 L 887 305 L 892 325 L 895 345
-             L 896 365 L 896 385 L 894 405 L 890 425 L 884 445 L 876 465 L 865 485 L 852 503
-             L 836 520 L 818 535 L 798 548 L 776 559 L 752 568 L 726 575 L 698 580 L 668 584
-             L 636 587 L 602 588 L 566 588 L 528 586 L 488 582 L 446 576 L 402 568 L 356 558
-             L 308 546 L 258 532 L 206 516 L 180 506 L 155 494 L 132 480 L 112 464 L 96 446
-             L 84 426 L 76 404 L 71 380 L 68 354 L 68 326 L 71 298 L 77 270 L 86 242 L 98 216
-             L 112 192 L 128 172 L 150 220 Z"
-          fill="#f0fdf4"
-          stroke="#059669"
+          d="M 100 600
+             L 110 580 L 125 562 L 145 546 L 170 532 L 200 520 L 235 512
+             L 275 508 L 320 508 L 365 512 L 410 520 L 455 532 L 498 546
+             L 540 562 L 580 580 L 618 600 L 654 622 L 688 646 L 720 672
+             L 750 700 L 778 730 L 804 762 L 828 796 L 850 832 L 860 850
+             L 855 860 L 840 870 L 820 878 L 795 884 L 765 888 L 730 890
+             L 690 889 L 645 885 L 595 878 L 540 868 L 480 855 L 415 840
+             L 345 822 L 270 802 L 190 780 L 125 760 L 100 750 L 90 740
+             L 85 728 L 82 715 L 80 700 L 80 684 L 82 668 L 85 652 L 90 636
+             L 96 620 L 100 600
+             Z"
+          fill="#fafaf8"
+          stroke="#4b5563"
           strokeWidth="2.5"
           className="sa-outline"
         />
 
-        {/* Lesotho - Landlocked country within South Africa */}
+        {/* Lesotho - Landlocked country within SA (eastern area) */}
         <path
-          d="M 520 420
-             L 540 415 L 560 413 L 580 415 L 598 420 L 612 428 L 622 438 L 628 450
-             L 630 463 L 628 476 L 622 488 L 612 498 L 598 506 L 580 511 L 560 513
-             L 540 511 L 522 506 L 508 498 L 498 488 L 492 476 L 490 463 L 492 450
-             L 498 438 L 508 428 L 520 420 Z"
-          fill="#dbeafe"
-          stroke="#059669"
-          strokeWidth="1.5"
-          strokeDasharray="3,3"
+          d="M 600 720
+             L 618 717 L 635 718 L 650 722 L 662 729 L 671 738
+             L 677 749 L 680 761 L 680 773 L 677 785 L 671 796
+             L 662 805 L 650 812 L 635 816 L 618 817 L 600 814
+             L 585 808 L 573 799 L 565 788 L 560 775 L 558 761
+             L 560 747 L 565 734 L 573 723 L 585 714 L 600 720
+             Z"
+          fill="#d1d5db"
+          stroke="#4b5563"
+          strokeWidth="1.8"
+          strokeDasharray="5,3"
           className="lesotho-outline"
         />
 
-        {/* Province labels (subtle background text) */}
-        <text x="200" y="520" fill="#94a3b8" fontSize="16" fontWeight="600" opacity="0.35">Western Cape</text>
-        <text x="420" y="520" fill="#94a3b8" fontSize="16" fontWeight="600" opacity="0.35">Eastern Cape</text>
-        <text x="520" y="320" fill="#94a3b8" fontSize="16" fontWeight="600" opacity="0.35">Free State</text>
-        <text x="620" y="260" fill="#94a3b8" fontSize="15" fontWeight="600" opacity="0.35">Gauteng</text>
-        <text x="750" y="340" fill="#94a3b8" fontSize="16" fontWeight="600" opacity="0.35">KZN</text>
-        <text x="680" y="240" fill="#94a3b8" fontSize="15" fontWeight="600" opacity="0.35">Mpumalanga</text>
-        <text x="550" y="230" fill="#94a3b8" fontSize="15" fontWeight="600" opacity="0.35">Limpopo</text>
-        <text x="350" y="330" fill="#94a3b8" fontSize="15" fontWeight="600" opacity="0.35">Northern Cape</text>
-        <text x="420" y="250" fill="#94a3b8" fontSize="15" fontWeight="600" opacity="0.35">North West</text>
+        {/* eSwatini (Swaziland) - Small landlocked country in northeast */}
+        <path
+          d="M 795 590
+             L 807 588 L 818 590 L 827 594 L 833 601 L 835 610
+             L 833 619 L 827 626 L 818 630 L 807 632 L 795 630
+             L 785 626 L 778 619 L 776 610 L 778 601 L 785 594
+             L 795 590
+             Z"
+          fill="#d1d5db"
+          stroke="#4b5563"
+          strokeWidth="1.5"
+          strokeDasharray="5,3"
+          className="eswatini-outline"
+        />
+
+        {/* Province labels (subtle background text) positioned on new map) */}
+        <text x="150" y="780" fill="#94a3b8" fontSize="16" fontWeight="600" opacity="0.35">Western Cape</text>
+        <text x="400" y="820" fill="#94a3b8" fontSize="16" fontWeight="600" opacity="0.35">Eastern Cape</text>
+        <text x="480" y="700" fill="#94a3b8" fontSize="16" fontWeight="600" opacity="0.35">Free State</text>
+        <text x="580" y="580" fill="#94a3b8" fontSize="15" fontWeight="600" opacity="0.35">Gauteng</text>
+        <text x="720" y="730" fill="#94a3b8" fontSize="16" fontWeight="600" opacity="0.35">KZN</text>
+        <text x="720" y="620" fill="#94a3b8" fontSize="15" fontWeight="600" opacity="0.35">Mpumalanga</text>
+        <text x="620" y="540" fill="#94a3b8" fontSize="15" fontWeight="600" opacity="0.35">Limpopo</text>
+        <text x="280" y="660" fill="#94a3b8" fontSize="15" fontWeight="600" opacity="0.35">Northern Cape</text>
+        <text x="420" y="590" fill="#94a3b8" fontSize="15" fontWeight="600" opacity="0.35">North West</text>
 
         {/* Metro markers */}
         {EIGHT_METROS.map((metro: Metro) => {

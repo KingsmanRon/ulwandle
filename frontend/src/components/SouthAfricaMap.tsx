@@ -137,6 +137,13 @@ const SouthAfricaMap: React.FC<SouthAfricaMapProps> = ({
         {/* Metro markers */}
         {EIGHT_METROS.map((metro: Metro) => {
           const pos = metroPositions[metro.id as keyof typeof metroPositions];
+
+          // Skip if position not defined for this metro
+          if (!pos) {
+            console.warn(`Position not defined for metro: ${metro.id}`);
+            return null;
+          }
+
           const radius = isSelected(metro) ? 24 : 18;
 
           return (

@@ -68,17 +68,17 @@ const SouthAfricaMap: React.FC<SouthAfricaMapProps> = ({
     }
   };
 
-  // Metro positions on the map (based on approximate geographic locations)
-  // Coordinates are for a 1000x800 viewBox
+  // Metro positions on the map (matching actual South Africa geography)
+  // Coordinates are for a 1000x800 viewBox matching the reference map
   const metroPositions = {
-    cpt: { x: 180, y: 700, name: "Cape Town" },           // Southwest coast
-    nelson: { x: 550, y: 750, name: "Nelson Mandela Bay" }, // Southeast coast
-    buffalo: { x: 640, y: 720, name: "Buffalo City" },    // East coast (East London)
-    ethek: { x: 800, y: 620, name: "Durban" },            // East coast (KZN)
-    manguang: { x: 500, y: 580, name: "Bloemfontein" },   // Central (Free State)
-    jhb: { x: 650, y: 480, name: "Johannesburg" },        // Northeast (Gauteng)
-    ekhur: { x: 690, y: 485, name: "Ekurhuleni" },        // East of Jhb (Gauteng)
-    tshwane: { x: 640, y: 460, name: "Pretoria" },        // North of Jhb (Gauteng)
+    cpt: { x: 200, y: 680, name: "Cape Town" },           // Western Cape - Southwest coast
+    nelson: { x: 520, y: 720, name: "Nelson Mandela Bay" }, // Eastern Cape - Southeast coast (Port Elizabeth)
+    buffalo: { x: 600, y: 700, name: "Buffalo City" },    // Eastern Cape - East coast (East London)
+    ethek: { x: 750, y: 580, name: "Durban" },            // KwaZulu-Natal - East coast
+    manguang: { x: 480, y: 540, name: "Bloemfontein" },   // Free State - Central interior
+    jhb: { x: 580, y: 380, name: "Johannesburg" },        // Gauteng - Northeast interior
+    ekhur: { x: 620, y: 385, name: "Ekurhuleni" },        // Gauteng - East of Johannesburg
+    tshwane: { x: 575, y: 350, name: "Pretoria" },        // Gauteng - North of Johannesburg
   };
 
   return (
@@ -106,37 +106,23 @@ const SouthAfricaMap: React.FC<SouthAfricaMapProps> = ({
       </div>
 
       <div style={{ position: 'relative', width: '100%', maxWidth: '1000px', margin: '0 auto' }}>
-        {/* Background Map Image */}
         <svg
           className="sa-map-svg"
           viewBox="0 0 1000 800"
           xmlns="http://www.w3.org/2000/svg"
           style={{ width: '100%', height: 'auto', display: 'block' }}
         >
-          {/* Simplified South Africa Map Background - User can replace with actual image */}
-          <rect width="1000" height="800" fill="#e0f2fe" />
-
-          {/* Simplified SA Outline for now - shows general shape */}
-          <path
-            d="M 100 650 L 120 600 L 150 550 L 200 500 L 270 460 L 350 440 L 440 430
-               L 530 435 L 620 450 L 700 480 L 770 520 L 830 570 L 870 630 L 890 690
-               L 880 730 L 850 760 L 800 780 L 740 790 L 670 795 L 590 790 L 500 775
-               L 400 750 L 300 715 L 200 675 L 130 660 L 100 650 Z"
-            fill="#fef3c7"
-            stroke="#92400e"
-            strokeWidth="2"
-            opacity="0.7"
+          {/* Clean Background Map Image - Place your South Africa map here */}
+          <image
+            href="/sa-provinces-map.png"
+            x="0"
+            y="0"
+            width="1000"
+            height="800"
+            preserveAspectRatio="xMidYMid meet"
           />
 
-          {/* Note: Province boundaries from reference map */}
-          <text x="500" y="50" textAnchor="middle" fill="#6b7280" fontSize="18" fontWeight="600">
-            South Africa - Metro Water Status Map
-          </text>
-          <text x="500" y="75" textAnchor="middle" fill="#9ca3af" fontSize="12">
-            (Map shows approximate locations - overlay on actual geographic map)
-          </text>
-
-        {/* Metro markers */}
+        {/* Metro markers - Only overlays on clean image */}
         {EIGHT_METROS.map((metro: Metro) => {
           const pos = metroPositions[metro.id as keyof typeof metroPositions];
 

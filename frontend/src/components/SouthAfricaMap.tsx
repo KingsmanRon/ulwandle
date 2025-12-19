@@ -112,9 +112,9 @@ const SouthAfricaMap: React.FC<SouthAfricaMapProps> = ({
           xmlns="http://www.w3.org/2000/svg"
           style={{ width: '100%', height: 'auto', display: 'block' }}
         >
-          {/* Clean Background Map Image - Place your South Africa map here */}
+          {/* Clean Background Map Image */}
           <image
-            href="/sa-provinces-map.png"
+            href="/sa-provinces-map.webp"
             x="0"
             y="0"
             width="1000"
@@ -122,7 +122,7 @@ const SouthAfricaMap: React.FC<SouthAfricaMapProps> = ({
             preserveAspectRatio="xMidYMid meet"
           />
 
-        {/* Metro markers - Only overlays on clean image */}
+        {/* Metro markers only - no other overlays */}
         {EIGHT_METROS.map((metro: Metro) => {
           const pos = metroPositions[metro.id as keyof typeof metroPositions];
 
@@ -132,31 +132,19 @@ const SouthAfricaMap: React.FC<SouthAfricaMapProps> = ({
             return null;
           }
 
-          const radius = isSelected(metro) ? 24 : 18;
+          const radius = isSelected(metro) ? 20 : 16;
 
           return (
             <g key={metro.id}>
-              {/* Glow effect for selected metros */}
-              {isSelected(metro) && (
-                <circle
-                  cx={pos.x}
-                  cy={pos.y}
-                  r={radius + 8}
-                  fill={getMetroColor(metro)}
-                  opacity="0.2"
-                  className="metro-glow"
-                />
-              )}
-
-              {/* Metro circle */}
+              {/* Metro circle marker - simple and clean */}
               <circle
                 cx={pos.x}
                 cy={pos.y}
                 r={radius}
                 fill={getMetroColor(metro)}
-                stroke={isSelected(metro) ? '#1e40af' : 'white'}
-                strokeWidth={isSelected(metro) ? '4' : '3'}
-                className={`metro-marker ${isSelected(metro) ? 'selected' : ''} ${hoveredMetro?.id === metro.id ? 'hovered' : ''}`}
+                stroke="white"
+                strokeWidth="2"
+                className="metro-marker"
                 onClick={() => handleMetroClick(metro.id)}
                 onMouseEnter={() => handleMetroHover(metro.id)}
                 onMouseLeave={() => handleMetroHover(null)}
@@ -170,37 +158,12 @@ const SouthAfricaMap: React.FC<SouthAfricaMapProps> = ({
                 className="metro-label"
                 textAnchor="middle"
                 fontSize="12"
-                fontWeight="700"
+                fontWeight="600"
                 fill="#1f2937"
                 pointerEvents="none"
               >
                 {pos.name}
               </text>
-
-              {/* Checkmark for selected metros */}
-              {isSelected(metro) && (
-                <g>
-                  <circle
-                    cx={pos.x + radius - 4}
-                    cy={pos.y - radius + 4}
-                    r="8"
-                    fill="#10b981"
-                    stroke="white"
-                    strokeWidth="2"
-                  />
-                  <text
-                    x={pos.x + radius - 4}
-                    y={pos.y - radius + 8}
-                    textAnchor="middle"
-                    fontSize="10"
-                    fontWeight="bold"
-                    fill="white"
-                    pointerEvents="none"
-                  >
-                    ✓
-                  </text>
-                </g>
-              )}
             </g>
           );
         })}

@@ -20,157 +20,6 @@ import {
   ChevronLeft
 } from 'lucide-react';
 
-// --- Configuration: The 8 Metros (South Africa) ---
-const METRO_SYSTEMS = {
-  jhb: {
-    id: 'jhb',
-    name: 'City of Johannesburg',
-    code: 'JHB',
-    operator: 'Rand Water',
-    nodes: [
-      { id: 'j1', type: 'source', name: 'Vaal Dam', level: 98, capacity: '100%', x: 50, y: 10, status: 'normal' },
-      { id: 'j2', type: 'pump', name: 'Zuikerbosch Stn', flow: '3200 Ml/d', x: 50, y: 30, status: 'normal' },
-      { id: 'j3', type: 'treatment', name: 'Vereeniging Purif.', quality: '99%', x: 50, y: 50, status: 'normal' },
-      { id: 'j4', type: 'pump', name: 'Eikenhof Pump', flow: '1200 Ml/d', x: 30, y: 70, status: 'normal' },
-      { id: 'j5', type: 'reservoir', name: 'Meredale Res', level: 45, capacity: '600 Ml', x: 30, y: 90, status: 'warning' },
-      { id: 'j6', type: 'reservoir', name: 'Sandton Res', level: 82, capacity: '800 Ml', x: 70, y: 90, status: 'normal' },
-    ],
-    connections: [
-      { id: 'jc1', from: 'j1', to: 'j2', status: 'normal' },
-      { id: 'jc2', from: 'j2', to: 'j3', status: 'normal' },
-      { id: 'jc3', from: 'j3', to: 'j4', status: 'normal' },
-      { id: 'jc4', from: 'j3', to: 'j6', status: 'normal' },
-      { id: 'jc5', from: 'j4', to: 'j5', status: 'critical' },
-    ]
-  },
-  cpt: {
-    id: 'cpt',
-    name: 'City of Cape Town',
-    code: 'CPT',
-    operator: 'DWS / City of CT',
-    nodes: [
-      { id: 'c1', type: 'source', name: 'Theewaterskloof', level: 102, capacity: '100%', x: 30, y: 10, status: 'warning' },
-      { id: 'c2', type: 'source', name: 'Berg River Dam', level: 95, capacity: '100%', x: 70, y: 10, status: 'normal' },
-      { id: 'c3', type: 'treatment', name: 'Faure WTW', quality: '98%', x: 50, y: 45, status: 'normal' },
-      { id: 'c4', type: 'pump', name: 'Muldersvlei', flow: '500 Ml/d', x: 50, y: 70, status: 'normal' },
-      { id: 'c5', type: 'reservoir', name: 'Blackheath', level: 60, capacity: '300 Ml', x: 50, y: 90, status: 'normal' },
-    ],
-    connections: [
-      { id: 'cc1', from: 'c1', to: 'c3', status: 'normal' },
-      { id: 'cc2', from: 'c2', to: 'c3', status: 'normal' },
-      { id: 'cc3', from: 'c3', to: 'c4', status: 'normal' },
-      { id: 'cc4', from: 'c4', to: 'c5', status: 'normal' },
-    ]
-  },
-  eth: {
-    id: 'eth',
-    name: 'eThekwini (Durban)',
-    code: 'ETH',
-    operator: 'Umgeni Water',
-    nodes: [
-      { id: 'e1', type: 'source', name: 'Midmar Dam', level: 88, capacity: '100%', x: 25, y: 10, status: 'normal' },
-      { id: 'e2', type: 'source', name: 'Albert Falls', level: 92, capacity: '100%', x: 75, y: 10, status: 'normal' },
-      { id: 'e3', type: 'source', name: 'Nagle Dam', level: 85, capacity: '100%', x: 50, y: 30, status: 'normal' },
-      { id: 'e4', type: 'treatment', name: 'Durban Heights', quality: '97%', x: 50, y: 55, status: 'maintenance' },
-      { id: 'e5', type: 'reservoir', name: 'Northdene', level: 30, capacity: '150 Ml', x: 20, y: 85, status: 'critical' },
-      { id: 'e6', type: 'reservoir', name: 'Umlazi Res', level: 70, capacity: '200 Ml', x: 80, y: 85, status: 'normal' },
-    ],
-    connections: [
-      { id: 'ec1', from: 'e1', to: 'e3', status: 'normal' },
-      { id: 'ec2', from: 'e2', to: 'e3', status: 'normal' },
-      { id: 'ec3', from: 'e3', to: 'e4', status: 'normal' },
-      { id: 'ec4', from: 'e4', to: 'e5', status: 'critical' },
-      { id: 'ec5', from: 'e4', to: 'e6', status: 'normal' },
-    ]
-  },
-  tsh: {
-    id: 'tsh',
-    name: 'City of Tshwane',
-    code: 'TSH',
-    operator: 'Rand Water / Magalies',
-    nodes: [
-      { id: 't1', type: 'source', name: 'Rietvlei Dam', level: 99, capacity: '100%', x: 30, y: 10, status: 'normal' },
-      { id: 't2', type: 'source', name: 'Roodeplaat Dam', level: 101, capacity: '100%', x: 70, y: 10, status: 'warning' },
-      { id: 't3', type: 'treatment', name: 'Rietvlei WTW', quality: '96%', x: 30, y: 40, status: 'normal' },
-      { id: 't4', type: 'treatment', name: 'Temba WTW', quality: '92%', x: 70, y: 40, status: 'warning' },
-      { id: 't5', type: 'reservoir', name: 'Garsfontein', level: 65, capacity: '600 Ml', x: 50, y: 80, status: 'normal' },
-    ],
-    connections: [
-      { id: 'tc1', from: 't1', to: 't3', status: 'normal' },
-      { id: 'tc2', from: 't2', to: 't4', status: 'normal' },
-      { id: 'tc3', from: 't3', to: 't5', status: 'normal' },
-      { id: 'tc4', from: 't4', to: 't5', status: 'maintenance' },
-    ]
-  },
-  nmb: {
-    id: 'nmb',
-    name: 'Nelson Mandela Bay',
-    code: 'NMB',
-    operator: 'NMBM',
-    nodes: [
-      { id: 'n1', type: 'source', name: 'Kouga Dam', level: 18, capacity: '100%', x: 30, y: 15, status: 'critical' },
-      { id: 'n2', type: 'source', name: 'Impofu Dam', level: 14, capacity: '100%', x: 70, y: 15, status: 'critical' },
-      { id: 'n3', type: 'treatment', name: 'Nooitgedacht', quality: '98%', x: 50, y: 55, status: 'normal' },
-      { id: 'n4', type: 'reservoir', name: 'Chelsea Res', level: 40, capacity: '350 Ml', x: 50, y: 85, status: 'warning' },
-    ],
-    connections: [
-      { id: 'nc1', from: 'n1', to: 'n3', status: 'normal' },
-      { id: 'nc2', from: 'n2', to: 'n3', status: 'normal' },
-      { id: 'nc3', from: 'n3', to: 'n4', status: 'normal' },
-    ]
-  },
-  eku: {
-    id: 'eku',
-    name: 'City of Ekurhuleni',
-    code: 'EKU',
-    operator: 'Rand Water',
-    nodes: [
-      { id: 'ek1', type: 'source', name: 'Vaal System', level: 98, capacity: '100%', x: 50, y: 10, status: 'normal' },
-      { id: 'ek2', type: 'pump', name: 'Mapleton Pump', flow: '2100 Ml/d', x: 50, y: 40, status: 'normal' },
-      { id: 'ek3', type: 'reservoir', name: 'Vlakfontein', level: 55, capacity: '200 Ml', x: 30, y: 80, status: 'normal' },
-      { id: 'ek4', type: 'reservoir', name: 'Brakpan Res', level: 45, capacity: '150 Ml', x: 70, y: 80, status: 'warning' },
-    ],
-    connections: [
-      { id: 'ekc1', from: 'ek1', to: 'ek2', status: 'normal' },
-      { id: 'ekc2', from: 'ek2', to: 'ek3', status: 'normal' },
-      { id: 'ekc3', from: 'ek2', to: 'ek4', status: 'normal' },
-    ]
-  },
-  man: {
-    id: 'man',
-    name: 'Mangaung',
-    code: 'MAN',
-    operator: 'Bloem Water',
-    nodes: [
-      { id: 'm1', type: 'source', name: 'Rustfontein', level: 85, capacity: '100%', x: 30, y: 20, status: 'normal' },
-      { id: 'm2', type: 'source', name: 'Gariep Dam', level: 95, capacity: '100%', x: 70, y: 20, status: 'normal' },
-      { id: 'm3', type: 'treatment', name: 'Maselspoort', quality: '95%', x: 50, y: 55, status: 'normal' },
-      { id: 'm4', type: 'reservoir', name: 'Brandkop Res', level: 75, capacity: '200 Ml', x: 50, y: 85, status: 'normal' },
-    ],
-    connections: [
-      { id: 'mc1', from: 'm1', to: 'm3', status: 'normal' },
-      { id: 'mc2', from: 'm2', to: 'm3', status: 'maintenance' },
-      { id: 'mc3', from: 'm3', to: 'm4', status: 'normal' },
-    ]
-  },
-  bcm: {
-    id: 'bcm',
-    name: 'Buffalo City',
-    code: 'BCM',
-    operator: 'Amatola Water',
-    nodes: [
-      { id: 'b1', type: 'source', name: 'Bridle Drift', level: 90, capacity: '100%', x: 40, y: 15, status: 'normal' },
-      { id: 'b2', type: 'source', name: 'Nahoon Dam', level: 85, capacity: '100%', x: 80, y: 15, status: 'normal' },
-      { id: 'b3', type: 'treatment', name: 'Umzonyana WTW', quality: '96%', x: 40, y: 50, status: 'normal' },
-      { id: 'b4', type: 'reservoir', name: 'Dawn Res', level: 60, capacity: '100 Ml', x: 40, y: 85, status: 'normal' },
-    ],
-    connections: [
-      { id: 'bc1', from: 'b1', to: 'b3', status: 'normal' },
-      { id: 'bc2', from: 'b3', to: 'b4', status: 'normal' },
-    ]
-  }
-};
-
 // Types for TypeScript
 type NodeType = 'source' | 'treatment' | 'pump' | 'reservoir';
 type NodeStatus = 'normal' | 'warning' | 'critical' | 'maintenance';
@@ -194,6 +43,166 @@ interface Connection {
   to: string;
   status: NodeStatus;
 }
+
+interface MetroSystem {
+  id: string;
+  name: string;
+  code: string;
+  operator: string;
+  nodes: Node[];
+  connections: Connection[];
+}
+
+// --- Configuration: The 8 Metros (South Africa) ---
+const METRO_SYSTEMS: Record<string, MetroSystem> = {
+  jhb: {
+    id: 'jhb',
+    name: 'City of Johannesburg',
+    code: 'JHB',
+    operator: 'Rand Water',
+    nodes: [
+      { id: 'j1', type: 'source' as NodeType, name: 'Vaal Dam', level: 98, capacity: '100%', x: 50, y: 10, status: 'normal' as NodeStatus },
+      { id: 'j2', type: 'pump' as NodeType, name: 'Zuikerbosch Stn', flow: '3200 Ml/d', x: 50, y: 30, status: 'normal' as NodeStatus },
+      { id: 'j3', type: 'treatment' as NodeType, name: 'Vereeniging Purif.', quality: '99%', x: 50, y: 50, status: 'normal' as NodeStatus },
+      { id: 'j4', type: 'pump' as NodeType, name: 'Eikenhof Pump', flow: '1200 Ml/d', x: 30, y: 70, status: 'normal' as NodeStatus },
+      { id: 'j5', type: 'reservoir' as NodeType, name: 'Meredale Res', level: 45, capacity: '600 Ml', x: 30, y: 90, status: 'warning' as NodeStatus },
+      { id: 'j6', type: 'reservoir' as NodeType, name: 'Sandton Res', level: 82, capacity: '800 Ml', x: 70, y: 90, status: 'normal' as NodeStatus },
+    ],
+    connections: [
+      { id: 'jc1', from: 'j1', to: 'j2', status: 'normal' as NodeStatus },
+      { id: 'jc2', from: 'j2', to: 'j3', status: 'normal' as NodeStatus },
+      { id: 'jc3', from: 'j3', to: 'j4', status: 'normal' as NodeStatus },
+      { id: 'jc4', from: 'j3', to: 'j6', status: 'normal' as NodeStatus },
+      { id: 'jc5', from: 'j4', to: 'j5', status: 'critical' as NodeStatus },
+    ]
+  },
+  cpt: {
+    id: 'cpt',
+    name: 'City of Cape Town',
+    code: 'CPT',
+    operator: 'DWS / City of CT',
+    nodes: [
+      { id: 'c1', type: 'source' as NodeType, name: 'Theewaterskloof', level: 102, capacity: '100%', x: 30, y: 10, status: 'warning' as NodeStatus },
+      { id: 'c2', type: 'source' as NodeType, name: 'Berg River Dam', level: 95, capacity: '100%', x: 70, y: 10, status: 'normal' as NodeStatus },
+      { id: 'c3', type: 'treatment' as NodeType, name: 'Faure WTW', quality: '98%', x: 50, y: 45, status: 'normal' as NodeStatus },
+      { id: 'c4', type: 'pump' as NodeType, name: 'Muldersvlei', flow: '500 Ml/d', x: 50, y: 70, status: 'normal' as NodeStatus },
+      { id: 'c5', type: 'reservoir' as NodeType, name: 'Blackheath', level: 60, capacity: '300 Ml', x: 50, y: 90, status: 'normal' as NodeStatus },
+    ],
+    connections: [
+      { id: 'cc1', from: 'c1', to: 'c3', status: 'normal' as NodeStatus },
+      { id: 'cc2', from: 'c2', to: 'c3', status: 'normal' as NodeStatus },
+      { id: 'cc3', from: 'c3', to: 'c4', status: 'normal' as NodeStatus },
+      { id: 'cc4', from: 'c4', to: 'c5', status: 'normal' as NodeStatus },
+    ]
+  },
+  eth: {
+    id: 'eth',
+    name: 'eThekwini (Durban)',
+    code: 'ETH',
+    operator: 'Umgeni Water',
+    nodes: [
+      { id: 'e1', type: 'source' as NodeType, name: 'Midmar Dam', level: 88, capacity: '100%', x: 25, y: 10, status: 'normal' as NodeStatus },
+      { id: 'e2', type: 'source' as NodeType, name: 'Albert Falls', level: 92, capacity: '100%', x: 75, y: 10, status: 'normal' as NodeStatus },
+      { id: 'e3', type: 'source' as NodeType, name: 'Nagle Dam', level: 85, capacity: '100%', x: 50, y: 30, status: 'normal' as NodeStatus },
+      { id: 'e4', type: 'treatment' as NodeType, name: 'Durban Heights', quality: '97%', x: 50, y: 55, status: 'maintenance' as NodeStatus },
+      { id: 'e5', type: 'reservoir' as NodeType, name: 'Northdene', level: 30, capacity: '150 Ml', x: 20, y: 85, status: 'critical' as NodeStatus },
+      { id: 'e6', type: 'reservoir' as NodeType, name: 'Umlazi Res', level: 70, capacity: '200 Ml', x: 80, y: 85, status: 'normal' as NodeStatus },
+    ],
+    connections: [
+      { id: 'ec1', from: 'e1', to: 'e3', status: 'normal' as NodeStatus },
+      { id: 'ec2', from: 'e2', to: 'e3', status: 'normal' as NodeStatus },
+      { id: 'ec3', from: 'e3', to: 'e4', status: 'normal' as NodeStatus },
+      { id: 'ec4', from: 'e4', to: 'e5', status: 'critical' as NodeStatus },
+      { id: 'ec5', from: 'e4', to: 'e6', status: 'normal' as NodeStatus },
+    ]
+  },
+  tsh: {
+    id: 'tsh',
+    name: 'City of Tshwane',
+    code: 'TSH',
+    operator: 'Rand Water / Magalies',
+    nodes: [
+      { id: 't1', type: 'source' as NodeType, name: 'Rietvlei Dam', level: 99, capacity: '100%', x: 30, y: 10, status: 'normal' as NodeStatus },
+      { id: 't2', type: 'source' as NodeType, name: 'Roodeplaat Dam', level: 101, capacity: '100%', x: 70, y: 10, status: 'warning' as NodeStatus },
+      { id: 't3', type: 'treatment' as NodeType, name: 'Rietvlei WTW', quality: '96%', x: 30, y: 40, status: 'normal' as NodeStatus },
+      { id: 't4', type: 'treatment' as NodeType, name: 'Temba WTW', quality: '92%', x: 70, y: 40, status: 'warning' as NodeStatus },
+      { id: 't5', type: 'reservoir' as NodeType, name: 'Garsfontein', level: 65, capacity: '600 Ml', x: 50, y: 80, status: 'normal' as NodeStatus },
+    ],
+    connections: [
+      { id: 'tc1', from: 't1', to: 't3', status: 'normal' as NodeStatus },
+      { id: 'tc2', from: 't2', to: 't4', status: 'normal' as NodeStatus },
+      { id: 'tc3', from: 't3', to: 't5', status: 'normal' as NodeStatus },
+      { id: 'tc4', from: 't4', to: 't5', status: 'maintenance' as NodeStatus },
+    ]
+  },
+  nmb: {
+    id: 'nmb',
+    name: 'Nelson Mandela Bay',
+    code: 'NMB',
+    operator: 'NMBM',
+    nodes: [
+      { id: 'n1', type: 'source' as NodeType, name: 'Kouga Dam', level: 18, capacity: '100%', x: 30, y: 15, status: 'critical' as NodeStatus },
+      { id: 'n2', type: 'source' as NodeType, name: 'Impofu Dam', level: 14, capacity: '100%', x: 70, y: 15, status: 'critical' as NodeStatus },
+      { id: 'n3', type: 'treatment' as NodeType, name: 'Nooitgedacht', quality: '98%', x: 50, y: 55, status: 'normal' as NodeStatus },
+      { id: 'n4', type: 'reservoir' as NodeType, name: 'Chelsea Res', level: 40, capacity: '350 Ml', x: 50, y: 85, status: 'warning' as NodeStatus },
+    ],
+    connections: [
+      { id: 'nc1', from: 'n1', to: 'n3', status: 'normal' as NodeStatus },
+      { id: 'nc2', from: 'n2', to: 'n3', status: 'normal' as NodeStatus },
+      { id: 'nc3', from: 'n3', to: 'n4', status: 'normal' as NodeStatus },
+    ]
+  },
+  eku: {
+    id: 'eku',
+    name: 'City of Ekurhuleni',
+    code: 'EKU',
+    operator: 'Rand Water',
+    nodes: [
+      { id: 'ek1', type: 'source' as NodeType, name: 'Vaal System', level: 98, capacity: '100%', x: 50, y: 10, status: 'normal' as NodeStatus },
+      { id: 'ek2', type: 'pump' as NodeType, name: 'Mapleton Pump', flow: '2100 Ml/d', x: 50, y: 40, status: 'normal' as NodeStatus },
+      { id: 'ek3', type: 'reservoir' as NodeType, name: 'Vlakfontein', level: 55, capacity: '200 Ml', x: 30, y: 80, status: 'normal' as NodeStatus },
+      { id: 'ek4', type: 'reservoir' as NodeType, name: 'Brakpan Res', level: 45, capacity: '150 Ml', x: 70, y: 80, status: 'warning' as NodeStatus },
+    ],
+    connections: [
+      { id: 'ekc1', from: 'ek1', to: 'ek2', status: 'normal' as NodeStatus },
+      { id: 'ekc2', from: 'ek2', to: 'ek3', status: 'normal' as NodeStatus },
+      { id: 'ekc3', from: 'ek2', to: 'ek4', status: 'normal' as NodeStatus },
+    ]
+  },
+  man: {
+    id: 'man',
+    name: 'Mangaung',
+    code: 'MAN',
+    operator: 'Bloem Water',
+    nodes: [
+      { id: 'm1', type: 'source' as NodeType, name: 'Rustfontein', level: 85, capacity: '100%', x: 30, y: 20, status: 'normal' as NodeStatus },
+      { id: 'm2', type: 'source' as NodeType, name: 'Gariep Dam', level: 95, capacity: '100%', x: 70, y: 20, status: 'normal' as NodeStatus },
+      { id: 'm3', type: 'treatment' as NodeType, name: 'Maselspoort', quality: '95%', x: 50, y: 55, status: 'normal' as NodeStatus },
+      { id: 'm4', type: 'reservoir' as NodeType, name: 'Brandkop Res', level: 75, capacity: '200 Ml', x: 50, y: 85, status: 'normal' as NodeStatus },
+    ],
+    connections: [
+      { id: 'mc1', from: 'm1', to: 'm3', status: 'normal' as NodeStatus },
+      { id: 'mc2', from: 'm2', to: 'm3', status: 'maintenance' as NodeStatus },
+      { id: 'mc3', from: 'm3', to: 'm4', status: 'normal' as NodeStatus },
+    ]
+  },
+  bcm: {
+    id: 'bcm',
+    name: 'Buffalo City',
+    code: 'BCM',
+    operator: 'Amatola Water',
+    nodes: [
+      { id: 'b1', type: 'source' as NodeType, name: 'Bridle Drift', level: 90, capacity: '100%', x: 40, y: 15, status: 'normal' as NodeStatus },
+      { id: 'b2', type: 'source' as NodeType, name: 'Nahoon Dam', level: 85, capacity: '100%', x: 80, y: 15, status: 'normal' as NodeStatus },
+      { id: 'b3', type: 'treatment' as NodeType, name: 'Umzonyana WTW', quality: '96%', x: 40, y: 50, status: 'normal' as NodeStatus },
+      { id: 'b4', type: 'reservoir' as NodeType, name: 'Dawn Res', level: 60, capacity: '100 Ml', x: 40, y: 85, status: 'normal' as NodeStatus },
+    ],
+    connections: [
+      { id: 'bc1', from: 'b1', to: 'b3', status: 'normal' as NodeStatus },
+      { id: 'bc2', from: 'b3', to: 'b4', status: 'normal' as NodeStatus },
+    ]
+  }
+};
 
 interface SelectedElement {
   elementType: 'node' | 'connection';

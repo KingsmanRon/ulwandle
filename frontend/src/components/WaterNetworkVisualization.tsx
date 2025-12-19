@@ -714,34 +714,41 @@ const WaterNetworkVisualization: React.FC<WaterNetworkVisualizationProps> = ({
                 )}
 
                 {/* Notification List (Recent Alerts) */}
-                {notifications.length > 0 && (
                 <div className="space-y-3">
                     <div className="flex items-center justify-between">
                     <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Recent Alerts</h4>
-                    <button onClick={() => setNotifications([])} className="text-[10px] text-blue-600 hover:underline">Clear All</button>
+                    {notifications.length > 0 && (
+                      <button onClick={() => setNotifications([])} className="text-[10px] text-blue-600 hover:underline">Clear All</button>
+                    )}
                     </div>
-                    {notifications.map((note) => (
-                    <div key={note.id} className={`p-4 rounded-xl border text-xs flex gap-3 shadow-sm transition-all ${
-                        note.type === 'critical' ? 'bg-red-50 border-red-100' :
-                        note.type === 'warning' ? 'bg-amber-50 border-amber-100' :
-                        'bg-emerald-50 border-emerald-100'
-                    }`}>
-                        <div className={`p-2 rounded-full h-fit shrink-0 ${
-                        note.type === 'critical' ? 'bg-white text-red-500' :
-                        note.type === 'warning' ? 'bg-white text-amber-500' :
-                        'bg-white text-emerald-500'
+                    {notifications.length > 0 ? (
+                      notifications.map((note) => (
+                        <div key={note.id} className={`p-4 rounded-xl border text-xs flex gap-3 shadow-sm transition-all ${
+                            note.type === 'critical' ? 'bg-red-50 border-red-100' :
+                            note.type === 'warning' ? 'bg-amber-50 border-amber-100' :
+                            'bg-emerald-50 border-emerald-100'
                         }`}>
-                        {note.type === 'critical' ? <AlertTriangle className="w-4 h-4" /> : <Info className="w-4 h-4" />}
+                            <div className={`p-2 rounded-full h-fit shrink-0 ${
+                            note.type === 'critical' ? 'bg-white text-red-500' :
+                            note.type === 'warning' ? 'bg-white text-amber-500' :
+                            'bg-white text-emerald-500'
+                            }`}>
+                            {note.type === 'critical' ? <AlertTriangle className="w-4 h-4" /> : <Info className="w-4 h-4" />}
+                            </div>
+                            <div>
+                            <p className="font-bold text-slate-800 text-sm mb-0.5">{note.title}</p>
+                            <p className="text-slate-600 leading-relaxed">{note.message}</p>
+                            <span className="text-[10px] text-slate-400 mt-2 block opacity-70">Just now</span>
+                            </div>
                         </div>
-                        <div>
-                        <p className="font-bold text-slate-800 text-sm mb-0.5">{note.title}</p>
-                        <p className="text-slate-600 leading-relaxed">{note.message}</p>
-                        <span className="text-[10px] text-slate-400 mt-2 block opacity-70">Just now</span>
-                        </div>
-                    </div>
-                    ))}
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-slate-400 text-sm">
+                        <Bell className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                        <p>No recent alerts</p>
+                      </div>
+                    )}
                 </div>
-                )}
             </div>
           </div>
         </aside>

@@ -68,17 +68,17 @@ const SouthAfricaMap: React.FC<SouthAfricaMapProps> = ({
     }
   };
 
-  // Metro positions on the map - positioned exactly on grey anchor points from map image
-  // Coordinates for 1000x800 viewBox - matching the grey dots in sa-provinces - Copy.png
+  // Metro positions as percentages - responsive at any screen size
+  // Measured directly from Map_of_the_metropolitan_municipalities image
   const metroPositions = {
-    cpt: { x: 155, y: 740, name: "Cape Town" },           // Southwest peninsula - grey anchor point
-    nelson: { x: 518, y: 750, name: "Nelson Mandela Bay" }, // South coast - grey anchor point
-    buffalo: { x: 635, y: 690, name: "Buffalo City" },    // Southeast coast - grey anchor point
-    ethek: { x: 806, y: 505, name: "Durban" },            // East coast - grey anchor point
-    manguang: { x: 500, y: 446, name: "Bloemfontein" },   // Central interior - grey anchor point
-    jhb: { x: 566, y: 270, name: "Johannesburg" },        // Gauteng cluster - grey anchor point
-    ekhur: { x: 643, y: 270, name: "Ekurhuleni" },        // East of JHB - grey anchor point
-    tshwane: { x: 605, y: 185, name: "Pretoria" },        // North of JHB - grey anchor point
+    cpt:      { x: "16.1%", y: "87.8%", name: "Cape Town" },
+    nelson:   { x: "54.0%", y: "89.0%", name: "Nelson Mandela Bay" },
+    buffalo:  { x: "66.1%", y: "81.9%", name: "Buffalo City" },
+    ethek:    { x: "84.0%", y: "60.0%", name: "eThekwini" },
+    manguang: { x: "52.1%", y: "53.0%", name: "Mangaung" },
+    jhb:      { x: "59.0%", y: "32.0%", name: "Johannesburg" },
+    ekhur:    { x: "67.0%", y: "32.0%", name: "Ekurhuleni" },
+    tshwane:  { x: "63.0%", y: "22.0%", name: "Tshwane" },
   };
 
   return (
@@ -124,18 +124,13 @@ const SouthAfricaMap: React.FC<SouthAfricaMapProps> = ({
             return null;
           }
 
-          // Convert coordinates to percentages for responsive positioning
-          // Based on 1000x800 coordinate system
-          const leftPercent = (pos.x / 1000) * 100;
-          const topPercent = (pos.y / 800) * 100;
-
           return (
             <div
               key={metro.id}
               className={`metro-marker ${isSelected(metro) ? 'selected' : ''}`}
               style={{
-                left: `${leftPercent}%`,
-                top: `${topPercent}%`,
+                left: pos.x,
+                top: pos.y,
                 backgroundColor: getMetroColor(metro),
               }}
               onClick={() => handleMetroClick(metro.id)}

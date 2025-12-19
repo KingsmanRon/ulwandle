@@ -68,17 +68,17 @@ const SouthAfricaMap: React.FC<SouthAfricaMapProps> = ({
     }
   };
 
-  // Metro positions on the map (matching actual South Africa geography)
-  // Coordinates are for a 1000x800 viewBox matching the reference map
+  // Metro positions on the map (aligned with actual city locations on map)
+  // Coordinates are for a 1000x800 viewBox - precisely matching the uploaded map
   const metroPositions = {
-    cpt: { x: 200, y: 680, name: "Cape Town" },           // Western Cape - Southwest coast
-    nelson: { x: 520, y: 720, name: "Nelson Mandela Bay" }, // Eastern Cape - Southeast coast (Port Elizabeth)
-    buffalo: { x: 600, y: 700, name: "Buffalo City" },    // Eastern Cape - East coast (East London)
-    ethek: { x: 750, y: 580, name: "Durban" },            // KwaZulu-Natal - East coast
-    manguang: { x: 480, y: 540, name: "Bloemfontein" },   // Free State - Central interior
-    jhb: { x: 580, y: 380, name: "Johannesburg" },        // Gauteng - Northeast interior
-    ekhur: { x: 620, y: 385, name: "Ekurhuleni" },        // Gauteng - East of Johannesburg
-    tshwane: { x: 575, y: 350, name: "Pretoria" },        // Gauteng - North of Johannesburg
+    cpt: { x: 180, y: 730, name: "Cape Town" },           // Bottom left coast
+    nelson: { x: 680, y: 740, name: "Nelson Mandela Bay" }, // Port Elizabeth - bottom right coast
+    buffalo: { x: 820, y: 690, name: "Buffalo City" },    // East London - east coast
+    ethek: { x: 1020, y: 490, name: "Durban" },           // Right coast (KZN)
+    manguang: { x: 570, y: 440, name: "Bloemfontein" },   // Center of country
+    jhb: { x: 730, y: 250, name: "Johannesburg" },        // Upper center (Gauteng)
+    ekhur: { x: 860, y: 245, name: "Ekurhuleni" },        // East of Johannesburg (near Witbank)
+    tshwane: { x: 790, y: 220, name: "Pretoria" },        // North of Johannesburg
   };
 
   return (

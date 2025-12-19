@@ -78,7 +78,7 @@ const SouthAfricaMap: React.FC<SouthAfricaMapProps> = ({
     manguang: { x: "60.0%", y: "54.5%", name: "Mangaung" },     
     jhb:      { x: "68.5%", y: "33.0%", name: "Johannesburg" },  
     ekhur:    { x: "71.5%", y: "33.0%", name: "Ekurhuleni" },     
-    tshwane:  { x: "70.0%", y: "24.5%", name: "Tshwane" },        
+    tshwane:  { x: "70.8%", y: "28.5%", name: "Tshwane" },        
   };
   return (
     <div className="south-africa-map-container">

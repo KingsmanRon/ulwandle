@@ -55,6 +55,7 @@
   max-width: 1000px;
   margin: 0 auto;
   line-height: 0;
+  user-select: none;  /* Prevent text selection cursor on entire map */
 }
 
 /* The Actual Map Image */
@@ -78,6 +79,7 @@
   z-index: 5;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  user-select: none;         /* Prevent text selection cursor */
 
   /* THE MAGIC ALIGNMENT FIX */
   /* This centers the dot exactly on your x/y coordinate */

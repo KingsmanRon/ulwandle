@@ -69,17 +69,17 @@ Ulwandle Tech is a comprehensive water monitoring and management platform design
 - **7-Day Historical Trends** - Visual analytics with charts
 
 ### 🗺️ **Interactive South Africa Map (Phase 1)**
-*Visual geographic representation with real-time status*
+*Clean geographic representation with real-time status*
 
-- **Interactive SVG map** showing all 8 SA metropolitan regions
-- **Color-coded metros** by water stress level:
+- **Actual South Africa map image** showing provinces and cities
+- **Color-coded metro markers** by water stress level:
   - 🔴 Critical (>40% wastage)
   - 🟠 High (30-40% wastage)
   - 🟡 Medium (20-30% wastage)
   - 🟢 Low (<20% wastage)
 - **Click metros to select/deselect** directly from map
-- **Hover tooltips** with population, stress level, and wastage %
-- **Visual selection feedback** with pulsing blue glow
+- **Minimal circular markers** precisely positioned on actual city locations
+- **Clean design** - no labels or hover effects, just the map with markers
 - **Real-time updates** when metro data changes
 - **Responsive design** for desktop and mobile
 
@@ -234,7 +234,7 @@ Ulwandle Tech is a comprehensive water monitoring and management platform design
 │                                                                     │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐            │
 │  │ SA Map       │  │ Metro        │  │ Dashboard    │            │
-│  │ (SVG)        │  │ Selector     │  │ (Recharts)   │            │
+│  │ (Image+SVG)  │  │ Selector     │  │ (Recharts)   │            │
 │  └──────────────┘  └──────────────┘  └──────────────┘            │
 │                                                                     │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐            │
@@ -394,11 +394,11 @@ Frontend will be available at `http://localhost:3000`
 ## 💡 Usage
 
 ### 1. View South Africa Map
-- Interactive map shows all 8 metros
-- Color-coded by water stress level
+- Clean map image shows all 8 metros with circular markers
+- Markers color-coded by water stress level
 - Click metros directly on map to select
-- Hover for instant metrics tooltip
-- Visual feedback for selected metros
+- Minimal design with accurate city positioning
+- Selected metros remain visually clickable
 
 ### 2. Select Metros
 - Click on one or multiple metro cards

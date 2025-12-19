@@ -72,12 +72,12 @@ const SouthAfricaMap: React.FC<SouthAfricaMapProps> = ({
   const metroPositions = {
     jhb: { x: 580, y: 280, name: "Johannesburg" },
     cpt: { x: 280, y: 580, name: "Cape Town" },
-    ethek: { x: 620, y: 290, name: "Ekurhuleni" },
-    eth: { x: 700, y: 350, name: "Durban" },
-    tsh: { x: 560, y: 250, name: "Pretoria" },
-    nmb: { x: 520, y: 530, name: "NM Bay" },
-    buf: { x: 560, y: 490, name: "Buffalo City" },
-    man: { x: 490, y: 360, name: "Bloemfontein" },
+    ekhur: { x: 620, y: 290, name: "Ekurhuleni" },
+    ethek: { x: 700, y: 350, name: "Durban" },
+    tshwane: { x: 560, y: 250, name: "Pretoria" },
+    nelson: { x: 520, y: 530, name: "NM Bay" },
+    buffalo: { x: 560, y: 490, name: "Buffalo City" },
+    manguang: { x: 490, y: 360, name: "Bloemfontein" },
   };
 
   return (

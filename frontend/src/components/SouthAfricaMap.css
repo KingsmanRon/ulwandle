@@ -54,6 +54,7 @@
   width: 100%;
   max-width: 1000px;
   margin: 0 auto;
+  line-height: 0;
 }
 
 /* The Actual Map Image */

@@ -105,24 +105,16 @@ const SouthAfricaMap: React.FC<SouthAfricaMapProps> = ({
         </div>
       </div>
 
-      <div style={{ position: 'relative', width: '100%', maxWidth: '1000px', margin: '0 auto' }}>
-        <svg
-          className="sa-map-svg"
-          viewBox="0 0 1000 800"
-          xmlns="http://www.w3.org/2000/svg"
-          style={{ width: '100%', height: 'auto', display: 'block' }}
-        >
-          {/* Clean Background Map Image with grey anchor points */}
-          <image
-            href="/Map_of_the_metropolitan_municipalities_of_South_Africa_(2016).svg.png"
-            x="0"
-            y="0"
-            width="1000"
-            height="800"
-            preserveAspectRatio="xMidYMid meet"
-          />
+      {/* The Map Area with Absolute Positioned Markers */}
+      <div className="map-wrapper">
+        {/* The Background Map Image */}
+        <img
+          src="/Map_of_the_metropolitan_municipalities_of_South_Africa_(2016).svg.png"
+          alt="South Africa Metropolitan Municipalities"
+          className="sa-map-image"
+        />
 
-        {/* Metro markers only - minimal circles */}
+        {/* Metro Markers - Positioned Absolutely */}
         {EIGHT_METROS.map((metro: Metro) => {
           const pos = metroPositions[metro.id as keyof typeof metroPositions];
 
@@ -132,25 +124,45 @@ const SouthAfricaMap: React.FC<SouthAfricaMapProps> = ({
             return null;
           }
 
-          const radius = 10;
+          // Convert coordinates to percentages for responsive positioning
+          // Based on 1000x800 coordinate system
+          const leftPercent = (pos.x / 1000) * 100;
+          const topPercent = (pos.y / 800) * 100;
 
           return (
-            <circle
+            <div
               key={metro.id}
-              cx={pos.x}
-              cy={pos.y}
-              r={radius}
-              fill={getMetroColor(metro)}
-              stroke="white"
-              strokeWidth="2"
+              className={`metro-marker ${isSelected(metro) ? 'selected' : ''}`}
+              style={{
+                left: `${leftPercent}%`,
+                top: `${topPercent}%`,
+                backgroundColor: getMetroColor(metro),
+              }}
               onClick={() => handleMetroClick(metro.id)}
-              style={{ cursor: 'pointer' }}
+              onMouseEnter={() => setHoveredMetro(metro)}
+              onMouseLeave={() => setHoveredMetro(null)}
+              title={pos.name}
             />
           );
         })}
-        </svg>
-      </div>
 
+        {/* Tooltip for Hovered Metro */}
+        {hoveredMetro && (
+          <div className="map-tooltip">
+            <h4>{hoveredMetro.name}</h4>
+            <p>
+              <strong>Status:</strong>{' '}
+              {metroStressLevels?.get(hoveredMetro.id)?.level || 'Unknown'}
+            </p>
+            {metroStressLevels?.get(hoveredMetro.id) && (
+              <p>
+                <strong>Wastage:</strong>{' '}
+                {metroStressLevels.get(hoveredMetro.id)!.wastage}%
+              </p>
+            )}
+          </div>
+        )}
+      </div>
 
       <div className="map-footer">
         <p>

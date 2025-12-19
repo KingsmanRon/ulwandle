@@ -1,12 +1,17 @@
+/* Container - Keeps everything organized */
 .south-africa-map-container {
   background: white;
   border-radius: 12px;
   padding: 2rem;
   margin: 2rem 0;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  position: relative;
+
+  /* SCROLL HANDLING: Because the map is fixed at 960px,
+     this ensures it scrolls on small screens instead of breaking layout */
+  overflow-x: auto;
 }
 
+/* Header Section */
 .map-header {
   display: flex;
   justify-content: space-between;
@@ -42,90 +47,81 @@
   border: 1px solid #d1d5db;
 }
 
-.sa-map-svg {
+/* The Wrapper for Image + Dots */
+/* This MUST be relative so dots position absolutely inside it */
+.map-wrapper {
+  position: relative;
   width: 100%;
-  height: auto;
-  max-height: 600px;
+  max-width: 1000px;
+  margin: 0 auto;
+  aspect-ratio: 1000 / 800; /* Maintains the coordinate system ratio */
+}
+
+/* The Actual Map Image */
+.sa-map-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
   display: block;
 }
 
-.sa-outline {
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
-}
+/* ------------------------------------------------ */
+/* THE DOTS (Div-based instead of SVG)              */
+/* ------------------------------------------------ */
 
 .metro-marker {
-  transition: all 0.3s ease;
-  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.2));
+  position: absolute;
+  width: 16px;       /* Size of the dot */
+  height: 16px;
+  border: 2px solid white;   /* White ring makes it pop */
+  border-radius: 50%;        /* Makes it a perfect circle */
   cursor: pointer;
+  z-index: 5;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+
+  /* THE MAGIC ALIGNMENT FIX */
+  /* This centers the dot exactly on your x/y coordinate */
+  transform: translate(-50%, -50%);
 }
 
 .metro-marker:hover {
-  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.35));
-  transform: scale(1.15);
-  transform-origin: center;
+  transform: translate(-50%, -50%) scale(1.3); /* Scale up but keep centered */
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  z-index: 10;
 }
 
 .metro-marker.selected {
-  filter: drop-shadow(0 8px 16px rgba(59, 130, 246, 0.5));
-  animation: pulse-metro 2s ease-in-out infinite;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3); /* Ring effect */
+  animation: pulse-ring 2s infinite;
 }
 
-.metro-marker.hovered {
-  stroke-width: 5 !important;
-  transform: scale(1.2);
-}
-
-.metro-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
-}
-
-@keyframes pulse-metro {
-  0%, 100% {
-    filter: drop-shadow(0 8px 16px rgba(59, 130, 246, 0.5));
-  }
-  50% {
-    filter: drop-shadow(0 12px 24px rgba(59, 130, 246, 0.7));
-  }
-}
-
-@keyframes pulse-glow {
-  0%, 100% {
-    opacity: 0.2;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.35;
-    transform: scale(1.1);
-  }
-}
-
-.metro-label {
-  font-size: 12px;
-  font-weight: 700;
-  fill: #1f2937;
-  paint-order: stroke fill;
-  stroke: white;
-  stroke-width: 3px;
-  stroke-linejoin: round;
-}
+/* ------------------------------------------------ */
+/* Tooltips & UI Overlay                            */
+/* ------------------------------------------------ */
 
 .map-tooltip {
   position: absolute;
-  top: 120px;
-  right: 2rem;
-  background: white;
-  border: 2px solid #3b82f6;
+  /* Adjust these top/right values to fit your layout preference */
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(4px);
+  border: 1px solid #e5e7eb;
+  border-left: 4px solid #3b82f6;
   border-radius: 8px;
   padding: 1rem;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-  min-width: 200px;
-  z-index: 10;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  min-width: 220px;
+  z-index: 20;
+  pointer-events: none; /* Lets clicks pass through if it overlaps slightly */
 }
 
 .map-tooltip h4 {
   margin: 0 0 0.5rem 0;
-  color: #1f2937;
+  color: #111827;
   font-size: 1.1rem;
+  font-weight: 700;
 }
 
 .map-tooltip p {
@@ -138,15 +134,7 @@
   color: #1f2937;
 }
 
-.click-hint {
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid #e5e7eb;
-  font-style: italic;
-  color: #6b7280 !important;
-  font-size: 0.85rem !important;
-}
-
+/* Footer Section */
 .map-footer {
   margin-top: 1.5rem;
   padding-top: 1rem;
@@ -174,7 +162,26 @@
   font-style: italic;
 }
 
-/* Responsive */
+/* ------------------------------------------------ */
+/* Animations                                       */
+/* ------------------------------------------------ */
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+  }
+}
+
+/* ------------------------------------------------ */
+/* Responsive                                       */
+/* ------------------------------------------------ */
+
 @media (max-width: 768px) {
   .south-africa-map-container {
     padding: 1.5rem;
@@ -197,7 +204,8 @@
     width: 100%;
   }
 
-  .metro-label {
-    font-size: 10px;
+  .metro-marker {
+    width: 14px;
+    height: 14px;
   }
 }

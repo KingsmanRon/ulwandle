@@ -114,7 +114,7 @@ const SouthAfricaMap: React.FC<SouthAfricaMapProps> = ({
         >
           {/* Clean Background Map Image with grey anchor points */}
           <image
-            href="/sa-provinces - Copy.png"
+            href="/Map_of_the_metropolitan_municipalities_of_South_Africa_(2016).svg.png"
             x="0"
             y="0"
             width="1000"

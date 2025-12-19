@@ -71,14 +71,14 @@ const SouthAfricaMap: React.FC<SouthAfricaMapProps> = ({
   // Metro positions as percentages - responsive at any screen size
   // Measured directly from Map_of_the_metropolitan_municipalities image
   const metroPositions = {
-    cpt:      { x: "16.8%", y: "88.5%", name: "Cape Town" },     
-    nelson:   { x: "55.5%", y: "91.0%", name: "Nelson Mandela Bay" },
-    buffalo:  { x: "69.5%", y: "83.5%", name: "Buffalo City" },
-    ethek:    { x: "85.5%", y: "61.0%", name: "eThekwini" },     
-    manguang: { x: "51.5%", y: "54.0%", name: "Mangaung" }, 
-    jhb:      { x: "58.5%", y: "32.5%", name: "Johannesburg" },
-    ekhur:    { x: "65.5%", y: "32.5%", name: "Ekurhuleni" },
-    tshwane:  { x: "61.5%", y: "22.5%", name: "Tshwane" },
+    cpt:      { x: "16.8%", y: "90.0%", name: "Cape Town" },      
+    nelson:   { x: "53.5%", y: "89.5%", name: "Nelson Mandela Bay" }, 
+    buffalo:  { x: "67.5%", y: "83.5%", name: "Buffalo City" },   
+    ethek:    { x: "83.5%", y: "61.0%", name: "eThekwini" },      
+    manguang: { x: "53.0%", y: "54.0%", name: "Mangaung" },    
+    jhb:      { x: "56.5%", y: "32.5%", name: "Johannesburg" },  
+    ekhur:    { x: "62.0%", y: "32.5%", name: "Ekurhuleni" },     
+    tshwane:  { x: "63.0%", y: "24.5%", name: "Tshwane" },        
   };
 
   return (

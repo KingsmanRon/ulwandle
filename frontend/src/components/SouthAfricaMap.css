@@ -55,6 +55,7 @@
   max-width: 1000px;
   margin: 0 auto;
   line-height: 0;
+  border: 2px solid red; /* TEMPORARY: Remove after checking */
 }
 
 /* The Actual Map Image */

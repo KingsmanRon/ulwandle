@@ -68,17 +68,17 @@ const SouthAfricaMap: React.FC<SouthAfricaMapProps> = ({
     }
   };
 
-  // Metro positions on the map - positioned on grey anchor points from map image
+  // Metro positions on the map - positioned exactly on grey anchor points from map image
   // Coordinates for 1000x800 viewBox - matching the grey dots in sa-provinces - Copy.png
   const metroPositions = {
-    cpt: { x: 165, y: 685, name: "Cape Town" },           // Southwest peninsula - grey anchor point
-    nelson: { x: 650, y: 720, name: "Nelson Mandela Bay" }, // South coast - grey anchor point
-    buffalo: { x: 730, y: 680, name: "Buffalo City" },    // Southeast coast - grey anchor point
-    ethek: { x: 860, y: 550, name: "Durban" },            // East coast - grey anchor point
-    manguang: { x: 600, y: 515, name: "Bloemfontein" },   // Central interior - grey anchor point
-    jhb: { x: 745, y: 350, name: "Johannesburg" },        // Gauteng cluster - grey anchor point
-    ekhur: { x: 795, y: 360, name: "Ekurhuleni" },        // East of JHB - grey anchor point
-    tshwane: { x: 765, y: 315, name: "Pretoria" },        // North of JHB - grey anchor point
+    cpt: { x: 120, y: 565, name: "Cape Town" },           // Southwest peninsula - grey anchor point
+    nelson: { x: 545, y: 595, name: "Nelson Mandela Bay" }, // South coast - grey anchor point
+    buffalo: { x: 605, y: 565, name: "Buffalo City" },    // Southeast coast - grey anchor point
+    ethek: { x: 715, y: 460, name: "Durban" },            // East coast - grey anchor point
+    manguang: { x: 495, y: 425, name: "Bloemfontein" },   // Central interior - grey anchor point
+    jhb: { x: 615, y: 235, name: "Johannesburg" },        // Gauteng cluster - grey anchor point
+    ekhur: { x: 660, y: 240, name: "Ekurhuleni" },        // East of JHB - grey anchor point
+    tshwane: { x: 630, y: 210, name: "Pretoria" },        // North of JHB - grey anchor point
   };
 
   return (

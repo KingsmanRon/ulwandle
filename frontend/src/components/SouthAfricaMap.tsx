@@ -68,17 +68,17 @@ const SouthAfricaMap: React.FC<SouthAfricaMapProps> = ({
     }
   };
 
-  // Metro positions on the map (recalibrated from screenshot analysis)
-  // Coordinates are for a 1000x800 viewBox - matching visible city labels
+  // Metro positions on the map (precisely calibrated from latest screenshot)
+  // Coordinates for 1000x800 viewBox - matching exact label positions
   const metroPositions = {
-    cpt: { x: 165, y: 685, name: "Cape Town" },           // Bottom left - on "Cape Town" label
-    nelson: { x: 710, y: 695, name: "Nelson Mandela Bay" }, // "Port Elizabeth" - bottom center-right
-    buffalo: { x: 820, y: 660, name: "Buffalo City" },    // "East London" - right coast
-    ethek: { x: 935, y: 500, name: "Durban" },            // "Durban" - right coast
-    manguang: { x: 600, y: 460, name: "Bloemfontein" },   // Center - "Bloemfontein" label
-    jhb: { x: 780, y: 255, name: "Johannesburg" },        // Upper center - "Johannesburg" label
-    ekhur: { x: 900, y: 245, name: "Ekurhuleni" },        // East of JHB - near "Witbank"
-    tshwane: { x: 840, y: 225, name: "Pretoria" },        // North of JHB - "Pretoria" label
+    cpt: { x: 370, y: 775, name: "Cape Town" },           // Bottom left - "Cape Town" label
+    nelson: { x: 755, y: 780, name: "Nelson Mandela Bay" }, // "Port Elizabeth" - bottom right
+    buffalo: { x: 855, y: 730, name: "Buffalo City" },    // "East London" - east coast
+    ethek: { x: 1000, y: 555, name: "Durban" },           // "Durban" - far right coast
+    manguang: { x: 695, y: 510, name: "Bloemfontein" },   // "Bloemfontein" - center
+    jhb: { x: 805, y: 340, name: "Johannesburg" },        // "Johannesburg" - upper center
+    ekhur: { x: 925, y: 330, name: "Ekurhuleni" },        // Near "Witbank" - east of JHB
+    tshwane: { x: 860, y: 305, name: "Pretoria" },        // "Pretoria" - north of JHB
   };
 
   return (

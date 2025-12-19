@@ -68,16 +68,17 @@ const SouthAfricaMap: React.FC<SouthAfricaMapProps> = ({
     }
   };
 
-  // Metro positions on the map (geographic locations matching new coordinates)
+  // Metro positions on the map (based on approximate geographic locations)
+  // Coordinates are for a 1000x800 viewBox
   const metroPositions = {
-    jhb: { x: 585, y: 590, name: "Johannesburg" },
-    cpt: { x: 180, y: 780, name: "Cape Town" },
-    ekhur: { x: 620, y: 600, name: "Ekurhuleni" },
-    ethek: { x: 760, y: 710, name: "Durban" },
-    tshwane: { x: 570, y: 570, name: "Pretoria" },
-    nelson: { x: 530, y: 820, name: "Nelson Mandela Bay" },
-    buffalo: { x: 630, y: 800, name: "Buffalo City" },
-    manguang: { x: 480, y: 680, name: "Bloemfontein" },
+    cpt: { x: 180, y: 700, name: "Cape Town" },           // Southwest coast
+    nelson: { x: 550, y: 750, name: "Nelson Mandela Bay" }, // Southeast coast
+    buffalo: { x: 640, y: 720, name: "Buffalo City" },    // East coast (East London)
+    ethek: { x: 800, y: 620, name: "Durban" },            // East coast (KZN)
+    manguang: { x: 500, y: 580, name: "Bloemfontein" },   // Central (Free State)
+    jhb: { x: 650, y: 480, name: "Johannesburg" },        // Northeast (Gauteng)
+    ekhur: { x: 690, y: 485, name: "Ekurhuleni" },        // East of Jhb (Gauteng)
+    tshwane: { x: 640, y: 460, name: "Pretoria" },        // North of Jhb (Gauteng)
   };
 
   return (
@@ -104,74 +105,36 @@ const SouthAfricaMap: React.FC<SouthAfricaMapProps> = ({
         </div>
       </div>
 
-      <svg
-        className="sa-map-svg"
-        viewBox="0 0 900 700"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        {/* Background - Ocean */}
-        <rect width="900" height="700" fill="#d0e7f9" />
+      <div style={{ position: 'relative', width: '100%', maxWidth: '1000px', margin: '0 auto' }}>
+        {/* Background Map Image */}
+        <svg
+          className="sa-map-svg"
+          viewBox="0 0 1000 800"
+          xmlns="http://www.w3.org/2000/svg"
+          style={{ width: '100%', height: 'auto', display: 'block' }}
+        >
+          {/* Simplified South Africa Map Background - User can replace with actual image */}
+          <rect width="1000" height="800" fill="#e0f2fe" />
 
-        {/* South Africa - Actual Country Outline Matching Reference Map */}
-        <path
-          d="M 100 600
-             L 110 580 L 125 562 L 145 546 L 170 532 L 200 520 L 235 512
-             L 275 508 L 320 508 L 365 512 L 410 520 L 455 532 L 498 546
-             L 540 562 L 580 580 L 618 600 L 654 622 L 688 646 L 720 672
-             L 750 700 L 778 730 L 804 762 L 828 796 L 850 832 L 860 850
-             L 855 860 L 840 870 L 820 878 L 795 884 L 765 888 L 730 890
-             L 690 889 L 645 885 L 595 878 L 540 868 L 480 855 L 415 840
-             L 345 822 L 270 802 L 190 780 L 125 760 L 100 750 L 90 740
-             L 85 728 L 82 715 L 80 700 L 80 684 L 82 668 L 85 652 L 90 636
-             L 96 620 L 100 600
-             Z"
-          fill="#fafaf8"
-          stroke="#4b5563"
-          strokeWidth="2.5"
-          className="sa-outline"
-        />
+          {/* Simplified SA Outline for now - shows general shape */}
+          <path
+            d="M 100 650 L 120 600 L 150 550 L 200 500 L 270 460 L 350 440 L 440 430
+               L 530 435 L 620 450 L 700 480 L 770 520 L 830 570 L 870 630 L 890 690
+               L 880 730 L 850 760 L 800 780 L 740 790 L 670 795 L 590 790 L 500 775
+               L 400 750 L 300 715 L 200 675 L 130 660 L 100 650 Z"
+            fill="#fef3c7"
+            stroke="#92400e"
+            strokeWidth="2"
+            opacity="0.7"
+          />
 
-        {/* Lesotho - Landlocked country within SA (eastern area) */}
-        <path
-          d="M 600 720
-             L 618 717 L 635 718 L 650 722 L 662 729 L 671 738
-             L 677 749 L 680 761 L 680 773 L 677 785 L 671 796
-             L 662 805 L 650 812 L 635 816 L 618 817 L 600 814
-             L 585 808 L 573 799 L 565 788 L 560 775 L 558 761
-             L 560 747 L 565 734 L 573 723 L 585 714 L 600 720
-             Z"
-          fill="#d1d5db"
-          stroke="#4b5563"
-          strokeWidth="1.8"
-          strokeDasharray="5,3"
-          className="lesotho-outline"
-        />
-
-        {/* eSwatini (Swaziland) - Small landlocked country in northeast */}
-        <path
-          d="M 795 590
-             L 807 588 L 818 590 L 827 594 L 833 601 L 835 610
-             L 833 619 L 827 626 L 818 630 L 807 632 L 795 630
-             L 785 626 L 778 619 L 776 610 L 778 601 L 785 594
-             L 795 590
-             Z"
-          fill="#d1d5db"
-          stroke="#4b5563"
-          strokeWidth="1.5"
-          strokeDasharray="5,3"
-          className="eswatini-outline"
-        />
-
-        {/* Province labels (subtle background text) positioned on new map) */}
-        <text x="150" y="780" fill="#94a3b8" fontSize="16" fontWeight="600" opacity="0.35">Western Cape</text>
-        <text x="400" y="820" fill="#94a3b8" fontSize="16" fontWeight="600" opacity="0.35">Eastern Cape</text>
-        <text x="480" y="700" fill="#94a3b8" fontSize="16" fontWeight="600" opacity="0.35">Free State</text>
-        <text x="580" y="580" fill="#94a3b8" fontSize="15" fontWeight="600" opacity="0.35">Gauteng</text>
-        <text x="720" y="730" fill="#94a3b8" fontSize="16" fontWeight="600" opacity="0.35">KZN</text>
-        <text x="720" y="620" fill="#94a3b8" fontSize="15" fontWeight="600" opacity="0.35">Mpumalanga</text>
-        <text x="620" y="540" fill="#94a3b8" fontSize="15" fontWeight="600" opacity="0.35">Limpopo</text>
-        <text x="280" y="660" fill="#94a3b8" fontSize="15" fontWeight="600" opacity="0.35">Northern Cape</text>
-        <text x="420" y="590" fill="#94a3b8" fontSize="15" fontWeight="600" opacity="0.35">North West</text>
+          {/* Note: Province boundaries from reference map */}
+          <text x="500" y="50" textAnchor="middle" fill="#6b7280" fontSize="18" fontWeight="600">
+            South Africa - Metro Water Status Map
+          </text>
+          <text x="500" y="75" textAnchor="middle" fill="#9ca3af" fontSize="12">
+            (Map shows approximate locations - overlay on actual geographic map)
+          </text>
 
         {/* Metro markers */}
         {EIGHT_METROS.map((metro: Metro) => {
@@ -255,7 +218,8 @@ const SouthAfricaMap: React.FC<SouthAfricaMapProps> = ({
             </g>
           );
         })}
-      </svg>
+        </svg>
+      </div>
 
       {/* Hover tooltip */}
       {hoveredMetro && metroStressLevels && (

@@ -68,6 +68,78 @@ Ulwandle Tech is a comprehensive water monitoring and management platform design
 - **Water Stress Levels** - Critical/High/Medium/Low indicators
 - **7-Day Historical Trends** - Visual analytics with charts
 
+### 🗺️ **Interactive South Africa Map (Phase 1)**
+*Visual geographic representation with real-time status*
+
+- **Interactive SVG map** showing all 8 SA metropolitan regions
+- **Color-coded metros** by water stress level:
+  - 🔴 Critical (>40% wastage)
+  - 🟠 High (30-40% wastage)
+  - 🟡 Medium (20-30% wastage)
+  - 🟢 Low (<20% wastage)
+- **Click metros to select/deselect** directly from map
+- **Hover tooltips** with population, stress level, and wastage %
+- **Visual selection feedback** with pulsing blue glow
+- **Real-time updates** when metro data changes
+- **Responsive design** for desktop and mobile
+
+### 📍 **Zone-Based Problem Area Visualization (Phase 2)**
+*Isolate and prioritize problem areas within each metro*
+
+- **Divide metros into zones** (4-6 zones per metro)
+- **Color-coded zone blocks** showing problem severity
+- **Priority ranking** by wastage % + active leak count
+- **Per-zone metrics:**
+  - Population breakdown
+  - Daily intake/usage/wastage
+  - Active leak indicators
+  - Cost impact (R/day)
+- **Interactive zone selection** with detailed analysis panels
+- **AI-powered recommendations** for each problem area
+- **"No Problems" indicator** when zones are healthy
+
+**Example:** Johannesburg divided into North, South, East, West, Central zones - instantly see that "Sandton North" has 32.4% wastage with 2 active leaks (R51k/day loss)
+
+### 🔌 **Interactive Network Graph (Phase 3)**
+*Full water distribution network topology with leak detection*
+
+- **Graph visualization** of complete water infrastructure:
+  - 🟣 Source nodes (treatment plants)
+  - 🔵 Primary distribution junctions
+  - 🟢 Secondary distribution junctions
+  - ⚠️ Leak indicators on pipe segments
+- **Real-time monitoring** at each intersection:
+  - Flow rate (ML/day)
+  - Pressure (kPa)
+  - Sensor status (Online/Offline/Error)
+- **Differential flow analysis** for leak detection
+- **Click nodes/leaks** for detailed information panels
+- **Leak analysis includes:**
+  - Estimated loss (ML/day and R/day)
+  - AI confidence level (70-95%)
+  - Probable cause (pipe burst, corrosion, illegal connection)
+  - Urgency level (Routine/Planned/Urgent/Emergency)
+  - Affected geographic areas
+- **Critical leak summary** with top 3 urgent repairs
+- **Network statistics:** Node count, pipe segments, active leaks
+
+**Value:** Instead of "Johannesburg has 19.9% NRW", see "70 ML/day leak between Junction A and Junction B, probable pipe burst, R28k/day loss, repair ROI in 5-11 days"
+
+### 📊 **Multi-Metro Aggregation**
+*Combined analysis when multiple metros are selected*
+
+- **Total metrics** across all selected metros:
+  - Combined daily intake/usage/wastage
+  - Overall stress level indicator
+  - Average wastage percentage
+  - Total population served
+- **Individual breakdowns** showing each metro's contribution
+- **Key insights:**
+  - Highest/lowest wastage metros
+  - Daily water loss value (R)
+  - Potential annual savings estimates
+- **Comparison metrics** (e.g., "Johannesburg: 53.7% of total intake")
+
 ### 📊 **Multi-Metro Excel Export**
 - Select one or multiple metros
 - Export all selected metros to single Excel file
@@ -161,13 +233,18 @@ Ulwandle Tech is a comprehensive water monitoring and management platform design
 │                     FRONTEND (React PWA)                            │
 │                                                                     │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐            │
-│  │ Metro        │  │ Dashboard    │  │ Excel Export │            │
-│  │ Selector     │  │ (Recharts)   │  │ (XLSX)       │            │
+│  │ SA Map       │  │ Metro        │  │ Dashboard    │            │
+│  │ (SVG)        │  │ Selector     │  │ (Recharts)   │            │
 │  └──────────────┘  └──────────────┘  └──────────────┘            │
 │                                                                     │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐            │
-│  │ Shutdown     │  │ Claude AI    │  │ Blockchain   │            │
-│  │ Notifications│  │ Rec's        │  │ Service      │            │
+│  │ Zone Map     │  │ Network      │  │ Excel Export │            │
+│  │ (Phase 2)    │  │ Graph (D3)   │  │ (XLSX)       │            │
+│  └──────────────┘  └──────────────┘  └──────────────┘            │
+│                                                                     │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐            │
+│  │ Multi-Metro  │  │ Shutdown     │  │ Claude AI    │            │
+│  │ Aggregate    │  │ Notifications│  │ Rec's        │            │
 │  └──────────────┘  └──────────────┘  └──────────────┘            │
 │                                                                     │
 └────────────────────────────────┬────────────────────────────────────┘
@@ -177,23 +254,24 @@ Ulwandle Tech is a comprehensive water monitoring and management platform design
 │                      BACKEND (FastAPI)                              │
 │                                                                     │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐            │
-│  │ Water        │  │ Metro        │  │ Notification │            │
-│  │ Service      │  │ Service      │  │ Service      │            │
+│  │ Water        │  │ Metro        │  │ Network      │            │
+│  │ Service      │  │ Service      │  │ Topology Gen │            │
 │  └──────────────┘  └──────────────┘  └──────────────┘            │
 │                                                                     │
-│  ┌──────────────┐  ┌──────────────┐                               │
-│  │ Claude AI    │  │ Blockchain   │                               │
-│  │ Integration  │  │ Verification │                               │
-│  └──────────────┘  └──────────────┘                               │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐            │
+│  │ Leak         │  │ Notification │  │ Claude AI    │            │
+│  │ Detection    │  │ Service      │  │ Integration  │            │
+│  └──────────────┘  └──────────────┘  └──────────────┘            │
 │                                                                     │
 └────────────────────────────────┬────────────────────────────────────┘
                                  │
 ┌────────────────────────────────▼────────────────────────────────────┐
 │              DATABASE (PostgreSQL + TimescaleDB)                    │
 │                                                                     │
-│  - metros              - notifications       - audit_logs          │
-│  - water_readings      - blockchain_records  - claude_cache        │
-│  - water_time_series   (TimescaleDB hypertables)                   │
+│  - metros                  - metro_zones             - audit_logs  │
+│  - water_intersections     - intersection_readings   (hypertable)  │
+│  - intersection_connections - network_leak_detections              │
+│  - notifications           - blockchain_records                    │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -315,26 +393,57 @@ Frontend will be available at `http://localhost:3000`
 
 ## 💡 Usage
 
-### 1. Select Metros
+### 1. View South Africa Map
+- Interactive map shows all 8 metros
+- Color-coded by water stress level
+- Click metros directly on map to select
+- Hover for instant metrics tooltip
+- Visual feedback for selected metros
+
+### 2. Select Metros
 - Click on one or multiple metro cards
+- **OR** click metros directly on the map
 - Selected metros show checkmarks
 - See selection count in header
 - Use "Clear All" to deselect
 
-### 2. View Dashboard
+### 3. View Multi-Metro Aggregation
+- Automatically displays when 2+ metros selected
+- See combined totals and averages
+- Individual metro breakdowns with percentages
+- Key insights: highest/lowest wastage
+- Potential savings calculations
+
+### 4. View Dashboard
 - Automatically displays after metro selection
 - See real-time water metrics
 - View 7-day historical trends
 - Check water stress levels
 - Compare intake vs usage
 
-### 3. Export to Excel
+### 5. Explore Problem Areas (Zones)
+- View metro divided into geographic zones
+- Color-coded by problem severity
+- Click zones for detailed analysis
+- See priority ranking of problem areas
+- Get AI recommendations per zone
+- Estimate cost impact (R/day) per zone
+
+### 6. Analyze Network Topology
+- Interactive graph of water distribution network
+- See source → primary → secondary junctions
+- Identify leak locations on pipe segments
+- Click nodes for flow/pressure details
+- Click leaks for AI analysis
+- View critical leak summary with costs
+
+### 7. Export to Excel
 - Select one or more metros
 - Click "Export to Excel" button
 - File downloads automatically
 - All selected metros in one spreadsheet
 
-### 4. Create Shutdown Notification
+### 8. Create Shutdown Notification
 - Select urgency level
 - Enter shutdown reason
 - Specify estimated duration
@@ -342,15 +451,16 @@ Frontend will be available at `http://localhost:3000`
 - Send notification to all stakeholders
 - View notification history
 
-### 5. Get AI Recommendations
+### 9. Get AI Recommendations
 - Automatically generated after metro selection
 - Review priority level
 - Analyze cost-benefit for each recommendation
 - Check implementation timeline
 - View KPIs and expected impact
 
-### 6. Quick Navigation
+### 10. Quick Navigation
 - Use sticky nav bar to jump between sections
+- Dynamic sections (Problem Areas, Network Graph appear when metro selected)
 - Click to smooth scroll
 - Always visible while scrolling
 
@@ -374,15 +484,24 @@ When running the backend, interactive API documentation is available:
 
 ## 🗺️ Roadmap
 
-### Phase 2 (Next 3 Months)
-- ✅ **Dam Level Monitoring** - Full/low dam alerts and integration
-- ✅ **Real-time IoT Sensors** - Connect actual flow meters and sensors
-- ✅ **Interactive Maps** - Leaflet/Mapbox visualization of all metros
+### ✅ Phase 1 - COMPLETED
+- ✅ **South Africa Map** - Interactive SVG map with metro highlighting
+- ✅ **Zone Visualization** - Problem area isolation and prioritization
+- ✅ **Network Graph** - Full topology with leak detection
+- ✅ **Multi-Metro Aggregation** - Combined analysis and comparison
+- ✅ **Differential Flow Analysis** - Leak detection algorithm
+- ✅ **AI Leak Analysis** - Cause identification and cost estimation
 
-### Phase 3 (Months 4-6)
+### Phase 2 (Next 3-6 Months)
+- 🔄 **Real IoT Sensor Integration** - Replace simulated with actual sensors
+- 🔄 **Dam Level Monitoring** - Full/low dam alerts and integration
 - 📱 **Mobile Apps** - Native iOS/Android apps
 - 🚨 **Automated Alerts** - Threshold-based email/SMS notifications
-- 🔮 **Predictive Analytics** - ML-based forecasting
+
+### Phase 3 (Months 7-12)
+- 🔮 **Predictive Analytics** - ML-based leak prediction
+- 🎯 **Repair Team Dispatch** - Automated work order creation
+- 📊 **Historical Trend Analysis** - Long-term leak patterns
 
 ### Phase 4 (Months 7-12)
 - 👥 **Citizen Reporting** - Public portal for leak reports

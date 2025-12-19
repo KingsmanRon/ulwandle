@@ -223,6 +223,302 @@ POST /api/v1/metros/compare
 
 ---
 
+## Network & Leak Detection Endpoints
+
+### Get Metro Network Topology
+
+Get complete water distribution network for a metro, including intersections, connections, zones, and detected leaks.
+
+```http
+GET /api/v1/metros/{metro_id}/network
+```
+
+**Path Parameters:**
+- `metro_id` (string): Metro identifier (e.g., `jhb`, `cpt`)
+
+**Response:**
+```json
+{
+  "intersections": [
+    {
+      "intersection_id": "jhb-source-001",
+      "name": "City of Johannesburg Main Treatment Plant",
+      "type": "SOURCE",
+      "lat": -26.2041,
+      "lng": 28.0473,
+      "flow_rate_ml": 1972.25,
+      "pressure_kpa": 385.4,
+      "status": "NORMAL"
+    },
+    {
+      "intersection_id": "jhb-primary-001",
+      "name": "City of Johannesburg Primary Junction 1",
+      "type": "PRIMARY",
+      "lat": -26.1541,
+      "lng": 28.0973,
+      "flow_rate_ml": 657.42,
+      "pressure_kpa": 342.8,
+      "status": "NORMAL"
+    }
+    // ... more intersections
+  ],
+  "connections": [
+    {
+      "from_id": "jhb-source-001",
+      "to_id": "jhb-primary-001",
+      "pipe_diameter_mm": 1000,
+      "pipe_length_km": 8.3,
+      "pipe_material": "Steel",
+      "pipe_age_years": 28,
+      "max_flow_ml": 850.0
+    }
+    // ... more connections
+  ],
+  "zones": [
+    {
+      "zone_id": "jhb-north",
+      "name": "City of Johannesburg North",
+      "population": 1127025,
+      "daily_intake_ml": 394.45,
+      "daily_usage_ml": 315.56,
+      "daily_wastage_ml": 78.89,
+      "wastage_percentage": 20.0,
+      "has_active_leaks": true,
+      "leak_count": 2,
+      "priority_score": 45.2
+    }
+    // ... more zones
+  ],
+  "leaks": [
+    {
+      "leak_id": "LEAK-JHB-3847",
+      "segment_start_id": "jhb-primary-001",
+      "segment_end_id": "jhb-secondary-003",
+      "severity": "HIGH",
+      "estimated_loss_ml": 87.3,
+      "estimated_loss_percentage": 13.2,
+      "ai_confidence": 84.5,
+      "probable_cause": "Underground pipe burst",
+      "urgency_level": "URGENT",
+      "status": "DETECTED",
+      "affected_areas": ["Sandton", "Randburg"]
+    }
+    // ... more leaks
+  ]
+}
+```
+
+### Get Metro Intersections
+
+Get all water network intersections for a metro.
+
+```http
+GET /api/v1/metros/{metro_id}/intersections
+```
+
+**Response:**
+```json
+[
+  {
+    "intersection_id": "jhb-source-001",
+    "name": "City of Johannesburg Main Treatment Plant",
+    "type": "SOURCE",
+    "lat": -26.2041,
+    "lng": 28.0473,
+    "flow_rate_ml": 1972.25,
+    "pressure_kpa": 385.4,
+    "status": "NORMAL"
+  }
+  // ... more intersections
+]
+```
+
+### Get Metro Zones
+
+Get zone breakdown for a metro (Phase 2 problem area visualization).
+
+```http
+GET /api/v1/metros/{metro_id}/zones
+```
+
+**Response:**
+```json
+[
+  {
+    "zone_id": "jhb-north",
+    "name": "City of Johannesburg North",
+    "population": 1127025,
+    "daily_intake_ml": 394.45,
+    "daily_usage_ml": 315.56,
+    "daily_wastage_ml": 78.89,
+    "wastage_percentage": 20.0,
+    "has_active_leaks": true,
+    "leak_count": 2,
+    "priority_score": 45.2,
+    "bounds_geojson": {
+      "type": "Polygon",
+      "coordinates": [[...]]
+    }
+  }
+  // ... more zones
+]
+```
+
+### Get Problem Zones
+
+Get only zones with active leaks or high wastage.
+
+```http
+GET /api/v1/metros/{metro_id}/zones/problem-areas
+```
+
+**Response:**
+```json
+[
+  {
+    "zone_id": "jhb-north",
+    "name": "City of Johannesburg North",
+    "wastage_percentage": 32.4,
+    "has_active_leaks": true,
+    "leak_count": 2,
+    "priority_score": 65.8
+  }
+  // ... sorted by priority_score descending
+]
+```
+
+### Get Metro Leaks
+
+Get all detected leaks for a metro.
+
+```http
+GET /api/v1/metros/{metro_id}/leaks?status=DETECTED
+```
+
+**Query Parameters:**
+- `status` (string, optional): Filter by status (DETECTED, INVESTIGATING, REPAIRING, RESOLVED)
+
+**Response:**
+```json
+[
+  {
+    "leak_id": "LEAK-JHB-3847",
+    "segment_start_id": "jhb-primary-001",
+    "segment_end_id": "jhb-secondary-003",
+    "severity": "HIGH",
+    "estimated_loss_ml": 87.3,
+    "estimated_loss_percentage": 13.2,
+    "ai_confidence": 84.5,
+    "probable_cause": "Underground pipe burst",
+    "urgency_level": "URGENT",
+    "status": "DETECTED",
+    "affected_areas": ["Sandton", "Randburg"]
+  }
+  // ... more leaks
+]
+```
+
+### Get Critical Leaks
+
+Get critical/high severity leaks for immediate action.
+
+```http
+GET /api/v1/metros/{metro_id}/leaks/critical
+```
+
+**Response:**
+```json
+[
+  {
+    "leak_id": "LEAK-JHB-3847",
+    "severity": "CRITICAL",
+    "estimated_loss_ml": 145.8,
+    "estimated_loss_percentage": 22.7,
+    "ai_confidence": 91.2,
+    "probable_cause": "Major pipe burst - heavy corrosion",
+    "urgency_level": "EMERGENCY",
+    "estimated_daily_cost": 58320
+  }
+  // ... sorted by estimated_loss_ml descending
+]
+```
+
+### Get Intersection Readings
+
+Get time-series sensor readings for a specific intersection.
+
+```http
+GET /api/v1/intersections/{intersection_id}/readings?hours=24
+```
+
+**Query Parameters:**
+- `hours` (integer, optional): Hours of data to retrieve (default: 24, max: 168)
+
+**Response:**
+```json
+[
+  {
+    "intersection_id": "jhb-primary-001",
+    "flow_rate_ml": 657.42,
+    "pressure_kpa": 342.8,
+    "temperature_c": 18.5,
+    "sensor_status": "ONLINE",
+    "recorded_at": "2025-12-05T12:00:00Z"
+  }
+  // ... hourly readings
+]
+```
+
+### Get Network Statistics
+
+Get overall network statistics across all metros.
+
+```http
+GET /api/v1/metros/stats/overview
+```
+
+**Response:**
+```json
+{
+  "total_metros": 8,
+  "total_intersections": 78,
+  "total_connections": 156,
+  "total_zones": 38,
+  "total_leaks": 31,
+  "active_leaks": 24,
+  "critical_leaks": 6,
+  "coverage_population": 23238127
+}
+```
+
+### Update Leak Status
+
+Update the investigation/repair status of a detected leak.
+
+```http
+POST /api/v1/metros/leaks/{leak_id}/update-status
+```
+
+**Request Body:**
+```json
+{
+  "new_status": "INVESTIGATING",
+  "notes": "Team dispatched to location, acoustic detection in progress"
+}
+```
+
+**Response:**
+```json
+{
+  "leak_id": "LEAK-JHB-3847",
+  "status": "INVESTIGATING",
+  "notes": "Team dispatched to location, acoustic detection in progress",
+  "updated_at": "2025-12-05T14:30:00Z"
+}
+```
+
+---
+
 ## Claude AI Endpoints
 
 ### Get Water Conservation Recommendations

@@ -68,29 +68,16 @@ const SouthAfricaMap: React.FC<SouthAfricaMapProps> = ({
     }
   };
 
-  // Simplified SVG paths for SA metros (approximate shapes)
-  // In production, these would be actual GeoJSON boundaries converted to SVG paths
-  const metroShapes = {
-    jhb: "M 480 180 L 520 180 L 520 220 L 480 220 Z",  // Johannesburg (rectangle)
-    cpt: "M 200 450 L 260 450 L 260 500 L 200 500 Z",  // Cape Town
-    ethek: "M 530 185 L 570 185 L 570 225 L 530 225 Z",  // Ekurhuleni
-    eth: "M 580 280 L 630 280 L 630 330 L 580 330 Z",  // eThekwini
-    tsh: "M 470 150 L 510 150 L 510 175 L 470 175 Z",  // Tshwane
-    nmb: "M 520 410 L 565 410 L 565 450 L 520 450 Z",  // Nelson Mandela Bay
-    buf: "M 530 370 L 570 370 L 570 405 L 530 405 Z",  // Buffalo City
-    man: "M 390 320 L 430 320 L 430 360 L 390 360 Z",  // Mangaung
-  };
-
-  // Approximate positions for labels
-  const metroLabelPositions = {
-    jhb: { x: 500, y: 200 },
-    cpt: { x: 230, y: 475 },
-    ethek: { x: 550, y: 205 },
-    eth: { x: 605, y: 305 },
-    tsh: { x: 490, y: 162 },
-    nmb: { x: 542, y: 430 },
-    buf: { x: 550, y: 387 },
-    man: { x: 410, y: 340 },
+  // Metro positions on the map (approximate geographic locations)
+  const metroPositions = {
+    jhb: { x: 580, y: 280, name: "Johannesburg" },
+    cpt: { x: 280, y: 580, name: "Cape Town" },
+    ethek: { x: 620, y: 290, name: "Ekurhuleni" },
+    eth: { x: 700, y: 350, name: "Durban" },
+    tsh: { x: 560, y: 250, name: "Pretoria" },
+    nmb: { x: 520, y: 530, name: "NM Bay" },
+    buf: { x: 560, y: 490, name: "Buffalo City" },
+    man: { x: 490, y: 360, name: "Bloemfontein" },
   };
 
   return (
@@ -119,50 +106,109 @@ const SouthAfricaMap: React.FC<SouthAfricaMapProps> = ({
 
       <svg
         className="sa-map-svg"
-        viewBox="0 0 800 600"
+        viewBox="0 0 800 650"
         xmlns="http://www.w3.org/2000/svg"
       >
-        {/* South Africa outline (simplified) */}
+        {/* Background */}
+        <rect width="800" height="650" fill="#e0f2fe" />
+
+        {/* South Africa outline (more realistic shape) */}
         <path
-          d="M 150 200 L 700 200 L 700 520 L 150 520 Z"
-          fill="#f8fafc"
-          stroke="#cbd5e1"
-          strokeWidth="2"
+          d="M 250 150
+             L 280 140 L 320 135 L 360 138 L 400 145 L 440 155 L 480 165 L 520 175 L 560 185 L 600 195
+             L 640 210 L 680 230 L 710 250 L 730 280 L 740 310 L 745 340 L 748 370 L 750 400
+             L 748 430 L 740 460 L 728 490 L 710 515 L 685 535 L 655 550 L 620 560 L 580 568
+             L 540 572 L 500 574 L 460 574 L 420 572 L 380 568 L 340 562 L 300 554 L 260 544
+             L 230 530 L 210 512 L 195 490 L 185 465 L 180 440 L 178 415 L 180 390 L 185 365
+             L 192 340 L 200 315 L 210 290 L 220 265 L 230 240 L 235 215 L 238 190 L 242 165
+             L 245 155 Z"
+          fill="#f0fdf4"
+          stroke="#059669"
+          strokeWidth="3"
           className="sa-outline"
         />
 
-        {/* Province boundaries (simplified) */}
-        <line x1="300" y1="200" x2="300" y2="520" stroke="#e2e8f0" strokeWidth="1" strokeDasharray="5,5" />
-        <line x1="450" y1="200" x2="450" y2="520" stroke="#e2e8f0" strokeWidth="1" strokeDasharray="5,5" />
-        <line x1="600" y1="200" x2="600" y2="520" stroke="#e2e8f0" strokeWidth="1" strokeDasharray="5,5" />
+        {/* Province labels (light gray text) */}
+        <text x="300" y="300" fill="#94a3b8" fontSize="14" fontWeight="600" opacity="0.4">Western Cape</text>
+        <text x="450" y="400" fill="#94a3b8" fontSize="14" fontWeight="600" opacity="0.4">Eastern Cape</text>
+        <text x="600" y="260" fill="#94a3b8" fontSize="14" fontWeight="600" opacity="0.4">Gauteng</text>
+        <text x="680" y="360" fill="#94a3b8" fontSize="14" fontWeight="600" opacity="0.4">KZN</text>
 
-        {/* Metro regions */}
-        {EIGHT_METROS.map((metro: Metro) => (
-          <g key={metro.id}>
-            <path
-              d={metroShapes[metro.id as keyof typeof metroShapes]}
-              fill={getMetroColor(metro)}
-              stroke={isSelected(metro) ? '#1e40af' : '#64748b'}
-              strokeWidth={isSelected(metro) ? '3' : '2'}
-              className={`metro-region ${isSelected(metro) ? 'selected' : ''} ${hoveredMetro?.id === metro.id ? 'hovered' : ''}`}
-              onClick={() => handleMetroClick(metro.id)}
-              onMouseEnter={() => handleMetroHover(metro.id)}
-              onMouseLeave={() => handleMetroHover(null)}
-              style={{ cursor: 'pointer' }}
-            />
+        {/* Metro markers */}
+        {EIGHT_METROS.map((metro: Metro) => {
+          const pos = metroPositions[metro.id as keyof typeof metroPositions];
+          const radius = isSelected(metro) ? 24 : 18;
 
-            {/* Metro labels */}
-            <text
-              x={metroLabelPositions[metro.id as keyof typeof metroLabelPositions]?.x || 0}
-              y={metroLabelPositions[metro.id as keyof typeof metroLabelPositions]?.y || 0}
-              className="metro-label"
-              textAnchor="middle"
-              pointerEvents="none"
-            >
-              {metro.name.replace('City of ', '').replace(' (Pretoria)', '').replace(' (Durban)', '').replace(' (Bloemfontein)', '')}
-            </text>
-          </g>
-        ))}
+          return (
+            <g key={metro.id}>
+              {/* Glow effect for selected metros */}
+              {isSelected(metro) && (
+                <circle
+                  cx={pos.x}
+                  cy={pos.y}
+                  r={radius + 8}
+                  fill={getMetroColor(metro)}
+                  opacity="0.2"
+                  className="metro-glow"
+                />
+              )}
+
+              {/* Metro circle */}
+              <circle
+                cx={pos.x}
+                cy={pos.y}
+                r={radius}
+                fill={getMetroColor(metro)}
+                stroke={isSelected(metro) ? '#1e40af' : 'white'}
+                strokeWidth={isSelected(metro) ? '4' : '3'}
+                className={`metro-marker ${isSelected(metro) ? 'selected' : ''} ${hoveredMetro?.id === metro.id ? 'hovered' : ''}`}
+                onClick={() => handleMetroClick(metro.id)}
+                onMouseEnter={() => handleMetroHover(metro.id)}
+                onMouseLeave={() => handleMetroHover(null)}
+                style={{ cursor: 'pointer' }}
+              />
+
+              {/* Metro label */}
+              <text
+                x={pos.x}
+                y={pos.y + radius + 18}
+                className="metro-label"
+                textAnchor="middle"
+                fontSize="12"
+                fontWeight="700"
+                fill="#1f2937"
+                pointerEvents="none"
+              >
+                {pos.name}
+              </text>
+
+              {/* Checkmark for selected metros */}
+              {isSelected(metro) && (
+                <g>
+                  <circle
+                    cx={pos.x + radius - 4}
+                    cy={pos.y - radius + 4}
+                    r="8"
+                    fill="#10b981"
+                    stroke="white"
+                    strokeWidth="2"
+                  />
+                  <text
+                    x={pos.x + radius - 4}
+                    y={pos.y - radius + 8}
+                    textAnchor="middle"
+                    fontSize="10"
+                    fontWeight="bold"
+                    fill="white"
+                    pointerEvents="none"
+                  >
+                    ✓
+                  </text>
+                </g>
+              )}
+            </g>
+          );
+        })}
       </svg>
 
       {/* Hover tooltip */}

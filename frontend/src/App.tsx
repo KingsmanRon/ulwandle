@@ -5,6 +5,10 @@ import { apiService } from './services/apiService';
 import WorldBankCompliancePanel from './components/WorldBankCompliance';
 import MetroSelector from './components/MetroSelector';
 import MetroDashboard from './components/MetroDashboard';
+import MultiMetroAggregate from './components/MultiMetroAggregate';
+import SouthAfricaMap from './components/SouthAfricaMap';
+import MetroZoneMap from './components/MetroZoneMap';
+import NetworkGraph from './components/NetworkGraph';
 import ClaudeRecommendationsPanel, { ClaudeRecommendationsData } from './components/ClaudeRecommendations';
 import ShutdownNotification from './components/ShutdownNotification';
 import { Metro, MetroWaterData, generateMetroWaterData } from './constants/saMetros';
@@ -221,12 +225,25 @@ function App() {
       </header>
 
       <nav className="quick-nav">
+        <button onClick={() => scrollToSection('map-section')} className="nav-btn">
+          🗺️ SA Map
+        </button>
         <button onClick={() => scrollToSection('metro-section')} className="nav-btn">
           🏙️ Select Metro
         </button>
         <button onClick={() => scrollToSection('dashboard-section')} className="nav-btn">
           📈 Dashboard
         </button>
+        {selectedMetro && (
+          <>
+            <button onClick={() => scrollToSection('zones-section')} className="nav-btn">
+              📍 Problem Areas
+            </button>
+            <button onClick={() => scrollToSection('network-section')} className="nav-btn">
+              🔌 Network Graph
+            </button>
+          </>
+        )}
         <button onClick={() => scrollToSection('shutdown-section')} className="nav-btn">
           🚨 Shutdown Notice
         </button>
@@ -236,6 +253,27 @@ function App() {
       </nav>
 
       <main className="app-content">
+        {/* Phase 1: South Africa Map with Metro Highlighting */}
+        <div id="map-section">
+          <SouthAfricaMap
+            selectedMetros={selectedMetros}
+            onMetroClick={(metro) => {
+              // Toggle selection
+              if (selectedMetros.some(m => m.id === metro.id)) {
+                handleMetroMultiSelect(selectedMetros.filter(m => m.id !== metro.id));
+              } else {
+                handleMetroMultiSelect([...selectedMetros, metro]);
+              }
+            }}
+            metroStressLevels={new Map(
+              allMetroData.map(data => [
+                data.metroId,
+                { level: data.stressLevel, wastage: data.wastagePercentage }
+              ])
+            )}
+          />
+        </div>
+
         <div id="metro-section">
           <MetroSelector
             selectedMetros={selectedMetros}
@@ -245,6 +283,11 @@ function App() {
         <WorldBankCompliancePanel
           allMetroData={allMetroData}
         />
+        {allMetroData.length > 1 && (
+          <div id="aggregate-section">
+            <MultiMetroAggregate allMetroData={allMetroData} />
+          </div>
+        )}
         {currentMetroData && (
           <>
             <div id="dashboard-section">
@@ -253,6 +296,21 @@ function App() {
                 historicalData={historicalData}
               />
             </div>
+
+            {/* Phase 2: Zone-based Problem Area Visualization */}
+            {selectedMetro && (
+              <div id="zones-section">
+                <MetroZoneMap metro={selectedMetro} />
+              </div>
+            )}
+
+            {/* Phase 3: Interactive Network Graph */}
+            {selectedMetro && (
+              <div id="network-section">
+                <NetworkGraph metro={selectedMetro} />
+              </div>
+            )}
+
             <div id="shutdown-section">
               <ShutdownNotification
                 metroData={currentMetroData}

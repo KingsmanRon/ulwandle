@@ -1,0 +1,188 @@
+.south-africa-map-container {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  margin: 2rem 0;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.map-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.map-header h2 {
+  margin: 0;
+  color: #1f2937;
+  font-size: 1.5rem;
+}
+
+.map-legend {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #4b5563;
+}
+
+.legend-color {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 1px solid #d1d5db;
+}
+
+.sa-map-svg {
+  width: 100%;
+  height: auto;
+  max-height: 600px;
+  display: block;
+}
+
+.sa-outline {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.metro-region {
+  transition: all 0.3s ease;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
+.metro-region:hover {
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+  transform: scale(1.02);
+  transform-origin: center;
+}
+
+.metro-region.selected {
+  filter: drop-shadow(0 6px 12px rgba(59, 130, 246, 0.4));
+  animation: pulse-selection 2s ease-in-out infinite;
+}
+
+.metro-region.hovered {
+  stroke-width: 4 !important;
+  opacity: 1 !important;
+}
+
+@keyframes pulse-selection {
+  0%, 100% {
+    filter: drop-shadow(0 6px 12px rgba(59, 130, 246, 0.4));
+  }
+  50% {
+    filter: drop-shadow(0 8px 16px rgba(59, 130, 246, 0.6));
+  }
+}
+
+.metro-label {
+  font-size: 12px;
+  font-weight: 600;
+  fill: #1f2937;
+  text-shadow:
+    1px 1px 0 white,
+    -1px -1px 0 white,
+    1px -1px 0 white,
+    -1px 1px 0 white;
+}
+
+.map-tooltip {
+  position: absolute;
+  top: 120px;
+  right: 2rem;
+  background: white;
+  border: 2px solid #3b82f6;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+  min-width: 200px;
+  z-index: 10;
+}
+
+.map-tooltip h4 {
+  margin: 0 0 0.5rem 0;
+  color: #1f2937;
+  font-size: 1.1rem;
+}
+
+.map-tooltip p {
+  margin: 0.25rem 0;
+  font-size: 0.9rem;
+  color: #4b5563;
+}
+
+.map-tooltip strong {
+  color: #1f2937;
+}
+
+.click-hint {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e5e7eb;
+  font-style: italic;
+  color: #6b7280 !important;
+  font-size: 0.85rem !important;
+}
+
+.map-footer {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 2px solid #e5e7eb;
+}
+
+.map-footer p {
+  margin: 0.5rem 0;
+  color: #4b5563;
+  font-size: 0.95rem;
+}
+
+.map-footer strong {
+  color: #1f2937;
+}
+
+.selected-metros-list {
+  color: #3b82f6;
+  font-weight: 600;
+}
+
+.map-hint {
+  color: #6b7280 !important;
+  font-size: 0.85rem !important;
+  font-style: italic;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .south-africa-map-container {
+    padding: 1.5rem;
+  }
+
+  .map-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .map-legend {
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .map-tooltip {
+    position: static;
+    margin-top: 1rem;
+    width: 100%;
+  }
+
+  .metro-label {
+    font-size: 10px;
+  }
+}

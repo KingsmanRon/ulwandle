@@ -114,7 +114,7 @@ const SouthAfricaMap: React.FC<SouthAfricaMapProps> = ({
         >
           {/* Clean Background Map Image */}
           <image
-            href="/sa-provinces-map.webp"
+            href="/sa-provinces.webp"
             x="0"
             y="0"
             width="1000"
@@ -122,7 +122,7 @@ const SouthAfricaMap: React.FC<SouthAfricaMapProps> = ({
             preserveAspectRatio="xMidYMid meet"
           />
 
-        {/* Metro markers only - no other overlays */}
+        {/* Metro markers only - minimal circles */}
         {EIGHT_METROS.map((metro: Metro) => {
           const pos = metroPositions[metro.id as keyof typeof metroPositions];
 
@@ -132,70 +132,25 @@ const SouthAfricaMap: React.FC<SouthAfricaMapProps> = ({
             return null;
           }
 
-          const radius = isSelected(metro) ? 20 : 16;
+          const radius = 10;
 
           return (
-            <g key={metro.id}>
-              {/* Metro circle marker - simple and clean */}
-              <circle
-                cx={pos.x}
-                cy={pos.y}
-                r={radius}
-                fill={getMetroColor(metro)}
-                stroke="white"
-                strokeWidth="2"
-                className="metro-marker"
-                onClick={() => handleMetroClick(metro.id)}
-                onMouseEnter={() => handleMetroHover(metro.id)}
-                onMouseLeave={() => handleMetroHover(null)}
-                style={{ cursor: 'pointer' }}
-              />
-
-              {/* Metro label */}
-              <text
-                x={pos.x}
-                y={pos.y + radius + 18}
-                className="metro-label"
-                textAnchor="middle"
-                fontSize="12"
-                fontWeight="600"
-                fill="#1f2937"
-                pointerEvents="none"
-              >
-                {pos.name}
-              </text>
-            </g>
+            <circle
+              key={metro.id}
+              cx={pos.x}
+              cy={pos.y}
+              r={radius}
+              fill={getMetroColor(metro)}
+              stroke="white"
+              strokeWidth="2"
+              onClick={() => handleMetroClick(metro.id)}
+              style={{ cursor: 'pointer' }}
+            />
           );
         })}
         </svg>
       </div>
 
-      {/* Hover tooltip */}
-      {hoveredMetro && metroStressLevels && (
-        <div className="map-tooltip">
-          <h4>{hoveredMetro.name}</h4>
-          <p><strong>Province:</strong> {hoveredMetro.province}</p>
-          <p><strong>Population:</strong> {(hoveredMetro.population / 1000000).toFixed(1)}M</p>
-          {metroStressLevels.get(hoveredMetro.id) && (
-            <>
-              <p>
-                <strong>Stress Level:</strong>{' '}
-                <span style={{
-                  color: metroStressLevels.get(hoveredMetro.id)!.level === 'CRITICAL' ? '#dc2626' :
-                    metroStressLevels.get(hoveredMetro.id)!.level === 'HIGH' ? '#ea580c' :
-                      metroStressLevels.get(hoveredMetro.id)!.level === 'MEDIUM' ? '#f59e0b' : '#16a34a'
-                }}>
-                  {metroStressLevels.get(hoveredMetro.id)!.level}
-                </span>
-              </p>
-              <p>
-                <strong>Wastage:</strong> {metroStressLevels.get(hoveredMetro.id)!.wastage.toFixed(1)}%
-              </p>
-            </>
-          )}
-          <p className="click-hint">Click to {isSelected(hoveredMetro) ? 'deselect' : 'select'}</p>
-        </div>
-      )}
 
       <div className="map-footer">
         <p>

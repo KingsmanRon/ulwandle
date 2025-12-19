@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Metro, saMetros } from '../constants/saMetros';
+import { Metro, EIGHT_METROS } from '../constants/saMetros';
 import './SouthAfricaMap.css';
 
 interface SouthAfricaMapProps {
@@ -49,7 +49,7 @@ const SouthAfricaMap: React.FC<SouthAfricaMapProps> = ({
   };
 
   const getMetroById = (id: string): Metro | undefined => {
-    return saMetros.find(m => m.id === id);
+    return EIGHT_METROS.find((m: Metro) => m.id === id);
   };
 
   const handleMetroClick = (metroId: string) => {
@@ -137,7 +137,7 @@ const SouthAfricaMap: React.FC<SouthAfricaMapProps> = ({
         <line x1="600" y1="200" x2="600" y2="520" stroke="#e2e8f0" strokeWidth="1" strokeDasharray="5,5" />
 
         {/* Metro regions */}
-        {saMetros.map((metro) => (
+        {EIGHT_METROS.map((metro: Metro) => (
           <g key={metro.id}>
             <path
               d={metroShapes[metro.id as keyof typeof metroShapes]}

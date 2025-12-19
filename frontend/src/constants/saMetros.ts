@@ -30,42 +30,42 @@ export const EIGHT_METROS: Metro[] = [
     coordinates: { lat: -33.9249, lng: 18.4241 }
   },
   {
-    id: 'ekhur',
+    id: 'eku',
     name: 'Ekurhuleni',
     province: 'Gauteng',
     population: 3842000,
     coordinates: { lat: -26.2309, lng: 28.3622 }
   },
   {
-    id: 'ethek',
+    id: 'eth',
     name: 'eThekwini (Durban)',
     province: 'KwaZulu-Natal',
     population: 3990000,
     coordinates: { lat: -29.8587, lng: 31.0218 }
   },
   {
-    id: 'tshwane',
+    id: 'tsh',
     name: 'City of Tshwane (Pretoria)',
     province: 'Gauteng',
     population: 3275000,
     coordinates: { lat: -25.7479, lng: 28.2293 }
   },
   {
-    id: 'nelson',
+    id: 'nmb',
     name: 'Nelson Mandela Bay (Port Elizabeth)',
     province: 'Eastern Cape',
     population: 1263000,
     coordinates: { lat: -33.9608, lng: 25.6022 }
   },
   {
-    id: 'buffalo',
+    id: 'bcm',
     name: 'Buffalo City (East London)',
     province: 'Eastern Cape',
     population: 832000,
     coordinates: { lat: -32.9733, lng: 27.8687 }
   },
   {
-    id: 'manguang',
+    id: 'man',
     name: 'Mangaung (Bloemfontein)',
     province: 'Free State',
     population: 783000,

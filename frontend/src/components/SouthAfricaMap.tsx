@@ -68,17 +68,17 @@ const SouthAfricaMap: React.FC<SouthAfricaMapProps> = ({
     }
   };
 
-  // Metro positions on the map (positioned at actual city locations, not labels)
-  // Coordinates for 1000x800 viewBox - marking where cities actually are geographically
+  // Metro positions on the map - positioned on grey anchor points from map image
+  // Coordinates for 1000x800 viewBox - matching the grey dots in sa-provinces - Copy.png
   const metroPositions = {
-    cpt: { x: 240, y: 760, name: "Cape Town" },           // Southwest coast/peninsula (actual city location)
-    nelson: { x: 755, y: 770, name: "Nelson Mandela Bay" }, // South coast at Port Elizabeth (actual city)
-    buffalo: { x: 855, y: 720, name: "Buffalo City" },    // Southeast coast at East London (actual city)
-    ethek: { x: 980, y: 550, name: "Durban" },            // East coast at Durban (actual city location)
-    manguang: { x: 710, y: 505, name: "Bloemfontein" },   // Central interior (actual city)
-    jhb: { x: 830, y: 305, name: "Johannesburg" },        // Gauteng cluster (actual city location)
-    ekhur: { x: 920, y: 295, name: "Ekurhuleni" },        // East of JHB - actual metro area
-    tshwane: { x: 850, y: 270, name: "Pretoria" },        // North of JHB (actual city location)
+    cpt: { x: 165, y: 685, name: "Cape Town" },           // Southwest peninsula - grey anchor point
+    nelson: { x: 650, y: 720, name: "Nelson Mandela Bay" }, // South coast - grey anchor point
+    buffalo: { x: 730, y: 680, name: "Buffalo City" },    // Southeast coast - grey anchor point
+    ethek: { x: 860, y: 550, name: "Durban" },            // East coast - grey anchor point
+    manguang: { x: 600, y: 515, name: "Bloemfontein" },   // Central interior - grey anchor point
+    jhb: { x: 745, y: 350, name: "Johannesburg" },        // Gauteng cluster - grey anchor point
+    ekhur: { x: 795, y: 360, name: "Ekurhuleni" },        // East of JHB - grey anchor point
+    tshwane: { x: 765, y: 315, name: "Pretoria" },        // North of JHB - grey anchor point
   };
 
   return (
@@ -112,9 +112,9 @@ const SouthAfricaMap: React.FC<SouthAfricaMapProps> = ({
           xmlns="http://www.w3.org/2000/svg"
           style={{ width: '100%', height: 'auto', display: 'block' }}
         >
-          {/* Clean Background Map Image */}
+          {/* Clean Background Map Image with grey anchor points */}
           <image
-            href="/sa-provinces.webp"
+            href="/sa-provinces - Copy.png"
             x="0"
             y="0"
             width="1000"

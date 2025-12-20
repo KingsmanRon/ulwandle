@@ -306,13 +306,8 @@ const WaterNetworkVisualization: React.FC<WaterNetworkVisualizationProps> = ({
 
         // 3. Replace Notifications (Clearing previous region's alerts)
         setNotifications(newNotifications);
-
-        // Notify parent component
-        if (onMetroChange) {
-          onMetroChange(activeRegion);
-        }
     }
-  }, [activeRegion, onMetroChange]);
+  }, [activeRegion]);
 
   const addNotification = (type: 'success' | 'warning' | 'critical', title: string, message: string) => {
     setNotifications(prev => {
@@ -417,7 +412,12 @@ const WaterNetworkVisualization: React.FC<WaterNetworkVisualizationProps> = ({
           {Object.values(METRO_SYSTEMS).map((metro) => (
             <button
               key={metro.id}
-              onClick={() => setActiveRegion(metro.id)}
+              onClick={() => {
+                setActiveRegion(metro.id);
+                if (onMetroChange) {
+                  onMetroChange(metro.id);
+                }
+              }}
               className={`metro-switcher-btn ${activeRegion === metro.id ? 'metro-switcher-btn-active' : ''}`}
             >
               {metro.code}

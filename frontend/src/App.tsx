@@ -9,7 +9,6 @@ import MultiMetroAggregate from './components/MultiMetroAggregate';
 import SouthAfricaMap from './components/SouthAfricaMap';
 import MetroZoneMap from './components/MetroZoneMap';
 import NetworkGraph from './components/NetworkGraph';
-import WaterNetworkVisualization from './components/WaterNetworkVisualization';
 import ClaudeRecommendationsPanel, { ClaudeRecommendationsData } from './components/ClaudeRecommendations';
 import ShutdownNotification from './components/ShutdownNotification';
 import { Metro, MetroWaterData, generateMetroWaterData } from './constants/saMetros';
@@ -241,10 +240,7 @@ function App() {
               📍 Problem Areas
             </button>
             <button onClick={() => scrollToSection('network-section')} className="nav-btn">
-              🔌 Network Graph
-            </button>
-            <button onClick={() => scrollToSection('distribution-section')} className="nav-btn">
-              💧 Distribution Network
+              💧 Water Distribution Network
             </button>
           </>
         )}
@@ -308,17 +304,10 @@ function App() {
               </div>
             )}
 
-            {/* Phase 3: Interactive Network Graph */}
+            {/* Water Distribution Network */}
             {selectedMetro && (
               <div id="network-section">
                 <NetworkGraph metro={selectedMetro} />
-              </div>
-            )}
-
-            {/* Water Distribution Network Visualization */}
-            {selectedMetro && (
-              <div id="distribution-section">
-                <WaterNetworkVisualization selectedMetroId={selectedMetro.id} />
               </div>
             )}
 

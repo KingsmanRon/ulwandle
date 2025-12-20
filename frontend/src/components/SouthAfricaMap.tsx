@@ -20,16 +20,22 @@ const SouthAfricaMap: React.FC<SouthAfricaMapProps> = ({
   };
 
   const getMetroColor = (metro: Metro): string => {
+    // If selected, always use consistent selection color (green)
+    if (isSelected(metro)) {
+      return '#16a34a';  // Green for all selections
+    }
+
+    // For unselected metros, show stress level with reduced opacity
     if (!metroStressLevels) {
-      return isSelected(metro) ? '#3b82f6' : '#94a3b8';
+      return '#94a3b8';  // Default gray
     }
 
     const stressData = metroStressLevels.get(metro.id);
     if (!stressData) {
-      return isSelected(metro) ? '#3b82f6' : '#94a3b8';
+      return '#94a3b8';
     }
 
-    // Color based on stress level
+    // Color based on stress level (for unselected metros)
     const colors = {
       CRITICAL: '#dc2626',
       HIGH: '#ea580c',
@@ -38,14 +44,7 @@ const SouthAfricaMap: React.FC<SouthAfricaMapProps> = ({
     };
 
     const baseColor = colors[stressData.level as keyof typeof colors] || '#94a3b8';
-
-    // If selected, make it brighter
-    if (isSelected(metro)) {
-      return baseColor;
-    }
-
-    // If not selected, make it more transparent
-    return baseColor + '80';  // 50% opacity
+    return baseColor + '80';  // 50% opacity for unselected
   };
 
   const getMetroById = (id: string): Metro | undefined => {

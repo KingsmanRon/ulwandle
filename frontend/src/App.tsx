@@ -8,7 +8,7 @@ import MetroDashboard from './components/MetroDashboard';
 import MultiMetroAggregate from './components/MultiMetroAggregate';
 import SouthAfricaMap from './components/SouthAfricaMap';
 import MetroZoneMap from './components/MetroZoneMap';
-import NetworkGraph from './components/NetworkGraph';
+import WaterNetworkVisualization from './components/WaterNetworkVisualization';
 import ClaudeRecommendationsPanel, { ClaudeRecommendationsData } from './components/ClaudeRecommendations';
 import ShutdownNotification from './components/ShutdownNotification';
 import { Metro, MetroWaterData, generateMetroWaterData } from './constants/saMetros';
@@ -307,7 +307,7 @@ function App() {
             {/* Water Distribution Network */}
             {selectedMetro && (
               <div id="network-section">
-                <NetworkGraph metro={selectedMetro} />
+                <WaterNetworkVisualization selectedMetroId={selectedMetro.id} />
               </div>
             )}
 

@@ -14,8 +14,6 @@ import {
   Info,
   X,
   Zap,
-  Maximize2,
-  Minimize2,
   ChevronRight,
   ChevronLeft
 } from 'lucide-react';
@@ -251,7 +249,6 @@ const WaterNetworkVisualization: React.FC<WaterNetworkVisualizationProps> = ({
 }) => {
   const [activeRegion, setActiveRegion] = useState(selectedMetroId);
   const [isLegendOpen, setIsLegendOpen] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const [nodes, setNodes] = useState(METRO_SYSTEMS[activeRegion as keyof typeof METRO_SYSTEMS].nodes);
@@ -399,7 +396,7 @@ const WaterNetworkVisualization: React.FC<WaterNetworkVisualizationProps> = ({
   };
 
   return (
-    <div className={`water-network-container ${isFullscreen ? 'water-network-fullscreen' : ''}`}>
+    <div className="water-network-container">
       {/* Header */}
       <header className="water-network-header">
         <div className="water-network-header-title">
@@ -429,10 +426,6 @@ const WaterNetworkVisualization: React.FC<WaterNetworkVisualizationProps> = ({
         </div>
 
         <div className="water-network-header-actions">
-          <button onClick={() => setIsFullscreen(!isFullscreen)} className="header-action-btn">
-            {isFullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
-          </button>
-          <div className="header-divider"></div>
           <button className="header-action-btn notification-btn">
             <Bell size={20} />
             {notifications.length > 0 && (

@@ -1,17 +1,13 @@
 /* Container & Layout */
 .water-network-container {
   background: #f8fafc;
-  min-height: 100vh;
+  min-height: 800px;
   display: flex;
   flex-direction: column;
   transition: all 0.3s ease;
-}
-
-.water-network-fullscreen {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  height: 100vh;
+  margin: 2rem 0;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 /* Header */
@@ -25,6 +21,7 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   z-index: 30;
   flex-shrink: 0;
+  border-radius: 12px 12px 0 0;
 }
 
 .water-network-header-title {
@@ -66,9 +63,12 @@
 .status-indicator {
   width: 8px;
   height: 8px;
+  min-width: 8px;
+  min-height: 8px;
   border-radius: 50%;
   background: #10b981;
   animation: pulse-indicator 2s ease-in-out infinite;
+  flex-shrink: 0;
 }
 
 @keyframes pulse-indicator {

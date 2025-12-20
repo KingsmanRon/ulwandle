@@ -11,7 +11,7 @@ import MetroZoneMap from './components/MetroZoneMap';
 import WaterNetworkVisualization from './components/WaterNetworkVisualization';
 import ClaudeRecommendationsPanel, { ClaudeRecommendationsData } from './components/ClaudeRecommendations';
 import ShutdownNotification from './components/ShutdownNotification';
-import { Metro, MetroWaterData, generateMetroWaterData } from './constants/saMetros';
+import { Metro, MetroWaterData, generateMetroWaterData, EIGHT_METROS } from './constants/saMetros';
 import { blockchainVerifier } from './services/blockchainService';
 
 function App() {
@@ -307,7 +307,15 @@ function App() {
             {/* Water Distribution Network */}
             {selectedMetro && (
               <div id="network-section">
-                <WaterNetworkVisualization selectedMetroId={selectedMetro.id} />
+                <WaterNetworkVisualization
+                  selectedMetroId={selectedMetro.id}
+                  onMetroChange={(metroId) => {
+                    const metro = EIGHT_METROS.find(m => m.id === metroId);
+                    if (metro) {
+                      handleMetroSelect(metro);
+                    }
+                  }}
+                />
               </div>
             )}
 

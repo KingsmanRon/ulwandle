@@ -29,6 +29,7 @@ function App() {
   const [historicalData, setHistoricalData] = useState<any[]>([]);
   const [claudeRecommendations, setClaudeRecommendations] = useState<ClaudeRecommendationsData | null>(null);
   const [loadingRecommendations, setLoadingRecommendations] = useState<boolean>(false);
+  const [zones, setZones] = useState<any[]>([]);
 
   // PWA Install Prompt
   useEffect(() => {
@@ -140,6 +141,32 @@ function App() {
       return () => clearInterval(interval);
     }
   }, [selectedMetro, handleMetroSelect]);
+
+  // Fetch zones data for export
+  useEffect(() => {
+    const fetchZones = async () => {
+      if (!selectedMetro) {
+        setZones([]);
+        return;
+      }
+
+      try {
+        const response = await fetch(`http://localhost:8000/api/v1/metros/${selectedMetro.id}/zones`);
+        if (response.ok) {
+          const data = await response.json();
+          setZones(data);
+        } else {
+          // Use fallback zones from MetroZoneMap
+          setZones([]);
+        }
+      } catch (error) {
+        // Backend not available, zones will be empty
+        setZones([]);
+      }
+    };
+
+    fetchZones();
+  }, [selectedMetro]);
 
 
   const getFallbackRecommendations = (metroData: MetroWaterData): ClaudeRecommendationsData => {
@@ -282,6 +309,10 @@ function App() {
         </div>
         <WorldBankCompliancePanel
           allMetroData={allMetroData}
+          selectedMetro={selectedMetro}
+          zones={zones}
+          recommendations={claudeRecommendations}
+          historicalData={historicalData}
         />
         {allMetroData.length > 1 && (
           <div id="aggregate-section">

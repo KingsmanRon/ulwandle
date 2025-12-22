@@ -1,8 +1,11 @@
 .metro-zone-map {
-  background: white;
-  border-radius: 12px;
-  padding: 2rem;
+  background: #f8fafc;
+  min-height: 800px;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
   margin: 2rem 0;
+  border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
@@ -15,12 +18,16 @@
 }
 
 .zone-map-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
+  background: white;
   border-bottom: 2px solid #e5e7eb;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  z-index: 30;
+  flex-shrink: 0;
+  border-radius: 12px 12px 0 0;
 }
 
 .zone-map-header h3 {
@@ -56,15 +63,18 @@
   grid-template-columns: 1fr 1fr;
   gap: 2rem;
   margin-bottom: 2rem;
+  padding: 1.5rem;
+  flex: 1;
 }
 
 .zone-grid-visual {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 1rem;
-  padding: 1rem;
-  background: #f9fafb;
-  border-radius: 8px;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .zone-block {
@@ -121,10 +131,10 @@
 }
 
 .zone-details-panel {
-  background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
-  border: 2px solid #e5e7eb;
-  border-radius: 8px;
+  background: white;
+  border-radius: 12px;
   padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .zone-detail-header {
@@ -245,9 +255,12 @@
 }
 
 .zone-priority-list {
-  margin-top: 2rem;
-  padding-top: 2rem;
+  background: white;
+  margin: 0 1.5rem 1.5rem 1.5rem;
+  padding: 1.5rem;
   border-top: 2px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .zone-priority-list h4 {
@@ -372,10 +385,20 @@
 
 @media (max-width: 768px) {
   .metro-zone-map {
-    padding: 1.5rem;
+    margin: 1rem 0;
+  }
+
+  .zone-content {
+    padding: 1rem;
+  }
+
+  .zone-priority-list {
+    margin: 0 1rem 1rem 1rem;
+    padding: 1rem;
   }
 
   .zone-map-header {
+    padding: 1rem;
     flex-direction: column;
     align-items: flex-start;
     gap: 0.75rem;
@@ -388,6 +411,11 @@
 
   .zone-grid-visual {
     grid-template-columns: repeat(2, 1fr);
+    padding: 1rem;
+  }
+
+  .zone-details-panel {
+    padding: 1rem;
   }
 
   .priority-zone-item {

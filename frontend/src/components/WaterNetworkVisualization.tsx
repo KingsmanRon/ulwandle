@@ -262,7 +262,7 @@ const WaterNetworkVisualization: React.FC<WaterNetworkVisualizationProps> = ({
     if (selectedMetroId && selectedMetroId !== activeRegion) {
       setActiveRegion(selectedMetroId);
     }
-  }, [selectedMetroId]);
+  }, [selectedMetroId, activeRegion]);
 
   // Unified Data & Alert Loading Logic
   useEffect(() => {

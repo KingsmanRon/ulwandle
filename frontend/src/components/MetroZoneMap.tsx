@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Metro } from '../constants/saMetros';
 import { AlertTriangle, CheckCircle, TrendingUp } from 'lucide-react';
+import { API_BASE_URL } from '../services/apiService';
 import './MetroZoneMap.css';
 
 interface ZoneData {
@@ -19,6 +20,7 @@ interface ZoneData {
 
 interface MetroZoneMapProps {
   metro: Metro;
+  onZonesUpdate?: (zones: ZoneData[]) => void;
 }
 
 // Fallback demo data for zone-based analysis
@@ -72,34 +74,42 @@ const FALLBACK_ZONES: Record<string, ZoneData[]> = {
   ],
 };
 
-const MetroZoneMap: React.FC<MetroZoneMapProps> = ({ metro }) => {
+const MetroZoneMap: React.FC<MetroZoneMapProps> = ({ metro, onZonesUpdate }) => {
   const [zones, setZones] = useState<ZoneData[]>([]);
   const [selectedZone, setSelectedZone] = useState<ZoneData | null>(null);
   const [loading, setLoading] = useState(true);
   const [usingFallback, setUsingFallback] = useState(false);
 
-  useEffect(() => {
-    fetchZones();
-  }, [metro.id]);
-
-  const fetchZones = async () => {
+  const fetchZones = useCallback(async () => {
     setLoading(true);
     setUsingFallback(false);
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/metros/${metro.id}/zones`);
+      const response = await fetch(`${API_BASE_URL}/api/v1/metros/${metro.id}/zones`);
       if (!response.ok) throw new Error('API not available');
       const data = await response.json();
       setZones(data);
+      // Notify parent component
+      if (onZonesUpdate) {
+        onZonesUpdate(data);
+      }
     } catch (error) {
       console.log('Using fallback zone data (backend not running)');
       // Use fallback demo data
       const fallbackData = FALLBACK_ZONES[metro.id] || [];
       setZones(fallbackData);
       setUsingFallback(true);
+      // Notify parent component with fallback data
+      if (onZonesUpdate) {
+        onZonesUpdate(fallbackData);
+      }
     } finally {
       setLoading(false);
     }
-  };
+  }, [metro.id, onZonesUpdate]);
+
+  useEffect(() => {
+    fetchZones();
+  }, [fetchZones]);
 
   const getZoneColor = (zone: ZoneData): string => {
     if (zone.has_active_leaks && zone.wastage_percentage > 30) {

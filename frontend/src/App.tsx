@@ -14,11 +14,50 @@ import ShutdownNotification from './components/ShutdownNotification';
 import { Metro, MetroWaterData, generateMetroWaterData, EIGHT_METROS } from './constants/saMetros';
 import { blockchainVerifier } from './services/blockchainService';
 
+interface SystemStatus {
+  total_metros: number;
+  total_intersections: number;
+  total_connections: number;
+  total_zones: number;
+  total_leaks: number;
+  active_leaks: number;
+  critical_leaks: number;
+  coverage_population: number;
+  system_status: string;
+  last_updated: string;
+}
+
+interface HistoricalDataPoint {
+  day: string;
+  intake: number;
+  usage: number;
+  wastage: number;
+}
+
+interface ZoneData {
+  zone_id: string;
+  name: string;
+  population: number;
+  daily_intake_ml: number;
+  daily_usage_ml: number;
+  daily_wastage_ml: number;
+  wastage_percentage: number;
+  has_active_leaks: boolean;
+  leak_count: number;
+  priority_score: number;
+}
+
+// PWA Install Prompt Event interface
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
 function App() {
-  const [systemStatus, setSystemStatus] = useState<any>(null);
+  const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
 
   // PWA state
-  const [installPrompt, setInstallPrompt] = useState<any>(null);
+  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
 
   // Metro monitoring state
@@ -26,16 +65,16 @@ function App() {
   const [selectedMetro, setSelectedMetro] = useState<Metro | null>(null);
   const [currentMetroData, setCurrentMetroData] = useState<MetroWaterData | null>(null);
   const [allMetroData, setAllMetroData] = useState<MetroWaterData[]>([]);
-  const [historicalData, setHistoricalData] = useState<any[]>([]);
+  const [historicalData, setHistoricalData] = useState<HistoricalDataPoint[]>([]);
   const [claudeRecommendations, setClaudeRecommendations] = useState<ClaudeRecommendationsData | null>(null);
   const [loadingRecommendations, setLoadingRecommendations] = useState<boolean>(false);
-  const [zones, setZones] = useState<any[]>([]);
+  const [zones, setZones] = useState<ZoneData[]>([]);
 
   // PWA Install Prompt
   useEffect(() => {
-    const handler = (e: any) => {
+    const handler = (e: Event) => {
       e.preventDefault();
-      setInstallPrompt(e);
+      setInstallPrompt(e as BeforeInstallPromptEvent);
     };
     window.addEventListener('beforeinstallprompt', handler);
     return () => window.removeEventListener('beforeinstallprompt', handler);
@@ -142,31 +181,10 @@ function App() {
     }
   }, [selectedMetro, handleMetroSelect]);
 
-  // Fetch zones data for export
-  useEffect(() => {
-    const fetchZones = async () => {
-      if (!selectedMetro) {
-        setZones([]);
-        return;
-      }
-
-      try {
-        const response = await fetch(`http://localhost:8000/api/v1/metros/${selectedMetro.id}/zones`);
-        if (response.ok) {
-          const data = await response.json();
-          setZones(data);
-        } else {
-          // Use fallback zones from MetroZoneMap
-          setZones([]);
-        }
-      } catch (error) {
-        // Backend not available, zones will be empty
-        setZones([]);
-      }
-    };
-
-    fetchZones();
-  }, [selectedMetro]);
+  // Handle zones update from MetroZoneMap component
+  const handleZonesUpdate = useCallback((zonesData: ZoneData[]) => {
+    setZones(zonesData);
+  }, []);
 
 
   const getFallbackRecommendations = (metroData: MetroWaterData): ClaudeRecommendationsData => {
@@ -331,7 +349,7 @@ function App() {
             {/* Phase 2: Zone-based Problem Area Visualization */}
             {selectedMetro && (
               <div id="zones-section">
-                <MetroZoneMap metro={selectedMetro} />
+                <MetroZoneMap metro={selectedMetro} onZonesUpdate={handleZonesUpdate} />
               </div>
             )}
 

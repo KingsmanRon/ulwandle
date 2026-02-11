@@ -58,15 +58,6 @@ const SouthAfricaMap: React.FC<SouthAfricaMapProps> = ({
     }
   };
 
-  const handleMetroHover = (metroId: string | null) => {
-    if (metroId) {
-      const metro = getMetroById(metroId);
-      setHoveredMetro(metro || null);
-    } else {
-      setHoveredMetro(null);
-    }
-  };
-
   // Metro positions as percentages - responsive at any screen size
   // Measured directly from Map_of_the_metropolitan_municipalities image
   const metroPositions = {

@@ -17,19 +17,19 @@
 │  │                            React 18 + TypeScript                                     │   │
 │  │                                                                                      │   │
 │  │  ┌────────────────┐  ┌────────────────┐  ┌────────────────┐  ┌─────────────────┐  │   │
-│  │  │  App.tsx       │  │ MetroSelector  │  │ MetroDashboard │  │ WorldBank       │  │   │
-│  │  │                │  │                │  │                │  │ Compliance      │  │   │
-│  │  │ - State Mgmt   │  │ - Multi-select │  │ - Recharts     │  │                 │  │   │
-│  │  │ - Navigation   │  │ - Toggle       │  │ - Metrics      │  │ - Excel Export  │  │   │
-│  │  │ - PWA Setup    │  │ - Checkmarks   │  │ - Pie/Area     │  │ - XLSX.js       │  │   │
+│  │  │ ErrorBoundary  │  │  App.tsx       │  │ MetroSelector  │  │ MetroDashboard  │  │   │
+│  │  │                │  │                │  │                │  │                 │  │   │
+│  │  │ - Error catch  │  │ - State Mgmt   │  │ - Multi-select │  │ - Recharts      │  │   │
+│  │  │ - Graceful UI  │  │ - Navigation   │  │ - Toggle       │  │ - Metrics       │  │   │
+│  │  │ - Error report │  │ - PWA Setup    │  │ - Checkmarks   │  │ - Pie/Area      │  │   │
 │  │  └────────────────┘  └────────────────┘  └────────────────┘  └─────────────────┘  │   │
 │  │                                                                                      │   │
 │  │  ┌────────────────┐  ┌────────────────┐  ┌────────────────┐  ┌─────────────────┐  │   │
-│  │  │  Shutdown      │  │ Claude Rec's   │  │ Quick Nav      │  │ Service Workers │  │   │
-│  │  │  Notification  │  │                │  │                │  │                 │  │   │
-│  │  │                │  │ - AI Cards     │  │ - Sticky Nav   │  │ - Offline Cache │  │   │
-│  │  │ - Form         │  │ - Priority     │  │ - Smooth Scroll│  │ - Install Prompt│  │   │
-│  │  │ - History      │  │ - KPIs         │  │ - Navigation   │  │ - PWA Features  │  │   │
+│  │  │ WorldBank      │  │  Shutdown      │  │ Claude Rec's   │  │ Service Workers │  │   │
+│  │  │ Compliance     │  │  Notification  │  │                │  │                 │  │   │
+│  │  │                │  │                │  │ - AI Cards     │  │ - Offline Cache │  │   │
+│  │  │ - Excel Export │  │ - Form         │  │ - Priority     │  │ - Install Prompt│  │   │
+│  │  │ - XLSX.js      │  │ - History      │  │ - KPIs         │  │ - PWA Features  │  │   │
 │  │  └────────────────┘  └────────────────┘  └────────────────┘  └─────────────────┘  │   │
 │  │                                                                                      │   │
 │  └──────────────────────────────────────┬───────────────────────────────────────────────┘   │

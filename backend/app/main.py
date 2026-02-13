@@ -16,7 +16,8 @@ from app.api import (
     predictions,
     districts,
     alerts,
-    dashboard
+    dashboard,
+    metros
 )
 from app.db.database import engine, Base
 from app.services.websocket_manager import websocket_manager
@@ -109,6 +110,7 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
 
 
 # Include API routers
+app.include_router(metros.router, tags=["Metros & Network"])
 app.include_router(monitoring.router, prefix="/api/v1/monitoring", tags=["Monitoring"])
 app.include_router(water_quality.router, prefix="/api/v1/water-quality", tags=["Water Quality"])
 app.include_router(kill_switch.router, prefix="/api/v1/kill-switch", tags=["Kill Switch"])

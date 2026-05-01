@@ -26,6 +26,9 @@
     "test": "react-scripts test --watchAll=false",
     "audit-ci": "npx --yes audit-ci@latest --moderate"
   },
+  "overrides": {
+    "ajv": "^8.12.0"
+  },
   "eslintConfig": {
     "extends": [
       "react-app"

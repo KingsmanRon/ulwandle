@@ -1,30 +1,46 @@
 """
-Database connection and session management
+Database connection and session management.
 """
 
+from contextlib import contextmanager
+from typing import Iterator
+
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import declarative_base, sessionmaker, Session
+
 from app.core.config import settings
 
-# Create database engine
+
 engine = create_engine(
-    settings.DATABASE_URL,
+    settings.DATABASE_URL.get_secret_value(),
     pool_pre_ping=True,
-    echo=settings.DEBUG
+    pool_recycle=1800,
+    echo=False,  # never echo SQL — bound parameters can leak PII
+    future=True,
 )
 
-# Create session factory
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# Base class for models
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, future=True)
 Base = declarative_base()
 
 
-def get_db():
-    """Dependency to get database session"""
+def get_db() -> Iterator[Session]:
+    """Request-scoped DB session for FastAPI dependencies."""
     db = SessionLocal()
     try:
         yield db
+    finally:
+        db.close()
+
+
+@contextmanager
+def db_session() -> Iterator[Session]:
+    """Standalone session for background tasks; commits on success, rolls back on error."""
+    db = SessionLocal()
+    try:
+        yield db
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
     finally:
         db.close()

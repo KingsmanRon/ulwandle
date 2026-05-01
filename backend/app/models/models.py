@@ -1,28 +1,29 @@
 """
-Database Models for Ulwandle Tech
+Database models for Ulwandle Tech.
 """
+
+import enum
+from datetime import datetime, timezone
 
 from sqlalchemy import (
     Column, Integer, String, Float, Boolean, DateTime,
-    ForeignKey, Text, Enum as SQLEnum, JSON
+    ForeignKey, Text, Enum as SQLEnum, JSON, Index
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from datetime import datetime
-import enum
 
 from app.db.database import Base
 
 
+# ---------- Enums ----------
+
 class DistrictStatus(str, enum.Enum):
-    """District water quality status"""
-    GREEN = "green"  # Safe, drinkable water
-    YELLOW = "yellow"  # Monitoring required
-    RED = "red"  # Undrinkable, emergency
+    GREEN = "green"
+    YELLOW = "yellow"
+    RED = "red"
 
 
 class ValveStatus(str, enum.Enum):
-    """Valve operational status"""
     OPEN = "open"
     CLOSED = "closed"
     PARTIAL = "partial"
@@ -30,15 +31,98 @@ class ValveStatus(str, enum.Enum):
 
 
 class AlertLevel(str, enum.Enum):
-    """Alert severity levels"""
     INFO = "info"
     WARNING = "warning"
     CRITICAL = "critical"
     EMERGENCY = "emergency"
 
 
+class UserRole(str, enum.Enum):
+    ADMIN = "admin"
+    SUPERVISOR = "supervisor"
+    OPERATOR = "operator"
+    VIEWER = "viewer"
+
+
+class ProposalStatus(str, enum.Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    EXECUTED = "executed"
+    REJECTED = "rejected"
+    EXPIRED = "expired"
+
+
+class ReasonCode(str, enum.Enum):
+    """Bounded, sanitized reason codes — never feed free text to safety-critical paths."""
+    LEAK_DETECTED = "leak_detected"
+    QUALITY_BREACH = "quality_breach"
+    CONTAMINATION = "contamination"
+    INFRASTRUCTURE_FAULT = "infrastructure_fault"
+    SCHEDULED_MAINTENANCE = "scheduled_maintenance"
+    EMERGENCY_OTHER = "emergency_other"
+
+
+# ---------- Auth ----------
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String(255), unique=True, nullable=False, index=True)
+    full_name = Column(String(200), nullable=False)
+    hashed_password = Column(String(255), nullable=False)
+    role = Column(SQLEnum(UserRole), nullable=False, default=UserRole.VIEWER)
+
+    # Base64-encoded Ed25519 public key (32 raw bytes -> 44 char base64)
+    ed25519_public_key = Column(String(64), nullable=True)
+
+    is_active = Column(Boolean, default=True, nullable=False)
+    failed_login_attempts = Column(Integer, default=0, nullable=False)
+    locked_until = Column(DateTime(timezone=True))
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    last_login_at = Column(DateTime(timezone=True))
+
+
+class RefreshToken(Base):
+    __tablename__ = "refresh_tokens"
+
+    jti = Column(String(64), primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    issued_at = Column(DateTime(timezone=True), server_default=func.now())
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    revoked = Column(Boolean, default=False, nullable=False)
+    user_agent = Column(String(255))
+    ip_hash = Column(String(64))
+
+
+class UsedNonce(Base):
+    """Replay protection for signed valve operations."""
+    __tablename__ = "used_nonces"
+
+    nonce = Column(String(128), primary_key=True)
+    used_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False, index=True)
+
+
+class AuditLog(Base):
+    """Append-only audit trail. Never updated; rotated by retention policy."""
+    __tablename__ = "audit_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    actor_id = Column(Integer, ForeignKey("users.id"))
+    actor_email = Column(String(255))
+    action = Column(String(100), nullable=False, index=True)
+    resource_type = Column(String(50))
+    resource_id = Column(String(100))
+    payload = Column(JSON)
+    ip_hash = Column(String(64))
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+
+
+# ---------- Domain ----------
+
 class District(Base):
-    """Municipal district/zone"""
     __tablename__ = "districts"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -48,17 +132,14 @@ class District(Base):
     province = Column(String(50), nullable=False)
     population = Column(Integer)
     area_km2 = Column(Float)
-    status = Column(SQLEnum(DistrictStatus), default=DistrictStatus.GREEN)
+    status = Column(SQLEnum(DistrictStatus), default=DistrictStatus.GREEN, nullable=False)
 
-    # Coordinates for mapping
     latitude = Column(Float)
     longitude = Column(Float)
 
-    # Metadata
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    # Relationships
     sensors = relationship("Sensor", back_populates="district")
     valves = relationship("Valve", back_populates="district")
     water_quality_readings = relationship("WaterQualityReading", back_populates="district")
@@ -66,98 +147,81 @@ class District(Base):
 
 
 class Sensor(Base):
-    """Water monitoring sensor"""
     __tablename__ = "sensors"
 
     id = Column(Integer, primary_key=True, index=True)
     sensor_id = Column(String(50), unique=True, nullable=False)
-    sensor_type = Column(String(50), nullable=False)  # flow, pressure, ph, tds, etc.
+    sensor_type = Column(String(50), nullable=False)
     district_id = Column(Integer, ForeignKey("districts.id"))
 
-    # Location
     location_name = Column(String(200))
     latitude = Column(Float)
     longitude = Column(Float)
 
-    # Status
+    # HMAC-SHA256 ingest secret per sensor (random, rotatable)
+    ingest_secret_hash = Column(String(128))
+
     is_active = Column(Boolean, default=True)
     last_reading_at = Column(DateTime(timezone=True))
 
-    # Metadata
     installed_at = Column(DateTime(timezone=True), server_default=func.now())
     calibrated_at = Column(DateTime(timezone=True))
 
-    # Relationships
     district = relationship("District", back_populates="sensors")
     flow_readings = relationship("FlowReading", back_populates="sensor")
     pressure_readings = relationship("PressureReading", back_populates="sensor")
 
 
 class FlowReading(Base):
-    """Water flow readings from sensors"""
     __tablename__ = "flow_readings"
 
     id = Column(Integer, primary_key=True, index=True)
-    sensor_id = Column(Integer, ForeignKey("sensors.id"))
-
-    # Flow data
-    flow_rate = Column(Float, nullable=False)  # liters per minute
-    total_volume = Column(Float)  # total liters
-
-    # Timestamp
+    sensor_id = Column(Integer, ForeignKey("sensors.id"), nullable=False)
+    flow_rate = Column(Float, nullable=False)
+    total_volume = Column(Float)
     recorded_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
-
-    # Anomaly detection
     is_anomaly = Column(Boolean, default=False)
     anomaly_score = Column(Float)
 
-    # Relationships
     sensor = relationship("Sensor", back_populates="flow_readings")
 
 
+Index("ix_flow_readings_sensor_time", FlowReading.sensor_id, FlowReading.recorded_at)
+
+
 class PressureReading(Base):
-    """Water pressure readings"""
     __tablename__ = "pressure_readings"
 
     id = Column(Integer, primary_key=True, index=True)
-    sensor_id = Column(Integer, ForeignKey("sensors.id"))
-
-    # Pressure data
-    pressure = Column(Float, nullable=False)  # kPa or bar
-
-    # Timestamp
+    sensor_id = Column(Integer, ForeignKey("sensors.id"), nullable=False)
+    pressure = Column(Float, nullable=False)
     recorded_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
 
-    # Relationships
     sensor = relationship("Sensor", back_populates="pressure_readings")
 
 
+Index("ix_pressure_readings_sensor_time", PressureReading.sensor_id, PressureReading.recorded_at)
+
+
 class WaterQualityReading(Base):
-    """Water quality measurements (pH, TDS, etc.)"""
     __tablename__ = "water_quality_readings"
 
     id = Column(Integer, primary_key=True, index=True)
     district_id = Column(Integer, ForeignKey("districts.id"))
 
-    # Water quality parameters
     ph = Column(Float)
-    tds = Column(Float)  # Total Dissolved Solids (mg/L)
-    turbidity = Column(Float)  # NTU
-    temperature = Column(Float)  # Celsius
-    chlorine = Column(Float)  # mg/L
+    tds = Column(Float)
+    turbidity = Column(Float)
+    temperature = Column(Float)
+    chlorine = Column(Float)
 
-    # Compliance
     meets_sans_241 = Column(Boolean, default=True)
-
-    # Timestamp
     recorded_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
 
-    # Relationships
     district = relationship("District", back_populates="water_quality_readings")
 
 
 class Valve(Base):
-    """Remote-controlled valves (Kill Switch)"""
     __tablename__ = "valves"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -165,169 +229,166 @@ class Valve(Base):
     name = Column(String(100), nullable=False)
     district_id = Column(Integer, ForeignKey("districts.id"))
 
-    # Location
     location_name = Column(String(200))
     latitude = Column(Float)
     longitude = Column(Float)
 
-    # Status
-    status = Column(SQLEnum(ValveStatus), default=ValveStatus.OPEN)
-    is_remote_controlled = Column(Boolean, default=True)
+    status = Column(SQLEnum(ValveStatus), default=ValveStatus.OPEN, nullable=False)
+    is_remote_controlled = Column(Boolean, default=True, nullable=False)
     last_operated_at = Column(DateTime(timezone=True))
 
-    # Control
     can_auto_close = Column(Boolean, default=False)
     requires_confirmation = Column(Boolean, default=True)
 
-    # Metadata
     installed_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    # Relationships
     district = relationship("District", back_populates="valves")
     operations = relationship("ValveOperation", back_populates="valve")
 
 
+class ValveOperationProposal(Base):
+    """Two-of-N approval workflow. Each step carries an Ed25519 signature."""
+    __tablename__ = "valve_operation_proposals"
+
+    id = Column(Integer, primary_key=True, index=True)
+    valve_id = Column(Integer, ForeignKey("valves.id"), nullable=False)
+    action = Column(String(20), nullable=False)
+    reason_code = Column(SQLEnum(ReasonCode), nullable=False)
+    reason_notes = Column(Text)
+
+    nonce = Column(String(128), unique=True, nullable=False, index=True)
+    issued_at = Column(DateTime(timezone=True), nullable=False)
+
+    proposer_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    proposer_signature = Column(Text, nullable=False)
+
+    approver_id = Column(Integer, ForeignKey("users.id"), index=True)
+    approver_signature = Column(Text)
+
+    status = Column(SQLEnum(ProposalStatus), nullable=False, default=ProposalStatus.PENDING, index=True)
+    ai_advisory = Column(JSON)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    decided_at = Column(DateTime(timezone=True))
+    expires_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    executed_at = Column(DateTime(timezone=True))
+
+    valve = relationship("Valve")
+
+
 class ValveOperation(Base):
-    """Valve operation history (audit trail)"""
+    """Append-only execution record. Mirrors the executed proposal."""
     __tablename__ = "valve_operations"
 
     id = Column(Integer, primary_key=True, index=True)
-    valve_id = Column(Integer, ForeignKey("valves.id"))
+    valve_id = Column(Integer, ForeignKey("valves.id"), nullable=False)
+    proposal_id = Column(Integer, ForeignKey("valve_operation_proposals.id"))
 
-    # Operation details
-    action = Column(String(20), nullable=False)  # open, close, partial
+    action = Column(String(20), nullable=False)
     previous_status = Column(String(20))
     new_status = Column(String(20))
 
-    # Authorization
-    operator_id = Column(String(50))
-    operator_name = Column(String(100))
-    reason = Column(Text)
-    is_manual = Column(Boolean, default=True)
+    proposer_id = Column(Integer, ForeignKey("users.id"))
+    approver_id = Column(Integer, ForeignKey("users.id"))
+    proposer_signature = Column(Text, nullable=False)
+    approver_signature = Column(Text)
+    reason_code = Column(SQLEnum(ReasonCode), nullable=False)
+    reason_notes = Column(Text)
 
-    # Timestamp
     executed_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    # Relationships
     valve = relationship("Valve", back_populates="operations")
 
 
 class Alert(Base):
-    """System alerts and notifications"""
     __tablename__ = "alerts"
 
     id = Column(Integer, primary_key=True, index=True)
     district_id = Column(Integer, ForeignKey("districts.id"), nullable=True)
 
-    # Alert details
-    alert_type = Column(String(50), nullable=False)  # leak, quality, valve, prediction
+    alert_type = Column(String(50), nullable=False)
     level = Column(SQLEnum(AlertLevel), nullable=False)
     title = Column(String(200), nullable=False)
     message = Column(Text, nullable=False)
 
-    # Additional data
     alert_metadata = Column(JSON)
 
-    # Status
     is_resolved = Column(Boolean, default=False)
     resolved_at = Column(DateTime(timezone=True))
     resolved_by = Column(String(100))
 
-    # Notifications
     notifications_sent = Column(Boolean, default=False)
     notification_count = Column(Integer, default=0)
 
-    # Timestamp
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
 
-    # Relationships
     district = relationship("District", back_populates="alerts")
 
 
 class Prediction(Base):
-    """AI/ML predictions from Claude"""
     __tablename__ = "predictions"
 
     id = Column(Integer, primary_key=True, index=True)
-
-    # Prediction details
-    prediction_type = Column(String(50), nullable=False)  # consumption, leak, demand
+    prediction_type = Column(String(50), nullable=False)
     district_id = Column(Integer, ForeignKey("districts.id"), nullable=True)
 
-    # Prediction data
     predicted_value = Column(Float)
     confidence_score = Column(Float)
-    prediction_horizon = Column(String(20))  # 1h, 24h, 7d, 30d
+    prediction_horizon = Column(String(20))
 
-    # Input data summary
     data_points_used = Column(Integer)
     features_analyzed = Column(JSON)
 
-    # Results
     prediction_result = Column(JSON)
     claude_analysis = Column(Text)
 
-    # Timestamp
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
     valid_until = Column(DateTime(timezone=True))
 
-    # Validation
     actual_value = Column(Float)
     accuracy = Column(Float)
 
 
 class LeakDetection(Base):
-    """Detected water leaks"""
     __tablename__ = "leak_detections"
 
     id = Column(Integer, primary_key=True, index=True)
     district_id = Column(Integer, ForeignKey("districts.id"))
 
-    # Leak details
     location_description = Column(String(200))
     latitude = Column(Float)
     longitude = Column(Float)
 
-    # Severity
-    estimated_loss_lpm = Column(Float)  # liters per minute
-    estimated_loss_total = Column(Float)  # total liters lost
+    estimated_loss_lpm = Column(Float)
+    estimated_loss_total = Column(Float)
     confidence_score = Column(Float)
 
-    # Detection
-    detection_method = Column(String(50))  # ai, sensor, manual
+    detection_method = Column(String(50))
     detected_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    # Status
     is_confirmed = Column(Boolean, default=False)
     is_repaired = Column(Boolean, default=False)
     repaired_at = Column(DateTime(timezone=True))
-
-    # Notes
     notes = Column(Text)
 
 
 class Employee(Base):
-    """Field employees for notifications"""
     __tablename__ = "employees"
 
     id = Column(Integer, primary_key=True, index=True)
     employee_id = Column(String(50), unique=True, nullable=False)
     name = Column(String(100), nullable=False)
-    role = Column(String(50))  # technician, engineer, supervisor
+    role = Column(String(50))
 
-    # Contact
     phone = Column(String(20))
     email = Column(String(100))
 
-    # Location
     assigned_district_id = Column(Integer, ForeignKey("districts.id"))
 
-    # Status
     is_active = Column(Boolean, default=True)
     is_on_duty = Column(Boolean, default=False)
     last_location_lat = Column(Float)
     last_location_lon = Column(Float)
     last_seen_at = Column(DateTime(timezone=True))
 
-    # Metadata
     created_at = Column(DateTime(timezone=True), server_default=func.now())

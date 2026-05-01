@@ -1,169 +1,134 @@
 """
-Alerts and Notifications API
+Alerts API.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
+from datetime import datetime, timedelta, timezone
 from typing import Optional
-from datetime import datetime, timedelta
 
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
+
+from app.auth.dependencies import get_current_user, require_roles
 from app.db.database import get_db
-from app.models.models import Alert, AlertLevel, District
+from app.models.models import Alert, AlertLevel, District, User, UserRole
 
 router = APIRouter()
 
 
+class AlertResolve(BaseModel):
+    note: Optional[str] = Field(default=None, max_length=500)
+
+
 @router.get("/")
-async def get_alerts(
+def list_alerts(
     district_id: Optional[int] = None,
     alert_type: Optional[str] = None,
     level: Optional[str] = None,
     is_resolved: Optional[bool] = None,
-    hours: int = Query(24, description="Hours of alerts to retrieve"),
-    db: Session = Depends(get_db)
+    hours: int = Query(24, ge=1, le=24 * 30),
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
 ):
-    """Get alerts with optional filters"""
-    time_threshold = datetime.utcnow() - timedelta(hours=hours)
-
-    query = db.query(Alert).filter(Alert.created_at >= time_threshold)
-
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+    q = db.query(Alert).filter(Alert.created_at >= cutoff)
     if district_id:
-        query = query.filter(Alert.district_id == district_id)
+        q = q.filter(Alert.district_id == district_id)
     if alert_type:
-        query = query.filter(Alert.alert_type == alert_type)
+        q = q.filter(Alert.alert_type == alert_type)
     if level:
-        query = query.filter(Alert.level == AlertLevel(level))
+        try:
+            q = q.filter(Alert.level == AlertLevel(level))
+        except ValueError:
+            raise HTTPException(400, "Invalid alert level")
     if is_resolved is not None:
-        query = query.filter(Alert.is_resolved == is_resolved)
+        q = q.filter(Alert.is_resolved == is_resolved)
 
-    alerts = query.order_by(Alert.created_at.desc()).limit(500).all()
-
+    rows = q.order_by(Alert.created_at.desc()).limit(500).all()
     return {
-        "count": len(alerts),
-        "timespan_hours": hours,
+        "count": len(rows),
         "alerts": [
             {
-                "id": a.id,
-                "alert_type": a.alert_type,
-                "level": a.level.value,
-                "title": a.title,
-                "message": a.message,
-                "district_id": a.district_id,
+                "id": a.id, "alert_type": a.alert_type, "level": a.level.value,
+                "title": a.title, "message": a.message, "district_id": a.district_id,
                 "is_resolved": a.is_resolved,
                 "created_at": a.created_at.isoformat(),
-                "resolved_at": a.resolved_at.isoformat() if a.resolved_at else None
-            }
-            for a in alerts
-        ]
+                "resolved_at": a.resolved_at.isoformat() if a.resolved_at else None,
+            } for a in rows
+        ],
     }
 
 
 @router.get("/{alert_id}")
-async def get_alert_details(
+def get_alert(
     alert_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
 ):
-    """Get detailed alert information"""
-    alert = db.query(Alert).filter(Alert.id == alert_id).first()
-    if not alert:
-        raise HTTPException(status_code=404, detail="Alert not found")
-
+    a = db.query(Alert).filter(Alert.id == alert_id).first()
+    if not a:
+        raise HTTPException(404, "Alert not found")
     district = None
-    if alert.district_id:
-        district = db.query(District).filter(District.id == alert.district_id).first()
-
+    if a.district_id:
+        district = db.query(District).filter(District.id == a.district_id).first()
     return {
-        "alert": {
-            "id": alert.id,
-            "alert_type": alert.alert_type,
-            "level": alert.level.value,
-            "title": alert.title,
-            "message": alert.message,
-            "district": {
-                "id": district.id,
-                "name": district.name,
-                "municipality": district.municipality
-            } if district else None,
-            "alert_metadata": alert.alert_metadata,
-            "is_resolved": alert.is_resolved,
-            "resolved_at": alert.resolved_at.isoformat() if alert.resolved_at else None,
-            "resolved_by": alert.resolved_by,
-            "notifications_sent": alert.notifications_sent,
-            "notification_count": alert.notification_count,
-            "created_at": alert.created_at.isoformat()
-        }
+        "id": a.id, "alert_type": a.alert_type, "level": a.level.value,
+        "title": a.title, "message": a.message,
+        "district": {"id": district.id, "name": district.name} if district else None,
+        "alert_metadata": a.alert_metadata,
+        "is_resolved": a.is_resolved,
+        "resolved_at": a.resolved_at.isoformat() if a.resolved_at else None,
+        "resolved_by": a.resolved_by,
+        "created_at": a.created_at.isoformat(),
     }
 
 
 @router.put("/{alert_id}/resolve")
-async def resolve_alert(
+def resolve(
     alert_id: int,
-    resolved_by: str,
-    notes: Optional[str] = None,
-    db: Session = Depends(get_db)
+    body: AlertResolve,
+    db: Session = Depends(get_db),
+    current: User = Depends(require_roles(UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.OPERATOR)),
 ):
-    """Mark alert as resolved"""
-    alert = db.query(Alert).filter(Alert.id == alert_id).first()
-    if not alert:
-        raise HTTPException(status_code=404, detail="Alert not found")
-
-    if alert.is_resolved:
-        raise HTTPException(status_code=400, detail="Alert is already resolved")
-
-    alert.is_resolved = True
-    alert.resolved_at = datetime.utcnow()
-    alert.resolved_by = resolved_by
-
+    a = db.query(Alert).filter(Alert.id == alert_id).first()
+    if not a:
+        raise HTTPException(404, "Alert not found")
+    if a.is_resolved:
+        raise HTTPException(409, "Alert already resolved")
+    a.is_resolved = True
+    a.resolved_at = datetime.now(timezone.utc)
+    a.resolved_by = current.email
+    if body.note:
+        meta = dict(a.alert_metadata or {})
+        meta["resolution_note"] = body.note
+        a.alert_metadata = meta
     db.commit()
-
-    return {
-        "message": "Alert resolved successfully",
-        "alert_id": alert_id,
-        "resolved_by": resolved_by,
-        "resolved_at": alert.resolved_at.isoformat()
-    }
+    return {"id": a.id, "resolved_by": a.resolved_by, "resolved_at": a.resolved_at.isoformat()}
 
 
 @router.get("/statistics/summary")
-async def get_alert_statistics(
-    hours: int = Query(24, description="Hours for statistics"),
-    db: Session = Depends(get_db)
+def stats(
+    hours: int = Query(24, ge=1, le=24 * 30),
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
 ):
-    """Get alert statistics"""
-    time_threshold = datetime.utcnow() - timedelta(hours=hours)
-
-    alerts = db.query(Alert).filter(Alert.created_at >= time_threshold).all()
-
-    stats = {
-        "total": len(alerts),
-        "by_level": {
-            "info": 0,
-            "warning": 0,
-            "critical": 0,
-            "emergency": 0
-        },
-        "by_type": {},
-        "resolved": 0,
-        "unresolved": 0
-    }
-
-    for alert in alerts:
-        # Count by level
-        stats["by_level"][alert.level.value] += 1
-
-        # Count by type
-        alert_type = alert.alert_type
-        if alert_type not in stats["by_type"]:
-            stats["by_type"][alert_type] = 0
-        stats["by_type"][alert_type] += 1
-
-        # Count resolved/unresolved
-        if alert.is_resolved:
-            stats["resolved"] += 1
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+    rows = db.query(Alert).filter(Alert.created_at >= cutoff).all()
+    by_level = {lvl.value: 0 for lvl in AlertLevel}
+    by_type: dict[str, int] = {}
+    resolved = unresolved = 0
+    for r in rows:
+        by_level[r.level.value] += 1
+        by_type[r.alert_type] = by_type.get(r.alert_type, 0) + 1
+        if r.is_resolved:
+            resolved += 1
         else:
-            stats["unresolved"] += 1
-
+            unresolved += 1
     return {
         "timespan_hours": hours,
-        "statistics": stats
+        "total": len(rows),
+        "by_level": by_level,
+        "by_type": by_type,
+        "resolved": resolved,
+        "unresolved": unresolved,
     }

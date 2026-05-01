@@ -1,71 +1,107 @@
 """
-Application Configuration
-Loads settings from environment variables
+Application configuration. Fail-closed: required secrets must be supplied.
 """
 
-from pydantic_settings import BaseSettings
 from typing import List
-import os
+from pydantic import Field, SecretStr, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """Application settings"""
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        case_sensitive=True,
+        extra="ignore",
+    )
 
     # Application
     APP_NAME: str = "Ulwandle Tech - RAC"
-    APP_VERSION: str = "1.0.0"
-    APP_ENV: str = "development"
-    DEBUG: bool = True
-    SECRET_KEY: str = "change-this-in-production"
+    APP_VERSION: str = "1.1.0"
+    APP_ENV: str = Field(default="development", pattern="^(development|staging|production)$")
+    DEBUG: bool = False
 
-    # API Configuration
+    # Required secrets — no defaults
+    SECRET_KEY: SecretStr
+    DATABASE_URL: SecretStr
+    ANTHROPIC_API_KEY: SecretStr
+
+    # JWT
+    JWT_ALGORITHM: str = "HS256"
+    JWT_ACCESS_TTL_SECONDS: int = 900               # 15 min
+    JWT_REFRESH_TTL_SECONDS: int = 60 * 60 * 24 * 7 # 7 days
+
+    # API / network
     API_HOST: str = "0.0.0.0"
     API_PORT: int = 8000
-    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000"]
-
-    # Database
-    DATABASE_URL: str = "postgresql://ulwandle:ulwandle_password@localhost:5432/ulwandle_db"
-
-    # Claude AI
-    ANTHROPIC_API_KEY: str = ""
+    CORS_ORIGINS: List[str] = []
+    TRUSTED_HOSTS: List[str] = []
+    MAX_REQUEST_BYTES: int = 1_000_000  # 1 MB
+    BEHIND_PROXY: bool = True
 
     # Redis
-    REDIS_URL: str = "redis://localhost:6379/0"
+    REDIS_URL: str = "redis://redis:6379/0"
 
-    # Water Quality Thresholds (SANS 241)
+    # Claude
+    CLAUDE_MODEL: str = "claude-sonnet-4-6"
+    CLAUDE_DECISION_MODEL: str = "claude-opus-4-7"
+    CLAUDE_TIMEOUT_SECONDS: float = 30.0
+
+    # SANS 241 thresholds
     PH_MIN: float = 6.0
     PH_MAX: float = 9.5
-    TDS_MAX: float = 1200.0  # mg/L
-    TURBIDITY_MAX: float = 5.0  # NTU
+    TDS_MAX: float = 1200.0
+    TURBIDITY_MAX: float = 5.0
 
-    # Leak Detection
+    # Anomaly / leak detection
     LEAK_THRESHOLD_PERCENT: float = 15.0
     ANOMALY_DETECTION_SENSITIVITY: float = 0.85
 
-    # Kill Switch
-    VALVE_CONTROL_ENABLED: bool = True
-    VALVE_TIMEOUT_SECONDS: int = 30
-    REQUIRE_MANUAL_CONFIRMATION: bool = True
+    # Kill switch — disabled by default; require explicit enablement per env
+    VALVE_CONTROL_ENABLED: bool = False
+    DUAL_CONTROL_REQUIRED: bool = True
+    PROPOSAL_TTL_SECONDS: int = 600       # 10 min window to approve+execute
+    NONCE_REPLAY_WINDOW_SECONDS: int = 900
+
+    # Sensor ingestion machine auth
+    SENSOR_INGEST_HMAC_REQUIRED: bool = True
+    SENSOR_HMAC_TIMESTAMP_SKEW_SECONDS: int = 120
+
+    # Rate limiting
+    RATE_LIMIT_DEFAULT: str = "60/minute"
+    RATE_LIMIT_AUTH: str = "10/minute"
+    RATE_LIMIT_VALVE: str = "20/hour"
+    RATE_LIMIT_INGEST: str = "600/minute"
 
     # Notifications
     ALERT_EMAIL: str = "alerts@ulwandle.tech"
-    SMS_API_KEY: str = ""
-    SMS_API_URL: str = "https://api.sms-provider.co.za/send"
     NOTIFICATION_WEBHOOK_URL: str = ""
     EMPLOYEE_NOTIFICATION_ENABLED: bool = True
 
-    # Monitoring
+    # Observability
     ENABLE_METRICS: bool = True
-    METRICS_PORT: int = 9090
-
-    # Logging
     LOG_LEVEL: str = "INFO"
-    LOG_FILE: str = "/var/log/ulwandle/app.log"
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    @field_validator("CORS_ORIGINS", "TRUSTED_HOSTS", mode="before")
+    @classmethod
+    def _split_csv(cls, v):
+        if isinstance(v, str):
+            return [x.strip() for x in v.split(",") if x.strip()]
+        return v or []
+
+    def assert_strong_secrets(self) -> None:
+        """Refuse to boot with weak secrets in non-dev environments."""
+        sk = self.SECRET_KEY.get_secret_value()
+        if len(sk) < 32:
+            raise ValueError("SECRET_KEY must be >= 32 characters")
+        if self.APP_ENV != "development":
+            if self.DEBUG:
+                raise ValueError("DEBUG must be False outside development")
+            if not self.CORS_ORIGINS:
+                raise ValueError("CORS_ORIGINS must be set in non-dev environments")
+            forbidden = {"change-this-in-production", "your-secret-key-change-in-production"}
+            if sk in forbidden:
+                raise ValueError("SECRET_KEY is using a known placeholder value")
 
 
-# Initialize settings
 settings = Settings()
+settings.assert_strong_secrets()

@@ -1,55 +1,47 @@
 # Python
 __pycache__/
 *.py[cod]
-*$py.class
-*.so
-.Python
-env/
-venv/
-ENV/
 *.egg-info/
 dist/
 build/
+.venv/
+venv/
+env/
 
 # Node
 node_modules/
 npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 
-# Environment
+# Secrets / env
 .env
 .env.local
 .env.production
-
-# IDEs
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-Thumbs.db
+.env.*.local
+*.pem
+*.key
 
 # Logs
 *.log
 logs/
-/var/log/
 
-# Database
+# DB
 *.db
 *.sqlite3
-postgres_data/
 
-# Docker
-docker-compose.override.yml
-
-# React build
-/frontend/build/
+# IDE / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
 
 # Testing
 .coverage
-htmlcov/
 .pytest_cache/
+htmlcov/
+
+# React
+/frontend/build/
+
+# Docker
+docker-compose.override.yml

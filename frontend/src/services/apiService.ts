@@ -1,147 +1,73 @@
-import axios from 'axios';
+import axios, { AxiosInstance } from "axios";
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.REACT_APP_API_URL || "";
 
-const api = axios.create({
+export const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  headers: { "Content-Type": "application/json" },
+  withCredentials: false,
+  timeout: 30_000,
 });
 
+let _accessToken: string | null = null;
+
+export function setAccessToken(token: string | null): void {
+  _accessToken = token;
+  if (token) {
+    apiClient.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+  } else {
+    delete apiClient.defaults.headers.common["Authorization"];
+  }
+}
+
+export function getAccessToken(): string | null {
+  return _accessToken;
+}
+
+export function clearTokens(): void {
+  setAccessToken(null);
+}
+
+// ---------- Domain ----------
+
 export const apiService = {
-  // System Status
-  getSystemStatus: async () => {
-    const response = await api.get('/api/v1/dashboard/overview');
-    return response.data;
-  },
+  getDashboardOverview: async () => (await apiClient.get("/api/v1/dashboard/overview")).data,
+  getRealtimeMetrics:   async () => (await apiClient.get("/api/v1/dashboard/realtime-metrics")).data,
+  getCriticalIssues:    async () => (await apiClient.get("/api/v1/dashboard/critical-issues")).data,
 
-  // Dashboard
-  getDashboardOverview: async () => {
-    const response = await api.get('/api/v1/dashboard/overview');
-    return response.data;
-  },
+  getDistricts:         async () => (await apiClient.get("/api/v1/districts/")).data,
+  getDistrict:          async (id: number) => (await apiClient.get(`/api/v1/districts/${id}`)).data,
+  getRedFlagged:        async () => (await apiClient.get("/api/v1/districts/red-flagged/list")).data,
 
-  getRealtimeMetrics: async () => {
-    const response = await api.get('/api/v1/dashboard/realtime-metrics');
-    return response.data;
-  },
+  getWaterQuality:      async (districtId?: number, hours = 24) =>
+    (await apiClient.get("/api/v1/water-quality/readings", { params: { district_id: districtId, hours } })).data,
+  analyzeQuality:       async (districtId: number, hours = 24) =>
+    (await apiClient.post(`/api/v1/water-quality/analyze/${districtId}`, null, { params: { hours } })).data,
 
-  getCriticalIssues: async () => {
-    const response = await api.get('/api/v1/dashboard/critical-issues');
-    return response.data;
-  },
+  getValves:            async (districtId?: number) =>
+    (await apiClient.get("/api/v1/kill-switch/valves", { params: { district_id: districtId } })).data,
+  proposeValveOp:       async (body: object) =>
+    (await apiClient.post("/api/v1/kill-switch/proposals", body)).data,
+  approveProposal:      async (id: number, signature: string) =>
+    (await apiClient.post(`/api/v1/kill-switch/proposals/${id}/approve`, { signature })).data,
+  listProposals:        async (status?: string) =>
+    (await apiClient.get("/api/v1/kill-switch/proposals", { params: { status_filter: status } })).data,
 
-  // Districts
-  getDistricts: async (filters?: any) => {
-    const response = await api.get('/api/v1/districts/', { params: filters });
-    return response.data;
-  },
+  getAlerts:            async (filters?: object) =>
+    (await apiClient.get("/api/v1/alerts/", { params: filters })).data,
+  resolveAlert:         async (id: number, note?: string) =>
+    (await apiClient.put(`/api/v1/alerts/${id}/resolve`, { note })).data,
 
-  getDistrictDetails: async (districtId: number) => {
-    const response = await api.get(`/api/v1/districts/${districtId}`);
-    return response.data;
-  },
+  registerSigningKey:   async (publicKey: string) =>
+    (await apiClient.put("/api/v1/auth/me/signing-key",
+      { ed25519_public_key: publicKey })).data,
 
-  getRedFlaggedDistricts: async () => {
-    const response = await api.get('/api/v1/districts/red-flagged/list');
-    return response.data;
-  },
+  getPredictions:       async (districtId?: number, hours = 24) =>
+    (await apiClient.get("/api/v1/predictions/predictions",
+      { params: { district_id: districtId, hours } })).data,
 
-  // Water Quality
-  getWaterQualityReadings: async (districtId?: number, hours: number = 24) => {
-    const response = await api.get('/api/v1/water-quality/readings', {
-      params: { district_id: districtId, hours }
-    });
-    return response.data;
-  },
-
-  analyzeWaterQuality: async (districtId: number, hours: number = 24) => {
-    const response = await api.post(`/api/v1/water-quality/analyze/${districtId}`, null, {
-      params: { hours }
-    });
-    return response.data;
-  },
-
-  getComplianceSummary: async () => {
-    const response = await api.get('/api/v1/water-quality/compliance-summary');
-    return response.data;
-  },
-
-  // Kill Switch (Valves)
-  getValves: async (districtId?: number) => {
-    const response = await api.get('/api/v1/kill-switch/valves', {
-      params: { district_id: districtId }
-    });
-    return response.data;
-  },
-
-  operateValve: async (valveId: string, data: any) => {
-    const response = await api.post(`/api/v1/kill-switch/valves/${valveId}/operate`, data);
-    return response.data;
-  },
-
-  emergencyShutdown: async (districtId: number, operatorName: string, reason: string) => {
-    const response = await api.post(`/api/v1/kill-switch/emergency-shutdown/${districtId}`, null, {
-      params: { operator_name: operatorName, reason }
-    });
-    return response.data;
-  },
-
-  // Predictions
-  analyzePredictions: async (data: any) => {
-    const response = await api.post('/api/v1/predictions/analyze', data);
-    return response.data;
-  },
-
-  getPredictions: async (districtId?: number, hours: number = 24) => {
-    const response = await api.get('/api/v1/predictions/predictions', {
-      params: { district_id: districtId, hours }
-    });
-    return response.data;
-  },
-
-  forecastConsumption: async (districtId: number, horizon: string = '24h') => {
-    const response = await api.post(`/api/v1/predictions/forecast/${districtId}`, null, {
-      params: { horizon }
-    });
-    return response.data;
-  },
-
-  // Alerts
-  getAlerts: async (filters?: any) => {
-    const response = await api.get('/api/v1/alerts/', { params: filters });
-    return response.data;
-  },
-
-  resolveAlert: async (alertId: number, resolvedBy: string) => {
-    const response = await api.put(`/api/v1/alerts/${alertId}/resolve`, null, {
-      params: { resolved_by: resolvedBy }
-    });
-    return response.data;
-  },
-
-  // Monitoring
-  getSensors: async (districtId?: number) => {
-    const response = await api.get('/api/v1/monitoring/sensors', {
-      params: { district_id: districtId }
-    });
-    return response.data;
-  },
-
-  getFlowReadings: async (districtId?: number, hours: number = 24) => {
-    const response = await api.get('/api/v1/monitoring/flow-readings', {
-      params: { district_id: districtId, hours }
-    });
-    return response.data;
-  },
-
-  getLeakDetections: async (districtId?: number) => {
-    const response = await api.get('/api/v1/monitoring/leaks', {
-      params: { district_id: districtId }
-    });
-    return response.data;
-  },
+  getComplianceSummary: async () =>
+    (await apiClient.get("/api/v1/water-quality/standards")).data,
 };
 
 export default apiService;

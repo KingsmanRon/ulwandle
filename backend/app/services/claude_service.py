@@ -1,415 +1,265 @@
 """
-Claude AI Service for Predictive Analytics
-Uses Anthropic's Claude API for water consumption predictions and anomaly detection
+Claude AI service. Used strictly as an advisory layer — never an authorization gate.
+
+Hardening:
+- AsyncAnthropic to avoid blocking the event loop.
+- Prompt caching on the static system text.
+- Inputs are bounded enums / numeric primitives — no free-text user content.
+- All outputs are validated before use; on any failure we return a typed fallback.
 """
 
-import anthropic
-from typing import List, Dict, Any, Optional
 import json
 import logging
-from datetime import datetime, timedelta
+from typing import Any
+
+from anthropic import AsyncAnthropic, APIError
 
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
 
-class ClaudeService:
-    """Service for interacting with Claude AI"""
+_client: AsyncAnthropic | None = None
 
-    def __init__(self):
-        """Initialize Claude client"""
-        self.client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
-        self.model = "claude-3-5-sonnet-20241022"
+
+def _client_singleton() -> AsyncAnthropic:
+    global _client
+    if _client is None:
+        _client = AsyncAnthropic(
+            api_key=settings.ANTHROPIC_API_KEY.get_secret_value(),
+            timeout=settings.CLAUDE_TIMEOUT_SECONDS,
+            max_retries=2,
+        )
+    return _client
+
+
+# Reason codes mirror the ReasonCode enum in models.
+_ALLOWED_REASON_CODES = {
+    "leak_detected", "quality_breach", "contamination",
+    "infrastructure_fault", "scheduled_maintenance", "emergency_other",
+}
+
+
+def _safe_str(value: Any, max_len: int = 60) -> str:
+    """Reduce arbitrary input to a short, alphanumeric-ish slug for prompt safety."""
+    s = "" if value is None else str(value)
+    s = "".join(c for c in s if c.isalnum() or c in "-_ .")
+    return s[:max_len]
+
+
+def _parse_json(text: str) -> dict | None:
+    """Strict JSON extraction; return None on any malformed output."""
+    text = text.strip()
+    if text.startswith("```"):
+        # Strip a possible code fence.
+        first_nl = text.find("\n")
+        if first_nl != -1:
+            text = text[first_nl + 1 :]
+        if text.endswith("```"):
+            text = text[: -3]
+    try:
+        obj = json.loads(text)
+        return obj if isinstance(obj, dict) else None
+    except json.JSONDecodeError:
+        return None
+
+
+# ---------- Public service surface ----------
+
+class ClaudeService:
 
     async def analyze_consumption_patterns(
         self,
         district_name: str,
-        flow_data: List[Dict[str, Any]],
-        historical_data: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
-        """
-        Analyze water consumption patterns using Claude AI
+        flow_data: list[dict[str, Any]],
+        historical_data: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Advisory analysis — never authorizes anything."""
+        district = _safe_str(district_name)
+        flow_summary = self._summarise_flow(flow_data, historical_data)
 
-        Args:
-            district_name: Name of the district
-            flow_data: Recent flow readings
-            historical_data: Historical consumption data
+        system = [{
+            "type": "text",
+            "text": (
+                "You are a water-systems analyst for South African municipal supply. "
+                "Respond only with a single JSON object matching the requested schema. "
+                "Do not include prose, markdown fences, or commentary."
+            ),
+            "cache_control": {"type": "ephemeral"},
+        }]
+        user_text = (
+            f"District: {district}\n"
+            f"Summary: {json.dumps(flow_summary)}\n\n"
+            "Schema:\n"
+            "{\n"
+            '  "patterns": {"daily_trend": "string", "weekly_trend": "string", '
+            '"anomalies_detected": false, "anomaly_details": []},\n'
+            '  "leak_detection": {"potential_leaks": false, "confidence_score": 0.0, '
+            '"estimated_loss_lpm": 0.0, "locations": []},\n'
+            '  "predictions": {"next_24h": 0.0, "next_7d": 0.0, "next_30d": 0.0, "peak_periods": []},\n'
+            '  "recommendations": {"immediate": [], "preventive": [], "infrastructure": []},\n'
+            '  "risk_assessment": {"level": "low|medium|high|critical", "risks": [], "mitigation": []},\n'
+            '  "summary": "string"\n'
+            "}"
+        )
 
-        Returns:
-            Analysis results with predictions
-        """
-        try:
-            # Prepare data summary for Claude
-            data_summary = self._prepare_data_summary(flow_data, historical_data)
-
-            prompt = f"""You are an expert water infrastructure analyst for South Africa's municipal water systems. Analyze the following water consumption data for {district_name} district.
-
-Data Summary:
-{json.dumps(data_summary, indent=2)}
-
-Please provide a comprehensive analysis including:
-
-1. **Pattern Analysis:**
-   - Identify consumption patterns (daily, weekly, seasonal)
-   - Detect any unusual patterns or trends
-   - Compare with typical consumption profiles
-
-2. **Leak Detection:**
-   - Identify potential leaks based on flow anomalies
-   - Calculate estimated water loss if leaks detected
-   - Provide confidence score for leak detection
-
-3. **Predictions:**
-   - Predict consumption for next 24 hours, 7 days, and 30 days
-   - Identify peak demand periods
-   - Forecast potential supply issues
-
-4. **Recommendations:**
-   - Immediate actions needed (if any)
-   - Preventive measures
-   - Infrastructure improvements
-
-5. **Risk Assessment:**
-   - Risk level (low, medium, high, critical)
-   - Specific risks identified
-   - Mitigation strategies
-
-Please format your response as structured JSON with the following schema:
-{{
-    "patterns": {{
-        "daily_trend": "string",
-        "weekly_trend": "string",
-        "anomalies_detected": boolean,
-        "anomaly_details": ["string"]
-    }},
-    "leak_detection": {{
-        "potential_leaks": boolean,
-        "confidence_score": float,
-        "estimated_loss_lpm": float,
-        "locations": ["string"]
-    }},
-    "predictions": {{
-        "next_24h": float,
-        "next_7d": float,
-        "next_30d": float,
-        "peak_periods": ["string"]
-    }},
-    "recommendations": {{
-        "immediate": ["string"],
-        "preventive": ["string"],
-        "infrastructure": ["string"]
-    }},
-    "risk_assessment": {{
-        "level": "low|medium|high|critical",
-        "risks": ["string"],
-        "mitigation": ["string"]
-    }},
-    "summary": "string"
-}}
-"""
-
-            # Call Claude API
-            message = self.client.messages.create(
-                model=self.model,
-                max_tokens=4096,
-                temperature=0.2,
-                messages=[
-                    {"role": "user", "content": prompt}
-                ]
-            )
-
-            # Parse response
-            response_text = message.content[0].text
-            analysis_result = self._parse_claude_response(response_text)
-
-            logger.info(f"Claude analysis completed for {district_name}")
-            return analysis_result
-
-        except Exception as e:
-            logger.error(f"Error in Claude analysis: {str(e)}")
-            return self._get_fallback_analysis()
+        return await self._invoke(system, user_text, model=settings.CLAUDE_MODEL,
+                                  max_tokens=2048, fallback=self._fallback_consumption())
 
     async def detect_water_quality_issues(
         self,
         district_name: str,
-        quality_readings: List[Dict[str, Any]],
-        compliance_standards: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        """
-        Analyze water quality data and detect compliance issues
+        quality_readings: list[dict[str, Any]],
+        compliance_standards: dict[str, Any],
+    ) -> dict[str, Any]:
+        district = _safe_str(district_name)
+        # Trim and round numeric inputs only.
+        sanitised = []
+        for r in quality_readings[:50]:
+            sanitised.append({
+                "ph": _num(r.get("ph")), "tds": _num(r.get("tds")),
+                "turbidity": _num(r.get("turbidity")), "chlorine": _num(r.get("chlorine")),
+                "temperature": _num(r.get("temperature")),
+                "meets_standards": bool(r.get("meets_standards", True)),
+            })
 
-        Args:
-            district_name: Name of the district
-            quality_readings: Recent water quality readings
-            compliance_standards: SANS 241 standards
+        system = [{
+            "type": "text",
+            "text": (
+                "You assess SANS 241 drinking-water compliance from numeric readings. "
+                "Reply with a single JSON object only."
+            ),
+            "cache_control": {"type": "ephemeral"},
+        }]
+        user_text = (
+            f"District: {district}\n"
+            f"Standards: {json.dumps(compliance_standards)}\n"
+            f"Readings: {json.dumps(sanitised)}\n\n"
+            "Schema:\n"
+            "{\n"
+            '  "compliance_status": {"meets_standards": true, "violations": []},\n'
+            '  "drinkability": "safe|monitoring|unsafe",\n'
+            '  "health_risks": [],\n'
+            '  "recommendations": {"immediate": [], "treatment": [], "longterm": []},\n'
+            '  "district_status": "green|yellow|red",\n'
+            '  "summary": "string"\n'
+            "}"
+        )
+        return await self._invoke(system, user_text, model=settings.CLAUDE_MODEL,
+                                  max_tokens=1500, fallback=self._fallback_quality())
 
-        Returns:
-            Water quality analysis
-        """
-        try:
-            prompt = f"""You are a water quality expert analyzing data for {district_name} district in South Africa.
-
-Water Quality Readings:
-{json.dumps(quality_readings, indent=2)}
-
-Compliance Standards (SANS 241):
-{json.dumps(compliance_standards, indent=2)}
-
-Analyze the water quality data and provide:
-
-1. **Compliance Status:**
-   - Parameters within/outside acceptable ranges
-   - Severity of any violations
-   - Immediate health risks
-
-2. **Trend Analysis:**
-   - Quality trends over time
-   - Deteriorating or improving parameters
-   - Seasonal patterns
-
-3. **Health Impact:**
-   - Drinkability assessment (safe/monitoring/unsafe)
-   - Specific health concerns
-   - Affected population estimate
-
-4. **Recommendations:**
-   - Immediate actions (e.g., issue boil water advisory)
-   - Treatment adjustments needed
-   - Long-term improvements
-
-Format response as JSON:
-{{
-    "compliance_status": {{
-        "meets_standards": boolean,
-        "violations": [{{
-            "parameter": "string",
-            "value": float,
-            "standard": float,
-            "severity": "low|medium|high"
-        }}]
-    }},
-    "drinkability": "safe|monitoring|unsafe",
-    "health_risks": ["string"],
-    "recommendations": {{
-        "immediate": ["string"],
-        "treatment": ["string"],
-        "longterm": ["string"]
-    }},
-    "district_status": "green|yellow|red",
-    "summary": "string"
-}}
-"""
-
-            message = self.client.messages.create(
-                model=self.model,
-                max_tokens=2048,
-                temperature=0.1,
-                messages=[
-                    {"role": "user", "content": prompt}
-                ]
-            )
-
-            response_text = message.content[0].text
-            analysis_result = self._parse_claude_response(response_text)
-
-            logger.info(f"Water quality analysis completed for {district_name}")
-            return analysis_result
-
-        except Exception as e:
-            logger.error(f"Error in water quality analysis: {str(e)}")
-            return self._get_fallback_quality_analysis()
-
-    async def analyze_valve_operation_decision(
+    async def advise_valve_operation(
         self,
-        valve_name: str,
-        district_name: str,
-        current_conditions: Dict[str, Any],
-        reason: str
-    ) -> Dict[str, Any]:
+        valve_summary: dict[str, Any],
+        reason_code: str,
+    ) -> dict[str, Any]:
         """
-        Analyze whether valve operation (kill switch) should be executed
-
-        Args:
-            valve_name: Name of the valve
-            district_name: District name
-            current_conditions: Current water system conditions
-            reason: Reason for valve operation request
-
-        Returns:
-            Recommendation for valve operation
+        ADVISORY ONLY. Never used to authorize. Inputs are bounded:
+        valve_summary contains pre-computed numeric/enum fields; reason_code is a
+        short enum string. No free-text reason notes are forwarded.
         """
+        if reason_code not in _ALLOWED_REASON_CODES:
+            reason_code = "emergency_other"
+
+        # Sanitize the small set of fields we forward.
+        forwarded = {
+            "valve_name": _safe_str(valve_summary.get("valve_name"), 80),
+            "district_name": _safe_str(valve_summary.get("district_name"), 80),
+            "district_population": int(valve_summary.get("district_population") or 0),
+            "current_status": _safe_str(valve_summary.get("current_status"), 20),
+            "district_quality_status": _safe_str(valve_summary.get("district_quality_status"), 20),
+            "reason_code": reason_code,
+        }
+
+        system = [{
+            "type": "text",
+            "text": (
+                "You are an advisor for valve operations on South African water infrastructure. "
+                "You do NOT authorize operations. You produce a structured JSON impact analysis. "
+                "Reply with one JSON object only."
+            ),
+            "cache_control": {"type": "ephemeral"},
+        }]
+        user_text = (
+            f"Operation context: {json.dumps(forwarded)}\n\n"
+            "Schema:\n"
+            "{\n"
+            '  "impact": {"affected_population": 0, "estimated_duration_hours": 0.0, '
+            '"severity": "low|medium|high|critical"},\n'
+            '  "considerations": [],\n'
+            '  "checklist": {"notifications": [], "employee_dispatch": [], "post_monitoring": []},\n'
+            '  "summary": "string"\n'
+            "}"
+        )
+        return await self._invoke(
+            system, user_text, model=settings.CLAUDE_DECISION_MODEL,
+            max_tokens=1024, fallback={"summary": "Advisory unavailable; proceed with manual judgement."}
+        )
+
+    # ---------- Internals ----------
+
+    async def _invoke(self, system, user_text: str, *, model: str,
+                      max_tokens: int, fallback: dict[str, Any]) -> dict[str, Any]:
         try:
-            prompt = f"""You are a critical infrastructure analyst for South African water systems.
-A Kill Switch (valve closure) has been requested for {valve_name} in {district_name}.
-
-Reason: {reason}
-
-Current Conditions:
-{json.dumps(current_conditions, indent=2)}
-
-Analyze and provide:
-
-1. **Risk Assessment:**
-   - Risks of closing valve (supply disruption)
-   - Risks of keeping valve open
-   - Population affected
-
-2. **Recommendation:**
-   - Should valve be closed? (yes/no/conditional)
-   - Confidence level (0-100)
-   - Conditions if conditional
-
-3. **Impact Analysis:**
-   - Estimated duration of closure
-   - Affected population
-   - Alternative supply options
-
-4. **Action Plan:**
-   - Pre-closure notifications
-   - Employee dispatch requirements
-   - Post-closure monitoring
-
-Format as JSON:
-{{
-    "recommendation": "approve|deny|conditional",
-    "confidence": float,
-    "conditions": ["string"],
-    "impact": {{
-        "affected_population": int,
-        "estimated_duration_hours": float,
-        "severity": "low|medium|high|critical"
-    }},
-    "action_plan": {{
-        "notifications": ["string"],
-        "employee_dispatch": ["string"],
-        "monitoring": ["string"]
-    }},
-    "summary": "string"
-}}
-"""
-
-            message = self.client.messages.create(
-                model=self.model,
-                max_tokens=2048,
+            client = _client_singleton()
+            msg = await client.messages.create(
+                model=model,
+                max_tokens=max_tokens,
                 temperature=0.1,
-                messages=[
-                    {"role": "user", "content": prompt}
-                ]
+                system=system,
+                messages=[{"role": "user", "content": user_text}],
             )
+            text = "".join(b.text for b in msg.content if getattr(b, "type", None) == "text")
+            parsed = _parse_json(text)
+            return parsed if parsed is not None else fallback
+        except APIError as e:
+            logger.warning("Claude API error: %s", e)
+            return fallback
+        except Exception:
+            logger.exception("Claude invocation failed")
+            return fallback
 
-            response_text = message.content[0].text
-            analysis_result = self._parse_claude_response(response_text)
-
-            logger.info(f"Valve operation analysis completed for {valve_name}")
-            return analysis_result
-
-        except Exception as e:
-            logger.error(f"Error in valve operation analysis: {str(e)}")
-            return {
-                "recommendation": "deny",
-                "confidence": 0.0,
-                "summary": "Error occurred during analysis. Manual review required."
-            }
-
-    def _prepare_data_summary(
-        self,
-        flow_data: List[Dict[str, Any]],
-        historical_data: Optional[Dict[str, Any]]
-    ) -> Dict[str, Any]:
-        """Prepare data summary for Claude"""
+    def _summarise_flow(self, flow_data, historical_data):
         if not flow_data:
             return {}
-
-        # Calculate basic statistics
-        flow_rates = [d.get("flow_rate", 0) for d in flow_data]
-        avg_flow = sum(flow_rates) / len(flow_rates) if flow_rates else 0
-        max_flow = max(flow_rates) if flow_rates else 0
-        min_flow = min(flow_rates) if flow_rates else 0
-
-        summary = {
-            "recent_readings": {
-                "count": len(flow_data),
-                "average_flow_lpm": round(avg_flow, 2),
-                "max_flow_lpm": round(max_flow, 2),
-                "min_flow_lpm": round(min_flow, 2),
-                "timespan": "last 24 hours"
-            },
-            "sample_readings": flow_data[:10]  # First 10 readings
+        rates = [d.get("flow_rate", 0) for d in flow_data if isinstance(d.get("flow_rate"), (int, float))]
+        if not rates:
+            return {"count": len(flow_data)}
+        return {
+            "count": len(flow_data),
+            "avg": round(sum(rates) / len(rates), 2),
+            "min": round(min(rates), 2),
+            "max": round(max(rates), 2),
+            "historical": historical_data or {},
         }
 
-        if historical_data:
-            summary["historical"] = historical_data
-
-        return summary
-
-    def _parse_claude_response(self, response_text: str) -> Dict[str, Any]:
-        """Parse Claude's JSON response"""
-        try:
-            # Try to extract JSON from response
-            # Claude might wrap JSON in markdown code blocks
-            if "```json" in response_text:
-                json_start = response_text.find("```json") + 7
-                json_end = response_text.find("```", json_start)
-                response_text = response_text[json_start:json_end].strip()
-            elif "```" in response_text:
-                json_start = response_text.find("```") + 3
-                json_end = response_text.find("```", json_start)
-                response_text = response_text[json_start:json_end].strip()
-
-            return json.loads(response_text)
-
-        except json.JSONDecodeError:
-            logger.error("Failed to parse Claude response as JSON")
-            return {
-                "error": "Failed to parse response",
-                "raw_response": response_text
-            }
-
-    def _get_fallback_analysis(self) -> Dict[str, Any]:
-        """Fallback analysis when Claude API fails"""
+    @staticmethod
+    def _fallback_consumption() -> dict[str, Any]:
         return {
-            "patterns": {
-                "daily_trend": "Unable to analyze",
-                "anomalies_detected": False,
-                "anomaly_details": []
-            },
-            "leak_detection": {
-                "potential_leaks": False,
-                "confidence_score": 0.0,
-                "estimated_loss_lpm": 0.0
-            },
-            "predictions": {
-                "next_24h": 0.0,
-                "next_7d": 0.0,
-                "next_30d": 0.0
-            },
-            "recommendations": {
-                "immediate": ["Claude AI service unavailable - manual review recommended"]
-            },
-            "risk_assessment": {
-                "level": "medium",
-                "risks": ["AI analysis unavailable"]
-            },
-            "summary": "AI analysis service is currently unavailable. Please use manual analysis."
+            "patterns": {"daily_trend": "unknown", "weekly_trend": "unknown",
+                         "anomalies_detected": False, "anomaly_details": []},
+            "leak_detection": {"potential_leaks": False, "confidence_score": 0.0,
+                               "estimated_loss_lpm": 0.0, "locations": []},
+            "predictions": {"next_24h": 0.0, "next_7d": 0.0, "next_30d": 0.0, "peak_periods": []},
+            "recommendations": {"immediate": ["AI advisory unavailable"], "preventive": [], "infrastructure": []},
+            "risk_assessment": {"level": "medium", "risks": ["AI unavailable"], "mitigation": []},
+            "summary": "AI advisory unavailable.",
         }
 
-    def _get_fallback_quality_analysis(self) -> Dict[str, Any]:
-        """Fallback water quality analysis"""
+    @staticmethod
+    def _fallback_quality() -> dict[str, Any]:
         return {
-            "compliance_status": {
-                "meets_standards": True,
-                "violations": []
-            },
+            "compliance_status": {"meets_standards": True, "violations": []},
             "drinkability": "monitoring",
             "health_risks": [],
-            "recommendations": {
-                "immediate": ["AI analysis unavailable - manual review recommended"]
-            },
+            "recommendations": {"immediate": ["AI advisory unavailable"], "treatment": [], "longterm": []},
             "district_status": "yellow",
-            "summary": "AI analysis service is currently unavailable. Please use manual water quality assessment."
+            "summary": "AI advisory unavailable.",
         }
 
 
-# Singleton instance
+def _num(v):
+    return float(v) if isinstance(v, (int, float)) else None
+
+
 claude_service = ClaudeService()

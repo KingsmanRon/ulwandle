@@ -79,7 +79,8 @@ Save the output — you'll paste it into Render in a minute.
 
 6. Click **Apply**
 7. Watch the build log — first build takes ~5 min (Docker image)
-8. Once green, verify:
+8. Database migrations (`alembic upgrade head`) run automatically on every container start, before gunicorn binds. If a migration fails the container exits — check the Render logs.
+9. Once green, verify:
    ```sh
    curl https://ulwandle-backend.onrender.com/health
    # expect: {"status":"ok","version":"1.1.0"}

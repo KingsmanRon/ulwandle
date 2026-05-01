@@ -19,7 +19,9 @@ services:
     dockerfilePath: ./Dockerfile
     healthCheckPath: /health
     autoDeploy: true
-    preDeployCommand: alembic upgrade head
+    # Migrations run on container start via backend/start.sh.
+    # Render free tier disallows preDeployCommand; switch to it on a paid plan
+    # if you scale to >1 instance to avoid replicas racing on schema upgrades.
     envVars:
       # Required secrets — fill in via the Render dashboard.
       - key: SECRET_KEY

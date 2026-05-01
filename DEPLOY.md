@@ -1,93 +1,178 @@
-# Deployment guide (free-tier first)
+# Deployment guide — Vercel (frontend) + Render (backend)
 
-The system is designed so that the first deployment can run entirely on
-free tiers, then migrate to paid plans without code changes.
+The system runs on free tiers for the pilot. Architecture:
 
-## Recommended free-tier stack
-| Component  | Service       | Free tier note                           |
-| ---------- | ------------- | ----------------------------------------- |
-| Backend    | Fly.io        | 3 shared-cpu-1x machines, 256 MB RAM      |
-| Postgres   | Neon          | 0.5 GB storage, branching, autosuspend    |
-| Redis      | Upstash       | 10 k commands/day                         |
-| Frontend   | Vercel        | 100 GB bandwidth/month                    |
-| CI         | GitHub Actions| 2,000 min/month                           |
+```
+  Vercel (frontend, static)  ───►  Render (FastAPI backend, Docker)
+                                       │
+                              ┌────────┼────────┐
+                              ▼        ▼        ▼
+                            Neon    Upstash   Anthropic
+                          (Postgres) (Redis)   (Claude)
+```
 
-> Neon does **not** ship TimescaleDB. The current schema runs fine on
-> stock Postgres with the indexes shipped in `0001_initial.py`. Move to
-> Timescale Cloud / managed Postgres + Timescale extension when you
-> outgrow it; convert `flow_readings`, `pressure_readings`, and
-> `water_quality_readings` to hypertables in a follow-up migration.
+## Accounts to create
 
-## One-time bootstrap
-1. **Generate secrets**
+| Service | Purpose | Free tier |
+|---|---|---|
+| GitHub | Source + CI | ✅ |
+| Vercel | Frontend hosting | ✅ Hobby |
+| Render | Backend hosting | ✅ (spins down after 15 min idle) |
+| Neon | Postgres | ✅ 0.5 GB |
+| Upstash | Redis | ✅ 10k cmd/day |
+| Anthropic Console | Claude API key | Pay-as-you-go (~$5 signup credit) |
 
+---
+
+## Step 1 — Provision the data layer (5 min)
+
+### 1a. Neon (Postgres)
+
+1. Sign up at [neon.tech](https://neon.tech)
+2. Create a new project (region: any EU region; Frankfurt matches Render)
+3. Copy the connection string — must look like:
+   ```
+   postgresql://USER:PASS@ep-xxx-pooler.eu-central-1.aws.neon.tech/DBNAME?sslmode=require
+   ```
+   The `?sslmode=require` suffix is critical.
+
+### 1b. Upstash (Redis)
+
+1. Sign up at [upstash.com](https://upstash.com)
+2. Create a Redis database (region: matching EU region)
+3. Copy the **TLS URL** — must start with `rediss://` (two s's), not `redis://`
+
+### 1c. Anthropic
+
+1. Sign up at [console.anthropic.com](https://console.anthropic.com)
+2. Add billing or claim signup credit
+3. Generate an API key — starts with `sk-ant-api03-`
+
+### 1d. Generate SECRET_KEY
+
+Run locally:
+```sh
+python3 -c "import secrets; print(secrets.token_urlsafe(48))"
+```
+Save the output — you'll paste it into Render in a minute.
+
+---
+
+## Step 2 — Deploy the backend on Render (10 min)
+
+### Via Blueprint (recommended)
+
+1. Render Dashboard → **New + → Blueprint**
+2. Connect GitHub → select repo `KingsmanRon/ulwandle`
+3. Branch: **`main`** (only after merging the security PR; otherwise use the security branch directly)
+4. Render auto-detects `render.yaml` at the repo root
+5. Render prompts for the six secrets — fill them in:
+
+| Secret | Value |
+|---|---|
+| `SECRET_KEY` | The random string from Step 1d |
+| `DATABASE_URL` | Neon connection string from Step 1a |
+| `ANTHROPIC_API_KEY` | From Step 1c |
+| `REDIS_URL` | Upstash `rediss://...` from Step 1b |
+| `CORS_ORIGINS` | `https://ulwandle.vercel.app` (predict your Vercel URL — see Step 3) |
+| `TRUSTED_HOSTS` | `ulwandle-backend.onrender.com` (predict your Render URL) |
+
+6. Click **Apply**
+7. Watch the build log — first build takes ~5 min (Docker image)
+8. Once green, verify:
    ```sh
-   python -c "import secrets; print(secrets.token_urlsafe(48))"
+   curl https://ulwandle-backend.onrender.com/health
+   # expect: {"status":"ok","version":"1.1.0"}
    ```
 
-2. **Provision Neon** and capture `DATABASE_URL`. Add `?sslmode=require`.
-3. **Provision Upstash Redis** and capture `REDIS_URL` (TLS).
-4. **Get an Anthropic API key**.
+### Bootstrap the first admin
 
-## Deploy backend (Fly.io)
+In Render Dashboard → your service → **Shell** tab:
 ```sh
-brew install flyctl                     # or curl -L https://fly.io/install.sh | sh
-flyctl auth login
-
-cd /path/to/repo
-flyctl launch --no-deploy --copy-config --config deploy/fly.toml --name ulwandle-rac
-flyctl secrets set \
-    SECRET_KEY="$(python -c 'import secrets; print(secrets.token_urlsafe(48))')" \
-    DATABASE_URL="postgres://...neon..." \
-    REDIS_URL="rediss://...upstash..." \
-    ANTHROPIC_API_KEY="sk-ant-..." \
-    CORS_ORIGINS="https://ulwandle-rac.vercel.app" \
-    TRUSTED_HOSTS="ulwandle-rac.fly.dev"
-flyctl deploy --config deploy/fly.toml
-```
-
-The release command `alembic upgrade head` runs migrations before the
-first instance starts.
-
-## Bootstrap the first admin
-```sh
-flyctl ssh console --config deploy/fly.toml
 python -m scripts.bootstrap_admin --email you@example.com --name "Admin"
-# enter password at prompt
 ```
+Enter a password (≥12 characters) twice.
 
-## Deploy frontend (Vercel)
-```sh
-cd frontend
-vercel --prod \
-    --build-env REACT_APP_API_URL=https://ulwandle-rac.fly.dev
-```
+---
 
-After the first deploy, set the Vercel project's `REACT_APP_API_URL`
-environment variable so subsequent builds pick it up automatically.
+## Step 3 — Deploy the frontend on Vercel (5 min)
 
-## Enable the kill switch
-Once you've smoke-tested everything end-to-end:
+1. Vercel Dashboard → **Add New → Project**
+2. Import `KingsmanRon/ulwandle` from GitHub
+3. **Branch:** `main`
+4. **Configure these settings explicitly** — do not accept "Services" auto-detection:
 
-```sh
-flyctl secrets set VALVE_CONTROL_ENABLED=true --config deploy/fly.toml
-```
+| Field | Value |
+|---|---|
+| Project Name | `ulwandle` |
+| Application Preset | **Create React App** |
+| Root Directory | **`frontend`** *(click Edit and pick the folder)* |
+| Build Command | `npm run build` *(default)* |
+| Output Directory | `build` *(default)* |
+| Install Command | `npm install` *(default)* |
+
+5. **Environment Variables** — add one:
+
+| Name | Value |
+|---|---|
+| `REACT_APP_API_URL` | `https://ulwandle-backend.onrender.com` *(your real Render URL)* |
+
+Apply to all three: Production, Preview, Development.
+
+6. Click **Deploy**
+7. Once green, note the URL (e.g. `https://ulwandle.vercel.app`)
+
+### Reconcile CORS
+
+If the Vercel URL doesn't exactly match what you put in `CORS_ORIGINS` on Render:
+1. Render Dashboard → your service → **Environment**
+2. Edit `CORS_ORIGINS` to the actual Vercel URL → Save (auto-redeploys)
+
+---
+
+## Step 4 — End-to-end smoke test
+
+Open `https://ulwandle.vercel.app`:
+
+- [ ] Login page loads, no console errors
+- [ ] Login as the bootstrapped admin works
+- [ ] DevTools → Network shows requests going to `*.onrender.com`
+- [ ] No CORS errors
+
+Set up the security flow:
+
+- [ ] **Settings → Signing Key** — generate (passphrase ≥ 12 chars)
+- [ ] As admin, `POST /api/v1/auth/users` with role `supervisor` to create a second user
+- [ ] Log in as the supervisor, register their signing key
+- [ ] As admin, create a District + Valve via the API
+- [ ] **As an operator**, propose a valve operation → succeeds, appears in pending list
+- [ ] **As the supervisor**, approve → valve state changes; audit record contains both signatures
+- [ ] Try approving with the same user that proposed → **must be rejected**
+- [ ] Only **after** all of the above passes:
+   ```
+   Render → Environment → VALVE_CONTROL_ENABLED = true
+   ```
+
+---
 
 ## Local development
+
 ```sh
-cp .env.example .env  # then edit
+cp .env.example .env  # fill in real values
 docker compose up --build
 docker compose exec backend alembic upgrade head
-docker compose exec backend python -m scripts.bootstrap_admin --email dev@local --name "Dev Admin"
+docker compose exec backend python -m scripts.bootstrap_admin \
+    --email dev@local --name "Dev Admin"
 ```
 
-The compose stack binds the API and frontend to `127.0.0.1` only — put
-them behind a reverse proxy (Caddy, Traefik, nginx) for any outside
-exposure.
+The compose stack binds API and frontend to `127.0.0.1` only. Put a reverse proxy in front of them for any external exposure.
 
-## Sensor onboarding
+---
+
+## Sensor onboarding (later)
+
 ```sh
-# As an admin, POST /api/v1/monitoring/sensors. The response includes
+# As admin, POST /api/v1/monitoring/sensors. The response includes
 # `ingest_secret` ONCE — store it on the gateway.
 # Each reading must send:
 #   X-Sensor-Secret: <plaintext secret>
@@ -95,7 +180,37 @@ exposure.
 #   X-Signature:     hex(HMAC-SHA256(secret, timestamp + "." + body))
 ```
 
+---
+
+## Free-tier gotchas
+
+| Issue | Why | Mitigation |
+|---|---|---|
+| **Render cold starts** (~30s) | Free plan suspends after 15 min idle | Cron-job.org ping `/health` every 10 min, or upgrade to Starter ($7/mo) |
+| **Neon autosuspend** (~5s wake) | Free plan suspends after 5 min idle | Same — pinging `/health` keeps the connection warm |
+| **Vercel build env vars** | Baked into bundle at build time | Always **redeploy** after changing `REACT_APP_API_URL` |
+| **Neon storage cap** (0.5 GB) | Time-series data adds up | Add periodic data archival once you cross ~80% |
+| **Upstash daily cap** (10k cmd) | Easy to exhaust with traffic | Monitor in Upstash dashboard; upgrade or self-host Redis |
+| **TimescaleDB not on Neon free** | Needed for hypertables | Schema works without it; convert hot tables to hypertables on a managed Postgres later |
+
+---
+
 ## Observability
-- `GET /health` for liveness checks.
-- Structured stdout logs; ship to Logtail / Better Stack / Grafana Loki.
-- Audit trail lives in the `audit_logs` table; export periodically.
+
+- `GET /health` for liveness checks
+- Stdout structured logs — ship to Logtail / Better Stack / Grafana Loki
+- Audit trail in `audit_logs` table — export periodically
+
+---
+
+## Production checklist
+
+Before promoting beyond pilot:
+
+- [ ] Upgrade Render Starter plan (no cold starts)
+- [ ] Upgrade Neon to a paid tier (2 GB+, no autosuspend)
+- [ ] Add a custom domain on both Vercel and Render
+- [ ] Configure Cloudflare or AWS WAF in front of the Render service
+- [ ] Replace browser-stored signing keys with WebAuthn / hardware tokens
+- [ ] Enable Render's persistent disk for log retention if you don't ship to an external sink
+- [ ] Add scheduled backups for the audit log table

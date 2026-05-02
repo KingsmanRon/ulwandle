@@ -3,8 +3,9 @@ Application configuration. Fail-closed: required secrets must be supplied.
 """
 
 from typing import List
+from typing_extensions import Annotated
 from pydantic import Field, SecretStr, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, SettingsConfigDict, NoDecode
 
 
 class Settings(BaseSettings):
@@ -33,8 +34,8 @@ class Settings(BaseSettings):
     # API / network
     API_HOST: str = "0.0.0.0"
     API_PORT: int = 8000
-    CORS_ORIGINS: List[str] = []
-    TRUSTED_HOSTS: List[str] = []
+    CORS_ORIGINS: Annotated[List[str], NoDecode] = []
+    TRUSTED_HOSTS: Annotated[List[str], NoDecode] = []
     MAX_REQUEST_BYTES: int = 1_000_000  # 1 MB
     BEHIND_PROXY: bool = True
 
@@ -73,7 +74,7 @@ class Settings(BaseSettings):
     RATE_LIMIT_INGEST: str = "600/minute"
 
     # Notifications
-    ALERT_EMAIL: str = "alerts@ulwandle.tech"
+    ALERT_EMAIL: str = "ronaldtrqobolo@outlook.com"
     NOTIFICATION_WEBHOOK_URL: str = ""
     EMPLOYEE_NOTIFICATION_ENABLED: bool = True
 

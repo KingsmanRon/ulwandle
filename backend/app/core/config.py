@@ -2,9 +2,9 @@
 Application configuration. Fail-closed: required secrets must be supplied.
 """
 
-from typing import List
+from typing import Annotated, List
 from pydantic import Field, SecretStr, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -33,8 +33,8 @@ class Settings(BaseSettings):
     # API / network
     API_HOST: str = "0.0.0.0"
     API_PORT: int = 8000
-    CORS_ORIGINS: List[str] = []
-    TRUSTED_HOSTS: List[str] = []
+    CORS_ORIGINS: Annotated[List[str], NoDecode] = []
+    TRUSTED_HOSTS: Annotated[List[str], NoDecode] = []
     MAX_REQUEST_BYTES: int = 1_000_000  # 1 MB
     BEHIND_PROXY: bool = True
 
@@ -85,7 +85,11 @@ class Settings(BaseSettings):
     @classmethod
     def _split_csv(cls, v):
         if isinstance(v, str):
-            return [x.strip() for x in v.split(",") if x.strip()]
+            s = v.strip()
+            if s.startswith("["):
+                import json
+                return [str(x).strip() for x in json.loads(s) if str(x).strip()]
+            return [x.strip() for x in s.split(",") if x.strip()]
         return v or []
 
     def assert_strong_secrets(self) -> None:

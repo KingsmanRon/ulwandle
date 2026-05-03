@@ -21,8 +21,14 @@ const LoginPage: React.FC = () => {
     }
   };
 
+  const bgStyle: React.CSSProperties = {
+    backgroundImage:
+      `linear-gradient(135deg, rgba(2, 132, 199, 0.55) 0%, rgba(12, 74, 110, 0.7) 100%), ` +
+      `url(${process.env.PUBLIC_URL}/bg.jpg)`,
+  };
+
   return (
-    <div className="auth-page">
+    <div className="auth-page" style={bgStyle}>
       <form className="auth-card" onSubmit={onSubmit} autoComplete="on">
         <h1>Ulwandle Tech</h1>
         <p className="muted">Resource Allocation &amp; Compliance</p>

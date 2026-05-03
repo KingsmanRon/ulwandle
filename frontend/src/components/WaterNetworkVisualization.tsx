@@ -713,8 +713,9 @@ const WaterNetworkVisualization: React.FC<WaterNetworkVisualizationProps> = ({
                   <span>Email Report</span>
                 </button>
               </div>
-              <div className="dispatch-blockchain-note">
-                Action recorded on Blockchain ledger #883920
+              <div className="dispatch-audit-note">
+                Action will be recorded in the audit log when wired to the
+                backend. This panel currently dispatches no real action.
               </div>
             </div>
           </div>

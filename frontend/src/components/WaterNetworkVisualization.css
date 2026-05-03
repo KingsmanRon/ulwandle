@@ -1144,10 +1144,12 @@
   font-weight: 700;
 }
 
-.dispatch-blockchain-note {
+.dispatch-audit-note {
   font-size: 0.625rem;
   text-align: center;
   color: #9ca3af;
+  padding: 0 0.5rem;
+  line-height: 1.4;
 }
 
 /* Responsive */

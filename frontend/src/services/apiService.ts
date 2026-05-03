@@ -68,6 +68,27 @@ export const apiService = {
 
   getComplianceSummary: async () =>
     (await apiClient.get("/api/v1/water-quality/standards")).data,
+
+  // Metros (synthetic topology + zones + leak detections)
+  getMetros:            async () =>
+    (await apiClient.get("/api/v1/metros/")).data,
+  getMetro:             async (metroId: string) =>
+    (await apiClient.get(`/api/v1/metros/${encodeURIComponent(metroId)}`)).data,
+  getMetroNetwork:      async (metroId: string) =>
+    (await apiClient.get(`/api/v1/metros/${encodeURIComponent(metroId)}/network`)).data,
+  getMetroZones:        async (metroId: string) =>
+    (await apiClient.get(`/api/v1/metros/${encodeURIComponent(metroId)}/zones`)).data,
+  getMetroProblemZones: async (metroId: string) =>
+    (await apiClient.get(`/api/v1/metros/${encodeURIComponent(metroId)}/zones/problem-areas`)).data,
+  getMetroLeaks:        async (metroId: string, status?: string) =>
+    (await apiClient.get(`/api/v1/metros/${encodeURIComponent(metroId)}/leaks`,
+      { params: { status } })).data,
+  getMetroCriticalLeaks: async (metroId: string) =>
+    (await apiClient.get(`/api/v1/metros/${encodeURIComponent(metroId)}/leaks/critical`)).data,
+  getNetworkStats:      async () =>
+    (await apiClient.get("/api/v1/metros/stats/overview")).data,
+  updateLeakStatus:     async (leakId: string, body: { new_status: string; notes?: string }) =>
+    (await apiClient.post(`/api/v1/metros/leaks/${encodeURIComponent(leakId)}/update-status`, body)).data,
 };
 
 export default apiService;

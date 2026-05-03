@@ -40,6 +40,10 @@ def verify_password(hashed: str, plain: str) -> bool:
         return _password_hasher.verify(hashed, plain)
     except (VerifyMismatchError, InvalidHashError, ValueError):
         return False
+    except Exception:
+        # Any other argon2/runtime error must be treated as "invalid", never
+        # surface as a 500 — the route must only ever return 200 or 401.
+        return False
 
 
 def password_needs_rehash(hashed: str) -> bool:

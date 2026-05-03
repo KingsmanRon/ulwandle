@@ -15,6 +15,14 @@ from sqlalchemy.sql import func
 from app.db.database import Base
 
 
+def _pg_enum(enum_cls):
+    """SQLEnum that maps to the enum *values* (lowercase, e.g. 'admin') instead
+    of the default Python *names* ('ADMIN'). The Alembic migration created the
+    PG enum types from the lowercase values, so without values_callable
+    SQLAlchemy raises LookupError reading back any existing row."""
+    return SQLEnum(enum_cls, values_callable=lambda cls: [m.value for m in cls])
+
+
 # ---------- Enums ----------
 
 class DistrictStatus(str, enum.Enum):
@@ -71,7 +79,7 @@ class User(Base):
     email = Column(String(255), unique=True, nullable=False, index=True)
     full_name = Column(String(200), nullable=False)
     hashed_password = Column(String(255), nullable=False)
-    role = Column(SQLEnum(UserRole), nullable=False, default=UserRole.VIEWER)
+    role = Column(_pg_enum(UserRole), nullable=False, default=UserRole.VIEWER)
 
     # Base64-encoded Ed25519 public key (32 raw bytes -> 44 char base64)
     ed25519_public_key = Column(String(64), nullable=True)
@@ -132,7 +140,7 @@ class District(Base):
     province = Column(String(50), nullable=False)
     population = Column(Integer)
     area_km2 = Column(Float)
-    status = Column(SQLEnum(DistrictStatus), default=DistrictStatus.GREEN, nullable=False)
+    status = Column(_pg_enum(DistrictStatus), default=DistrictStatus.GREEN, nullable=False)
 
     latitude = Column(Float)
     longitude = Column(Float)
@@ -233,7 +241,7 @@ class Valve(Base):
     latitude = Column(Float)
     longitude = Column(Float)
 
-    status = Column(SQLEnum(ValveStatus), default=ValveStatus.OPEN, nullable=False)
+    status = Column(_pg_enum(ValveStatus), default=ValveStatus.OPEN, nullable=False)
     is_remote_controlled = Column(Boolean, default=True, nullable=False)
     last_operated_at = Column(DateTime(timezone=True))
 
@@ -253,7 +261,7 @@ class ValveOperationProposal(Base):
     id = Column(Integer, primary_key=True, index=True)
     valve_id = Column(Integer, ForeignKey("valves.id"), nullable=False)
     action = Column(String(20), nullable=False)
-    reason_code = Column(SQLEnum(ReasonCode), nullable=False)
+    reason_code = Column(_pg_enum(ReasonCode), nullable=False)
     reason_notes = Column(Text)
 
     nonce = Column(String(128), unique=True, nullable=False, index=True)
@@ -265,7 +273,7 @@ class ValveOperationProposal(Base):
     approver_id = Column(Integer, ForeignKey("users.id"), index=True)
     approver_signature = Column(Text)
 
-    status = Column(SQLEnum(ProposalStatus), nullable=False, default=ProposalStatus.PENDING, index=True)
+    status = Column(_pg_enum(ProposalStatus), nullable=False, default=ProposalStatus.PENDING, index=True)
     ai_advisory = Column(JSON)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
@@ -292,7 +300,7 @@ class ValveOperation(Base):
     approver_id = Column(Integer, ForeignKey("users.id"))
     proposer_signature = Column(Text, nullable=False)
     approver_signature = Column(Text)
-    reason_code = Column(SQLEnum(ReasonCode), nullable=False)
+    reason_code = Column(_pg_enum(ReasonCode), nullable=False)
     reason_notes = Column(Text)
 
     executed_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -307,7 +315,7 @@ class Alert(Base):
     district_id = Column(Integer, ForeignKey("districts.id"), nullable=True)
 
     alert_type = Column(String(50), nullable=False)
-    level = Column(SQLEnum(AlertLevel), nullable=False)
+    level = Column(_pg_enum(AlertLevel), nullable=False)
     title = Column(String(200), nullable=False)
     message = Column(Text, nullable=False)
 

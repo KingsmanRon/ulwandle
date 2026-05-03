@@ -3,6 +3,7 @@ Auth endpoints: login, refresh, logout, me, register, register-key.
 """
 
 import base64
+import logging
 import secrets
 from datetime import datetime, timedelta, timezone
 
@@ -24,6 +25,7 @@ from app.db.database import get_db
 from app.models.models import AuditLog, RefreshToken, User, UserRole
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 # Pre-computed real Argon2id hash used as a constant-time fallback when the
 # email is not found, so login latency does not leak user existence.
@@ -42,19 +44,39 @@ def _user_public(u: User) -> UserPublic:
     )
 
 
+def _safe_payload(payload: dict | None) -> dict | None:
+    """Coerce payload values to JSON-safe primitives. Pydantic types like
+    EmailStr are str subclasses but some JSON encoders trip on them."""
+    if not payload:
+        return payload
+    out: dict = {}
+    for k, v in payload.items():
+        if isinstance(v, (str, int, float, bool)) or v is None:
+            out[k] = str(v) if isinstance(v, str) else v
+        else:
+            out[k] = str(v)
+    return out
+
+
 def _record_audit(db: Session, *, actor: User | None, action: str,
                   resource_type: str | None = None, resource_id: str | None = None,
                   payload: dict | None = None, request: Request | None = None) -> None:
-    ip = request.client.host if request and request.client else None
-    db.add(AuditLog(
-        actor_id=actor.id if actor else None,
-        actor_email=actor.email if actor else None,
-        action=action,
-        resource_type=resource_type,
-        resource_id=resource_id,
-        payload=payload,
-        ip_hash=hash_ip(ip) if ip else None,
-    ))
+    try:
+        ip = request.client.host if request and request.client else None
+        db.add(AuditLog(
+            actor_id=actor.id if actor else None,
+            actor_email=actor.email if actor else None,
+            action=action,
+            resource_type=resource_type,
+            resource_id=resource_id,
+            payload=_safe_payload(payload),
+            ip_hash=hash_ip(ip) if ip else None,
+        ))
+    except Exception:
+        # Audit must never mask the real response. Roll back the staged audit
+        # row and continue so the caller still gets a meaningful status code.
+        logger.exception("Failed to stage audit log entry (action=%s)", action)
+        db.rollback()
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -65,14 +87,18 @@ def login(body: LoginRequest, request: Request, db: Session = Depends(get_db)):
     valid = verify_password(user.hashed_password if user else _DUMMY_HASH, body.password)
 
     if not user or not valid or not user.is_active:
-        if user:
-            user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
-            if user.failed_login_attempts >= 10:
-                user.locked_until = datetime.now(timezone.utc) + timedelta(minutes=15)
+        try:
+            if user:
+                user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
+                if user.failed_login_attempts >= 10:
+                    user.locked_until = datetime.now(timezone.utc) + timedelta(minutes=15)
+                db.commit()
+            _record_audit(db, actor=user, action="login.failure",
+                          payload={"email": str(body.email)}, request=request)
             db.commit()
-        _record_audit(db, actor=user, action="login.failure",
-                      payload={"email": body.email}, request=request)
-        db.commit()
+        except Exception:
+            logger.exception("login.failure bookkeeping failed; returning 401 anyway")
+            db.rollback()
         raise HTTPException(401, "Invalid credentials")
 
     if user.locked_until and user.locked_until > datetime.now(timezone.utc):
@@ -90,7 +116,7 @@ def login(body: LoginRequest, request: Request, db: Session = Depends(get_db)):
     refresh, refresh_exp = create_refresh_token(user.id, jti)
 
     ua = (request.headers.get("user-agent") or "")[:255]
-    ip_h = hash_ip(request.client.host) if request.client else None
+    ip_h = hash_ip(request.client.host) if (request and request.client) else None
     db.add(RefreshToken(jti=jti, user_id=user.id, expires_at=refresh_exp,
                         user_agent=ua, ip_hash=ip_h))
     _record_audit(db, actor=user, action="login.success", request=request)

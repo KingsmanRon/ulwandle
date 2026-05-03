@@ -1,0 +1,212 @@
+/* Container - Keeps everything organized */
+.south-africa-map-container {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  margin: 2rem 0;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+  /* SCROLL HANDLING: Because the map is fixed at 960px,
+     this ensures it scrolls on small screens instead of breaking layout */
+  overflow-x: auto;
+}
+
+/* Header Section */
+.map-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.map-header h2 {
+  margin: 0;
+  color: #1f2937;
+  font-size: 1.5rem;
+}
+
+.map-legend {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #4b5563;
+}
+
+.legend-color {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 1px solid #d1d5db;
+}
+
+/* The Wrapper for Image + Dots */
+/* This MUST be relative so dots position absolutely inside it */
+.map-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  line-height: 0;
+  user-select: none;  /* Prevent text selection cursor on entire map */
+}
+
+/* The Actual Map Image */
+.sa-map-image {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* ------------------------------------------------ */
+/* THE DOTS (Div-based instead of SVG)              */
+/* ------------------------------------------------ */
+
+.metro-marker {
+  position: absolute;
+  width: 16px;       /* Size of the dot */
+  height: 16px;
+  border: 2px solid white;   /* White ring makes it pop */
+  border-radius: 50%;        /* Makes it a perfect circle */
+  cursor: pointer;
+  z-index: 5;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  user-select: none;         /* Prevent text selection cursor */
+
+  /* THE MAGIC ALIGNMENT FIX */
+  /* This centers the dot exactly on your x/y coordinate */
+  transform: translate(-50%, -50%);
+}
+
+.metro-marker:hover {
+  transform: translate(-50%, -50%) scale(1.3); /* Scale up but keep centered */
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  z-index: 10;
+}
+
+.metro-marker.selected {
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3); /* Ring effect */
+  animation: pulse-ring 2s infinite;
+}
+
+/* ------------------------------------------------ */
+/* Tooltips & UI Overlay                            */
+/* ------------------------------------------------ */
+
+.map-tooltip {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: #ffffff;
+  line-height: 1.5;
+  backdrop-filter: blur(4px);
+  border: 1px solid #e5e7eb;
+  border-left: 4px solid #3b82f6;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  min-width: 220px;
+  z-index: 100;
+  pointer-events: none; /* Lets clicks pass through if it overlaps slightly */
+}
+
+.map-tooltip h4 {
+  margin: 0 0 0.5rem 0;
+  color: #111827;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.map-tooltip p {
+  margin: 0.25rem 0;
+  font-size: 0.9rem;
+  color: #4b5563;
+}
+
+.map-tooltip strong {
+  color: #1f2937;
+}
+
+/* Footer Section */
+.map-footer {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 2px solid #e5e7eb;
+}
+
+.map-footer p {
+  margin: 0.5rem 0;
+  color: #4b5563;
+  font-size: 0.95rem;
+}
+
+.map-footer strong {
+  color: #1f2937;
+}
+
+.selected-metros-list {
+  color: #3b82f6;
+  font-weight: 600;
+}
+
+.map-hint {
+  color: #6b7280 !important;
+  font-size: 0.85rem !important;
+  font-style: italic;
+}
+
+/* ------------------------------------------------ */
+/* Animations                                       */
+/* ------------------------------------------------ */
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+  }
+}
+
+/* ------------------------------------------------ */
+/* Responsive                                       */
+/* ------------------------------------------------ */
+
+@media (max-width: 768px) {
+  .south-africa-map-container {
+    padding: 1.5rem;
+  }
+
+  .map-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .map-legend {
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .map-tooltip {
+    position: static;
+    margin-top: 1rem;
+    width: 100%;
+  }
+
+  .metro-marker {
+    width: 14px;
+    height: 14px;
+  }
+}

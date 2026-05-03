@@ -22,7 +22,8 @@ body {
 .app-header {
   background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
   color: white;
-  padding: 1.5rem 2rem;
+  padding-block: 1.5rem;
+  padding-inline: max(2rem, calc((100% - 1400px) / 2 + 2rem));
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -65,7 +66,8 @@ body {
 
 .app-nav {
   background-color: white;
-  padding: 1rem 2rem;
+  padding-block: 1rem;
+  padding-inline: max(2rem, calc((100% - 1400px) / 2 + 2rem));
   display: flex;
   gap: 1rem;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);

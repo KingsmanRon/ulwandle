@@ -160,3 +160,189 @@ body {
   background-color: #fee2e2;
   color: #991b1b;
 }
+
+/* Header sign-out */
+.header-status button {
+  margin-top: 0.4rem;
+  padding: 0.4rem 0.9rem;
+  background: rgba(255, 255, 255, 0.18);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+  backdrop-filter: blur(6px);
+}
+
+.header-status button:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* App-level loading screen */
+.app-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  font-size: 1.15rem;
+  color: #0369a1;
+  background-color: #f0f9ff;
+}
+
+/* Auth pages (login) */
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 60%, #ffffff 100%);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  background: white;
+  padding: 2.5rem 2rem;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(2, 132, 199, 0.18);
+  border-top: 4px solid #0284c7;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.auth-card h1 {
+  font-size: 1.75rem;
+  color: #0c4a6e;
+  margin: 0;
+}
+
+.auth-card .muted {
+  margin: -0.5rem 0 0.5rem 0;
+}
+
+/* Generic content card (used by SigningKeySetup, NoAccess) */
+.card {
+  background: white;
+  padding: 1.75rem;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(2, 132, 199, 0.1);
+  border-left: 4px solid #0284c7;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 720px;
+}
+
+.card h2 {
+  color: #0c4a6e;
+  margin: 0;
+}
+
+.card p {
+  color: #475569;
+  line-height: 1.5;
+}
+
+/* Form controls inside auth-card / card */
+.auth-card label,
+.card label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.auth-card input,
+.card input {
+  padding: 0.75rem 0.9rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 1rem;
+  background: #f8fafc;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.auth-card input:focus,
+.card input:focus {
+  outline: none;
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+  background: #fff;
+}
+
+.auth-card button[type="submit"],
+.card button[type="submit"] {
+  margin-top: 0.5rem;
+  padding: 0.85rem 1rem;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.2s, opacity 0.2s;
+}
+
+.auth-card button[type="submit"]:hover:not(:disabled),
+.card button[type="submit"]:hover:not(:disabled) {
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+  transform: translateY(-1px);
+}
+
+.auth-card button[type="submit"]:disabled,
+.card button[type="submit"]:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* Inline status text */
+.muted {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.error {
+  background: #fee2e2;
+  color: #991b1b;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border-left: 4px solid #ef4444;
+  font-size: 0.9rem;
+}
+
+.success {
+  background: #d1fae5;
+  color: #065f46;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border-left: 4px solid #10b981;
+  font-size: 0.9rem;
+}
+
+/* Kill switch view */
+.kill-switch {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.kill-switch h2 {
+  color: #0c4a6e;
+}
+
+.kill-switch .warning {
+  background: #fef3c7;
+  color: #92400e;
+  border-left: 4px solid #f59e0b;
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+}

@@ -6,7 +6,7 @@
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.aggregate-header {
+.multi-metro-aggregate .aggregate-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -15,7 +15,7 @@
   border-bottom: 2px solid #e5e7eb;
 }
 
-.aggregate-header h2 {
+.multi-metro-aggregate .aggregate-header h2 {
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -24,7 +24,7 @@
   font-size: 1.5rem;
 }
 
-.overall-stress-badge {
+.multi-metro-aggregate .overall-stress-badge {
   padding: 0.5rem 1rem;
   border-radius: 8px;
   color: white;
@@ -33,14 +33,14 @@
   letter-spacing: 0.5px;
 }
 
-.aggregate-metrics-grid {
+.multi-metro-aggregate .aggregate-metrics-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 1.5rem;
   margin-bottom: 2rem;
 }
 
-.aggregate-metric-card {
+.multi-metro-aggregate .aggregate-metric-card {
   display: flex;
   gap: 1rem;
   padding: 1.5rem;
@@ -50,12 +50,12 @@
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.aggregate-metric-card:hover {
+.multi-metro-aggregate .aggregate-metric-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
 }
 
-.metric-icon {
+.multi-metro-aggregate .metric-icon {
   width: 50px;
   height: 50px;
   border-radius: 10px;
@@ -66,11 +66,11 @@
   flex-shrink: 0;
 }
 
-.metric-content {
+.multi-metro-aggregate .metric-content {
   flex: 1;
 }
 
-.metric-content h3 {
+.multi-metro-aggregate .metric-content h3 {
   margin: 0 0 0.5rem 0;
   font-size: 0.9rem;
   color: #6b7280;
@@ -79,30 +79,30 @@
   letter-spacing: 0.5px;
 }
 
-.metric-value {
+.multi-metro-aggregate .metric-value {
   font-size: 1.75rem;
   font-weight: 700;
   color: #1f2937;
   margin: 0;
 }
 
-.metric-value .unit {
+.multi-metro-aggregate .metric-value .unit {
   font-size: 0.9rem;
   color: #6b7280;
   font-weight: 500;
 }
 
-.metric-subtitle {
+.multi-metro-aggregate .metric-subtitle {
   margin: 0.25rem 0 0 0;
   font-size: 0.85rem;
   color: #9ca3af;
 }
 
-.individual-metros-section {
+.multi-metro-aggregate .individual-metros-section {
   margin-top: 2rem;
 }
 
-.section-title {
+.multi-metro-aggregate .section-title {
   font-size: 1.25rem;
   color: #1f2937;
   margin-bottom: 1rem;
@@ -110,13 +110,13 @@
   border-bottom: 2px solid #e5e7eb;
 }
 
-.individual-metros-grid {
+.multi-metro-aggregate .individual-metros-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 1.5rem;
 }
 
-.individual-metro-card {
+.multi-metro-aggregate .individual-metro-card {
   background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%);
   border: 2px solid #e5e7eb;
   border-radius: 10px;
@@ -124,13 +124,13 @@
   transition: all 0.2s;
 }
 
-.individual-metro-card:hover {
+.multi-metro-aggregate .individual-metro-card:hover {
   border-color: #3b82f6;
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
   transform: translateY(-2px);
 }
 
-.metro-card-header {
+.multi-metro-aggregate .metro-card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -139,13 +139,13 @@
   border-bottom: 1px solid #e5e7eb;
 }
 
-.metro-card-header h4 {
+.multi-metro-aggregate .metro-card-header h4 {
   margin: 0;
   font-size: 1.1rem;
   color: #1f2937;
 }
 
-.stress-badge {
+.multi-metro-aggregate .stress-badge {
   padding: 0.25rem 0.75rem;
   border-radius: 6px;
   color: white;
@@ -154,26 +154,26 @@
   letter-spacing: 0.5px;
 }
 
-.metro-card-stats {
+.multi-metro-aggregate .metro-card-stats {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
 }
 
-.stat-row {
+.multi-metro-aggregate .stat-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-size: 0.9rem;
 }
 
-.stat-label {
+.multi-metro-aggregate .stat-label {
   color: #6b7280;
   font-weight: 500;
   min-width: 80px;
 }
 
-.stat-value {
+.multi-metro-aggregate .stat-value {
   color: #1f2937;
   font-weight: 700;
   flex: 1;
@@ -181,23 +181,23 @@
   margin-right: 0.5rem;
 }
 
-.stat-value.wastage {
+.multi-metro-aggregate .stat-value.wastage {
   color: #dc2626;
 }
 
-.stat-percentage {
+.multi-metro-aggregate .stat-percentage {
   color: #9ca3af;
   font-size: 0.8rem;
   min-width: 100px;
   text-align: right;
 }
 
-.stat-percentage.wastage {
+.multi-metro-aggregate .stat-percentage.wastage {
   color: #dc2626;
   font-weight: 600;
 }
 
-.aggregate-insights {
+.multi-metro-aggregate .aggregate-insights {
   margin-top: 2rem;
   padding: 1.5rem;
   background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
@@ -205,26 +205,26 @@
   border-radius: 8px;
 }
 
-.aggregate-insights h3 {
+.multi-metro-aggregate .aggregate-insights h3 {
   margin: 0 0 1rem 0;
   color: #1e40af;
   font-size: 1.1rem;
 }
 
-.aggregate-insights ul {
+.multi-metro-aggregate .aggregate-insights ul {
   margin: 0;
   padding-left: 1.5rem;
   list-style: none;
 }
 
-.aggregate-insights li {
+.multi-metro-aggregate .aggregate-insights li {
   margin-bottom: 0.75rem;
   color: #1f2937;
   position: relative;
   padding-left: 0.5rem;
 }
 
-.aggregate-insights li:before {
+.multi-metro-aggregate .aggregate-insights li:before {
   content: "→";
   position: absolute;
   left: -1rem;
@@ -232,11 +232,11 @@
   font-weight: bold;
 }
 
-.aggregate-insights li strong {
+.multi-metro-aggregate .aggregate-insights li strong {
   color: #1e40af;
 }
 
-.insight-note {
+.multi-metro-aggregate .insight-note {
   color: #6b7280;
   font-size: 0.85rem;
   font-style: italic;
@@ -248,21 +248,21 @@
     padding: 1.5rem;
   }
 
-  .aggregate-header {
+  .multi-metro-aggregate .aggregate-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
   }
 
-  .aggregate-metrics-grid {
+  .multi-metro-aggregate .aggregate-metrics-grid {
     grid-template-columns: 1fr;
   }
 
-  .individual-metros-grid {
+  .multi-metro-aggregate .individual-metros-grid {
     grid-template-columns: 1fr;
   }
 
-  .metric-value {
+  .multi-metro-aggregate .metric-value {
     font-size: 1.5rem;
   }
 }

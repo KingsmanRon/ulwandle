@@ -3,14 +3,14 @@
   color: #0c4a6e;
 }
 
-.stats-grid {
+.dashboard .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 1.5rem;
   margin-bottom: 2rem;
 }
 
-.stat-card {
+.dashboard .stat-card {
   background: white;
   padding: 1.5rem;
   border-radius: 12px;
@@ -19,12 +19,12 @@
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.stat-card:hover {
+.dashboard .stat-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(2, 132, 199, 0.2);
 }
 
-.stat-card h3 {
+.dashboard .stat-card h3 {
   font-size: 0.9rem;
   color: #0369a1;
   margin-bottom: 0.75rem;
@@ -32,14 +32,14 @@
   font-weight: 600;
 }
 
-.stat-value {
+.dashboard .stat-value {
   font-size: 2.5rem;
   font-weight: 700;
   color: #0c4a6e;
   margin-bottom: 0.75rem;
 }
 
-.stat-breakdown {
+.dashboard .stat-breakdown {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -47,19 +47,18 @@
   color: #475569;
 }
 
-.stat-breakdown span {
+.dashboard .stat-breakdown span {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.stat-breakdown .critical,
-.stat-breakdown .fault {
+.dashboard .stat-breakdown .critical, .dashboard .stat-breakdown .fault {
   color: #ef4444;
   font-weight: 600;
 }
 
-.critical-issues {
+.dashboard .critical-issues {
   background: white;
   padding: 1.5rem;
   border-radius: 12px;
@@ -68,29 +67,29 @@
   border-left: 4px solid #dc2626;
 }
 
-.critical-issues h3 {
+.dashboard .critical-issues h3 {
   color: #dc2626;
   margin-bottom: 1rem;
   font-size: 1.3rem;
 }
 
-.issue-section {
+.dashboard .issue-section {
   margin-bottom: 1.5rem;
 }
 
-.issue-section h4 {
+.dashboard .issue-section h4 {
   color: #0c4a6e;
   margin-bottom: 0.75rem;
   font-size: 1rem;
 }
 
-.issue-list {
+.dashboard .issue-list {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
 }
 
-.issue-item {
+.dashboard .issue-item {
   padding: 1rem;
   border-radius: 8px;
   display: flex;
@@ -99,32 +98,32 @@
   align-items: center;
 }
 
-.issue-item.critical {
+.dashboard .issue-item.critical {
   background-color: #fee2e2;
   border-left: 4px solid #ef4444;
 }
 
-.issue-item.warning {
+.dashboard .issue-item.warning {
   background-color: #fef3c7;
   border-left: 4px solid #f59e0b;
 }
 
-.issue-item.alert {
+.dashboard .issue-item.alert {
   background-color: #dbeafe;
   border-left: 4px solid #0284c7;
 }
 
-.issue-item strong {
+.dashboard .issue-item strong {
   flex: 1;
   min-width: 150px;
 }
 
-.issue-item span {
+.dashboard .issue-item span {
   font-size: 0.85rem;
   color: #64748b;
 }
 
-.recent-predictions {
+.dashboard .recent-predictions {
   background: white;
   padding: 1.5rem;
   border-radius: 12px;
@@ -132,18 +131,18 @@
   border-left: 4px solid #0284c7;
 }
 
-.recent-predictions h3 {
+.dashboard .recent-predictions h3 {
   margin-bottom: 1rem;
   color: #0c4a6e;
 }
 
-.predictions-list {
+.dashboard .predictions-list {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
 }
 
-.prediction-item {
+.dashboard .prediction-item {
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -153,20 +152,20 @@
   border-left: 3px solid #0284c7;
 }
 
-.pred-type {
+.dashboard .pred-type {
   flex: 1;
   font-weight: 600;
   text-transform: capitalize;
   color: #0c4a6e;
 }
 
-.pred-confidence {
+.dashboard .pred-confidence {
   color: #059669;
   font-weight: 500;
   font-size: 0.9rem;
 }
 
-.pred-time {
+.dashboard .pred-time {
   color: #64748b;
   font-size: 0.85rem;
 }

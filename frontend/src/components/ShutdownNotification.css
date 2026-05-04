@@ -6,32 +6,32 @@
   margin-bottom: 24px;
 }
 
-.notification-header {
+.shutdown-notification .notification-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
 }
 
-.header-info {
+.shutdown-notification .header-info {
   display: flex;
   gap: 16px;
   align-items: center;
 }
 
-.header-info h3 {
+.shutdown-notification .header-info h3 {
   margin: 0 0 4px 0;
   font-size: 20px;
   color: #1f2937;
 }
 
-.header-info p {
+.shutdown-notification .header-info p {
   margin: 0;
   font-size: 14px;
   color: #6b7280;
 }
 
-.send-notification-btn {
+.shutdown-notification .send-notification-btn {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -47,12 +47,12 @@
   box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
 }
 
-.send-notification-btn:hover {
+.shutdown-notification .send-notification-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
 }
 
-.last-sent-info {
+.shutdown-notification .last-sent-info {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -65,7 +65,7 @@
   font-weight: 500;
 }
 
-.notification-form {
+.shutdown-notification .notification-form {
   background: #f8fafc;
   border: 2px solid #e5e7eb;
   border-radius: 8px;
@@ -73,7 +73,7 @@
   margin-bottom: 24px;
 }
 
-.form-header {
+.shutdown-notification .form-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -82,13 +82,13 @@
   border-bottom: 2px solid #e5e7eb;
 }
 
-.form-header h4 {
+.shutdown-notification .form-header h4 {
   margin: 0;
   font-size: 18px;
   color: #1f2937;
 }
 
-.close-btn {
+.shutdown-notification .close-btn {
   background: transparent;
   border: none;
   cursor: pointer;
@@ -98,16 +98,16 @@
   transition: all 0.2s;
 }
 
-.close-btn:hover {
+.shutdown-notification .close-btn:hover {
   background: #e5e7eb;
   color: #1f2937;
 }
 
-.form-group {
+.shutdown-notification .form-group {
   margin-bottom: 16px;
 }
 
-.form-group label {
+.shutdown-notification .form-group label {
   display: block;
   margin-bottom: 8px;
   font-weight: 600;
@@ -115,9 +115,7 @@
   color: #374151;
 }
 
-.form-input,
-.form-select,
-.form-textarea {
+.shutdown-notification .form-input, .shutdown-notification .form-select, .shutdown-notification .form-textarea {
   width: 100%;
   padding: 10px 12px;
   border: 2px solid #d1d5db;
@@ -127,30 +125,28 @@
   transition: border-color 0.2s;
 }
 
-.form-input:focus,
-.form-select:focus,
-.form-textarea:focus {
+.shutdown-notification .form-input:focus, .shutdown-notification .form-select:focus, .shutdown-notification .form-textarea:focus {
   outline: none;
   border-color: #0284c7;
 }
 
-.form-input.disabled {
+.shutdown-notification .form-input.disabled {
   background: #e5e7eb;
   color: #6b7280;
   cursor: not-allowed;
 }
 
-.form-textarea {
+.shutdown-notification .form-textarea {
   resize: vertical;
 }
 
-.form-row {
+.shutdown-notification .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
 }
 
-.form-actions {
+.shutdown-notification .form-actions {
   display: flex;
   gap: 12px;
   justify-content: flex-end;
@@ -159,8 +155,7 @@
   border-top: 2px solid #e5e7eb;
 }
 
-.cancel-btn,
-.submit-btn {
+.shutdown-notification .cancel-btn, .shutdown-notification .submit-btn {
   padding: 10px 20px;
   border: none;
   border-radius: 6px;
@@ -170,18 +165,18 @@
   transition: all 0.2s;
 }
 
-.cancel-btn {
+.shutdown-notification .cancel-btn {
   background: white;
   color: #6b7280;
   border: 2px solid #d1d5db;
 }
 
-.cancel-btn:hover {
+.shutdown-notification .cancel-btn:hover {
   background: #f3f4f6;
   border-color: #9ca3af;
 }
 
-.submit-btn {
+.shutdown-notification .submit-btn {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -189,35 +184,35 @@
   color: white;
 }
 
-.submit-btn:hover:not(:disabled) {
+.shutdown-notification .submit-btn:hover:not(:disabled) {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
 }
 
-.submit-btn:disabled {
+.shutdown-notification .submit-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.notification-history {
+.shutdown-notification .notification-history {
   margin-top: 24px;
   padding-top: 24px;
   border-top: 2px solid #e5e7eb;
 }
 
-.notification-history h4 {
+.shutdown-notification .notification-history h4 {
   margin: 0 0 16px 0;
   font-size: 16px;
   color: #1f2937;
 }
 
-.history-list {
+.shutdown-notification .history-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-.history-item {
+.shutdown-notification .history-item {
   background: #f8fafc;
   border: 1px solid #e5e7eb;
   border-left: 4px solid #0284c7;
@@ -225,62 +220,62 @@
   padding: 12px 16px;
 }
 
-.history-header {
+.shutdown-notification .history-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 8px;
 }
 
-.history-id {
+.shutdown-notification .history-id {
   font-family: monospace;
   font-size: 12px;
   color: #6b7280;
   font-weight: 600;
 }
 
-.history-status {
+.shutdown-notification .history-status {
   padding: 2px 8px;
   border-radius: 4px;
   font-size: 11px;
   font-weight: 700;
 }
 
-.status-sent {
+.shutdown-notification .status-sent {
   background: #d1fae5;
   color: #065f46;
 }
 
-.status-pending {
+.shutdown-notification .status-pending {
   background: #fef3c7;
   color: #92400e;
 }
 
-.status-failed {
+.shutdown-notification .status-failed {
   background: #fee2e2;
   color: #991b1b;
 }
 
-.history-metro {
+.shutdown-notification .history-metro {
   font-weight: 600;
   color: #1f2937;
   margin: 4px 0;
   font-size: 14px;
 }
 
-.history-reason {
+.shutdown-notification .history-reason {
   color: #4b5563;
   margin: 4px 0;
   font-size: 13px;
 }
 
-.history-time {
+.shutdown-notification .history-time {
   color: #9ca3af;
   margin: 4px 0 0 0;
   font-size: 12px;
 }
 
-.notification-info {
+.shutdown-notification .notification-info {
   margin-top: 24px;
   padding: 16px;
   background: #eff6ff;
@@ -288,45 +283,44 @@
   border-left: 4px solid #0284c7;
 }
 
-.notification-info h4 {
+.shutdown-notification .notification-info h4 {
   margin: 0 0 12px 0;
   font-size: 14px;
   color: #1e40af;
 }
 
-.notification-info ul {
+.shutdown-notification .notification-info ul {
   margin: 0;
   padding-left: 20px;
 }
 
-.notification-info li {
+.shutdown-notification .notification-info li {
   color: #1e40af;
   font-size: 13px;
   margin: 6px 0;
 }
 
 @media (max-width: 768px) {
-  .notification-header {
+  .shutdown-notification .notification-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 16px;
   }
 
-  .send-notification-btn {
+  .shutdown-notification .send-notification-btn {
     width: 100%;
     justify-content: center;
   }
 
-  .form-row {
+  .shutdown-notification .form-row {
     grid-template-columns: 1fr;
   }
 
-  .form-actions {
+  .shutdown-notification .form-actions {
     flex-direction: column;
   }
 
-  .cancel-btn,
-  .submit-btn {
+  .shutdown-notification .cancel-btn, .shutdown-notification .submit-btn {
     width: 100%;
     justify-content: center;
   }

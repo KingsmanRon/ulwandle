@@ -6,39 +6,39 @@
   margin-bottom: 24px;
 }
 
-.export-header {
+.world-bank-compliance .export-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 20px;
 }
 
-.export-info {
+.world-bank-compliance .export-info {
   display: flex;
   align-items: center;
   gap: 16px;
   flex: 1;
 }
 
-.export-info svg {
+.world-bank-compliance .export-info svg {
   color: #0284c7;
   flex-shrink: 0;
 }
 
-.export-info h3 {
+.world-bank-compliance .export-info h3 {
   margin: 0 0 4px 0;
   font-size: 18px;
   font-weight: 600;
   color: #1f2937;
 }
 
-.export-info p {
+.world-bank-compliance .export-info p {
   margin: 0;
   font-size: 14px;
   color: #6b7280;
 }
 
-.export-button {
+.world-bank-compliance .export-button {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -54,17 +54,17 @@
   white-space: nowrap;
 }
 
-.export-button:hover:not(:disabled) {
+.world-bank-compliance .export-button:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
 }
 
-.export-button:disabled {
+.world-bank-compliance .export-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.export-help {
+.world-bank-compliance .export-help {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -77,12 +77,12 @@
   font-size: 14px;
 }
 
-.export-help svg {
+.world-bank-compliance .export-help svg {
   flex-shrink: 0;
   color: #f59e0b;
 }
 
-.export-ready {
+.world-bank-compliance .export-ready {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -96,17 +96,17 @@
   font-weight: 500;
 }
 
-.export-ready svg {
+.world-bank-compliance .export-ready svg {
   flex-shrink: 0;
 }
 
 @media (max-width: 768px) {
-  .export-header {
+  .world-bank-compliance .export-header {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .export-button {
+  .world-bank-compliance .export-button {
     width: 100%;
     justify-content: center;
   }

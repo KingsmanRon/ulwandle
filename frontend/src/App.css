@@ -69,6 +69,7 @@ body {
   padding-block: 1rem;
   padding-inline: max(2rem, calc((100% - 1400px) / 2 + 2rem));
   display: flex;
+  justify-content: center;
   gap: 1rem;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   overflow-x: auto;
@@ -104,6 +105,7 @@ body {
 .sub-nav {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 0.5rem;
   margin: 0 0 1.5rem 0;
   padding: 0.5rem;
@@ -240,7 +242,7 @@ body {
   justify-content: center;
   padding: 2rem 1rem;
   background-color: #0c4a6e;
-  background-size: contain;
+  background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
 }

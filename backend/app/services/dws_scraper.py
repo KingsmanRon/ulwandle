@@ -16,19 +16,22 @@ Render cron schedule (weekly, Monday morning UTC):
 
 PDF format
 ----------
-The DWS Weekly Reservoir Report is a multi-column PDF where each row is
-roughly:
+DWS Weekly is a multi-column reservoir report. Each row in the body
+pages looks like:
 
-    <DAM NAME>  <RIVER>  <FSC>  <THIS WEEK %>  <LAST WEEK %>  <LAST YEAR %>  ...
+    [zone] <STATION_CODE> <NAME...> <RIVER> <WMA> <PROV> ... <FSC> <WATER> <LAST_YR> <LAST_WK> <TODAY>
 
-Format has been stable for years but may change. The parser logs a
-PARSE_FORMAT_CHANGED warning and bails (no partial commits) if it
-encounters unexpected layout. The Postgres unique constraint then
-prevents partial-write damage on retry.
+Reservoir names get truncated/wrapped by pdfplumber's line extraction
+("Theewater" / next line "skloof"; "Steenbra" / next line "s Lower").
+Names are unstable, but **station codes** ("C1R001", "G4R007") are
+not — they identify the reservoir uniquely. We match on those.
 
-The "as_of" date for each reading is taken from the PDF cover ("REPORT FOR
-WEEK ENDING <date>"). If the cover can't be parsed, we fall back to the
-previous Monday in UTC.
+The numeric "Today %Full" is always the LAST decimal on the row
+(values like 2560.97, 2625.68, 38.1, 103.4, **102.5** — the last is
+today's storage %).
+
+The "as of" date is the first ISO YYYY-MM-DD on the cover ("Weekly
+State of the Reservoirs on\\n2025-10-13"). Fallback: previous Monday.
 """
 
 from __future__ import annotations
@@ -37,7 +40,6 @@ import io
 import logging
 import re
 from datetime import datetime, timedelta, timezone
-from typing import Iterable
 
 import httpx
 import pdfplumber
@@ -53,95 +55,60 @@ DWS_WEEKLY_URL = "https://www.dws.gov.za/Hydrology/Weekly/Weekly.pdf"
 SOURCE_NAME = "DWS Weekly State of Dams"
 SOURCE_KEY = "dws_weekly_dams"
 
-# Maps dam-name strings as they appear in the DWS PDF to our `dams.id`.
-# Keys are normalised (lower, no diacritics, single space). The matcher
-# tolerates trailing "DAM" and parenthetical suffixes.
-DAM_NAME_TO_ID: dict[str, str] = {
-    "vaal": "vaal",
-    "sterkfontein": "sterkfontein",
-    "bloemhof": "bloemhof",
-    "theewaterskloof": "theewaterskloof",
-    "voelvlei": "voelvlei",
-    "berg river": "berg_river",
-    "wemmershoek": "wemmershoek",
-    "steenbras lower": "steenbras_lower",
-    "steenbras upper": "steenbras_upper",
-    "inanda": "inanda",
-    "albert falls": "albert_falls",
-    "midmar": "midmar",
-    "hazelmere": "hazelmere",
-    "nagle": "nagle",
-    "kouga": "kouga",
-    "impofu": "impofu",
-    "mpofu": "impofu",
-    "churchill": "churchill",
-    "groendal": "groendal",
-    "bridle drift": "bridle_drift",
-    "wriggleswade": "wriggleswade",
-    "laing": "laing",
-    "mockes": "mockes",
-    "welbedacht": "welbedacht",
+# DWS reservoir station codes → our dams.id. Codes are stable across
+# weekly reports; reservoir names are not (they wrap, get truncated by
+# pdfplumber, change capitalisation). Station codes verified against
+# the 2025-10-13 PDF; if a future code changes, add the new code here
+# rather than relying on name matching.
+#
+# The `mockes` dam is intentionally absent — Mockes Dam is a Bloemwater
+# asset that doesn't appear in DWS Weekly. The dams row stays for
+# completeness but no readings come from this scraper.
+DWS_STATION_TO_DAM_ID: dict[str, str] = {
+    "C1R001": "vaal",
+    "C8R003": "sterkfontein",
+    "C9R002": "bloemhof",
+    "D2R004": "welbedacht",
+    "G1R001": "voelvlei",
+    "G1R002": "wemmershoek",
+    "G1R004": "berg_river",
+    "G4R001": "steenbras_lower",
+    "G4R007": "steenbras_upper",
+    "H6R001": "theewaterskloof",
+    "K9R001": "churchill",     # listed as "Kromrivier" in DWS Weekly
+    "K9R002": "impofu",
+    "L8R001": "kouga",
+    "M1R001": "groendal",
+    "R2R001": "laing",
+    "R2R003": "bridle_drift",
+    "S6R002": "wriggleswade",
+    "U2R001": "midmar",
+    "U2R002": "nagle",
+    "U2R003": "albert_falls",
+    "U2R004": "inanda",
+    "U3R001": "hazelmere",
 }
 
-
-_NORM_DIACRITICS = str.maketrans("ëéèêÈÉÊË", "eeeeEEEE")
-# DWS rows: leading dam name, then numeric columns. We extract the dam name
-# segment (up to first 3+ digit cluster or a known column header word) and
-# the first percent-looking value after a numeric run.
-_PCT_RE = re.compile(r"\b(\d{1,3}(?:[.,]\d{1,2})?)\s*%?\b")
-_AS_OF_RE = re.compile(
-    r"WEEK\s+ENDING\s+(?P<d>\d{1,2})\s+(?P<m>[A-Za-z]+)\s+(?P<y>\d{4})",
-    re.IGNORECASE,
-)
-_MONTH_LOOKUP = {m.lower(): i for i, m in enumerate(
-    ["", "January", "February", "March", "April", "May", "June",
-     "July", "August", "September", "October", "November", "December"], )}
-
-
-def _normalise(s: str) -> str:
-    return s.translate(_NORM_DIACRITICS).lower().strip()
-
-
-def _match_dam(line: str) -> str | None:
-    """Try to match a known dam name appearing as a prefix substring.
-
-    DWS lines look like "VAAL                  Vaal     2536.18 ..." — the
-    name is the first significant token. We test each known key as a
-    leading prefix on the normalised line.
-    """
-    norm = _normalise(line)
-    # Greedy: prefer the longest matching key so "steenbras lower" beats
-    # "steenbras".
-    matches = [k for k in DAM_NAME_TO_ID if norm.startswith(k)]
-    if not matches:
-        return None
-    longest = max(matches, key=len)
-    return DAM_NAME_TO_ID[longest]
-
-
-def _extract_pct(line: str) -> float | None:
-    """Return the first plausible storage percentage on a line (0-200)."""
-    for m in _PCT_RE.finditer(line):
-        try:
-            v = float(m.group(1).replace(",", "."))
-        except ValueError:
-            continue
-        if 0.0 <= v <= 200.0:
-            return v
-    return None
+# Station code regex matches a body row's station identifier:
+#   one upper-case letter, optional 1-2 digits, "R", three digits.
+# The `\b` boundaries avoid matching codes inside words.
+_STATION_RE = re.compile(r"\b([A-Z]\d{0,2}R\d{3})\b")
+# Decimal value (e.g. 102.5, 2560.97). Pure integers like the WMA
+# number (which appears mid-row) are intentionally not matched —
+# the storage %s and capacities all carry a decimal.
+_DECIMAL_RE = re.compile(r"\d+\.\d+")
+# ISO date on the cover page: "Weekly State of the Reservoirs on\n2025-10-13"
+_ISO_DATE_RE = re.compile(r"\b(\d{4}-\d{2}-\d{2})\b")
 
 
 def _parse_as_of(text: str) -> datetime:
-    m = _AS_OF_RE.search(text)
+    """First ISO date in the document is the cover 'as of' date."""
+    m = _ISO_DATE_RE.search(text)
     if m:
         try:
-            day = int(m.group("d"))
-            month = _MONTH_LOOKUP[m.group("m").lower()]
-            year = int(m.group("y"))
-            return datetime(year, month, day, tzinfo=timezone.utc)
-        except (KeyError, ValueError):
+            return datetime.strptime(m.group(1), "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        except ValueError:
             pass
-    # Fallback: last Monday UTC.
     today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0,
                                                 microsecond=0)
     monday = today - timedelta(days=today.weekday())
@@ -163,7 +130,14 @@ def _fetch_pdf(client: httpx.Client | None = None) -> bytes:
 
 
 def _extract_readings(pdf_bytes: bytes) -> tuple[datetime, list[tuple[str, float]]]:
-    """Parse the PDF and return (as_of, [(dam_id, pct), ...])."""
+    """Parse the PDF and return (as_of, [(dam_id, pct), ...]).
+
+    Strategy:
+    1. Walk every line on every page.
+    2. If a line contains a station code we care about, it's a body row.
+    3. Strip the "#" "Latest available data" markers and take the LAST
+       decimal value on the row — that's "Today %Full". Validate 0-200.
+    4. First occurrence per dam wins (the PDF repeats subtotals later)."""
     readings: dict[str, float] = {}
     full_text_chunks: list[str] = []
 
@@ -175,13 +149,22 @@ def _extract_readings(pdf_bytes: bytes) -> tuple[datetime, list[tuple[str, float
                 line = raw_line.strip()
                 if not line:
                     continue
-                dam_id = _match_dam(line)
+                m = _STATION_RE.search(line)
+                if m is None:
+                    continue
+                dam_id = DWS_STATION_TO_DAM_ID.get(m.group(1))
                 if dam_id is None:
                     continue
-                pct = _extract_pct(line)
-                if pct is None:
+                clean = line.replace("#", "").replace("&", "")
+                decimals = _DECIMAL_RE.findall(clean)
+                if not decimals:
                     continue
-                # Keep the first occurrence (PDF often repeats summaries).
+                try:
+                    pct = float(decimals[-1])
+                except ValueError:
+                    continue
+                if not (0.0 <= pct <= 200.0):
+                    continue
                 readings.setdefault(dam_id, pct)
 
     as_of = _parse_as_of("\n".join(full_text_chunks))

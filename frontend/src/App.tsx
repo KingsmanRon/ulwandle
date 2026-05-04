@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { Suspense, lazy, useCallback, useEffect, useMemo, useState } from "react";
 import "./App.css";
 import { useAuth } from "./auth/AuthContext";
 import LoginPage from "./auth/LoginPage";
@@ -10,21 +10,27 @@ import ClaudeRecommendationsPanel, {
 import Dashboard from "./components/Dashboard";
 import DistrictMap from "./components/DistrictMap";
 import KillSwitch from "./components/KillSwitch";
-import MetroDashboard from "./components/MetroDashboard";
 import MetroSelector from "./components/MetroSelector";
-import MetroZoneMap from "./components/MetroZoneMap";
 import MultiMetroAggregate from "./components/MultiMetroAggregate";
 import Predictions from "./components/Predictions";
 import ShutdownNotification from "./components/ShutdownNotification";
 import SouthAfricaMap from "./components/SouthAfricaMap";
-import WaterNetworkVisualization from "./components/WaterNetworkVisualization";
 import WaterQuality from "./components/WaterQuality";
-import WorldBankCompliancePanel from "./components/WorldBankCompliance";
 import {
   Metro,
   METROS,
   generateSyntheticMetroWaterData,
 } from "./constants/metros";
+
+// Lazy-loaded heavy panels. Each pulls a distinct chunk of vendor
+// weight (recharts, xlsx, the topology constants table) that only
+// matters when its sub-tab is opened.
+const MetroDashboard = lazy(() => import("./components/MetroDashboard"));
+const MetroZoneMap = lazy(() => import("./components/MetroZoneMap"));
+const WaterNetworkVisualization = lazy(() => import("./components/WaterNetworkVisualization"));
+const WorldBankCompliancePanel = lazy(() => import("./components/WorldBankCompliance"));
+
+const LazyFallback: React.FC = () => <div className="loading">Loading…</div>;
 
 // `beforeinstallprompt` is not in the standard DOM lib — type it
 // ourselves so we never have to use `any`.
@@ -175,7 +181,7 @@ const App: React.FC = () => {
     switch (metroSubView) {
       case "overview":
         body = (
-          <>
+          <div className="stacked-panels">
             <SouthAfricaMap
               selectedMetros={selectedMetros}
               onMetroClick={handleMetroToggle}
@@ -185,7 +191,7 @@ const App: React.FC = () => {
             {selectedMetroData.length > 0 && (
               <MultiMetroAggregate allMetroData={selectedMetroData} />
             )}
-          </>
+          </div>
         );
         break;
       case "detail":
@@ -204,7 +210,7 @@ const App: React.FC = () => {
         break;
       case "reports":
         body = (
-          <>
+          <div className="stacked-panels">
             <ClaudeRecommendationsPanel
               recommendations={recommendations}
               loading={false}
@@ -218,7 +224,7 @@ const App: React.FC = () => {
               recommendations={recommendations}
               historicalData={historicalData}
             />
-          </>
+          </div>
         );
         break;
     }
@@ -303,7 +309,9 @@ const App: React.FC = () => {
         {navButton("settings", "Signing Key")}
       </nav>
 
-      <main className="app-content">{render()}</main>
+      <main className="app-content">
+        <Suspense fallback={<LazyFallback />}>{render()}</Suspense>
+      </main>
     </div>
   );
 };

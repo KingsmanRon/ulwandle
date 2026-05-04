@@ -149,21 +149,6 @@
   margin: 4px 0;
 }
 
-.metro-dashboard .text-green-600 {
-  color: #059669 !important;
-  font-weight: 600;
-}
-
-.metro-dashboard .text-orange-600 {
-  color: #ea580c !important;
-  font-weight: 600;
-}
-
-.metro-dashboard .text-red-600 {
-  color: #dc2626 !important;
-  font-weight: 600;
-}
-
 @media (max-width: 768px) {
   .metro-dashboard .metrics-grid {
     grid-template-columns: 1fr;

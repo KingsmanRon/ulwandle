@@ -71,10 +71,9 @@ const WorldBankCompliancePanel: React.FC<WorldBankCompliancePanelProps> = ({
 }) => {
 
   const handleExcelExport = () => {
-    if (!allMetroData || allMetroData.length === 0) {
-      alert('Select at least one metro first.');
-      return;
-    }
+    // Defensive: button is also disabled below when there's nothing to
+    // export, so this guard should never trip in practice.
+    if (!allMetroData || allMetroData.length === 0) return;
 
     const wb = XLSX.utils.book_new();
 

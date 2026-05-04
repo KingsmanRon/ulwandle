@@ -45,21 +45,23 @@ const ShutdownNotification: React.FC<ShutdownNotificationProps> = ({ metroData }
   const [drafts, setDrafts] = useState<NotificationDraft[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [lastQueuedAt, setLastQueuedAt] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const resetForm = () => {
     setReason('');
     setUrgency('medium');
     setEstimatedDuration('');
     setAffectedAreas('');
+    setFormError(null);
   };
 
   const handleQueueDraft = async () => {
     if (!user) return;
     if (!reason.trim() || !estimatedDuration.trim()) {
-      alert('Reason and estimated duration are required.');
+      setFormError('Reason and estimated duration are required.');
       return;
     }
-
+    setFormError(null);
     setSubmitting(true);
 
     // Local-only persistence for now. The component is informational —
@@ -197,6 +199,12 @@ const ShutdownNotification: React.FC<ShutdownNotificationProps> = ({ metroData }
               />
             </div>
           </div>
+
+          {formError && (
+            <div role="alert" className="error">
+              {formError}
+            </div>
+          )}
 
           <div className="form-actions">
             <button

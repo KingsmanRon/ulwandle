@@ -25,6 +25,7 @@ Render cron schedule (daily, 06:00 UTC):
 
 from __future__ import annotations
 
+import html as html_lib
 import logging
 import re
 import urllib.error
@@ -61,6 +62,10 @@ DAM_NAME_TO_ID: dict[str, str] = {
 }
 
 _NORM_DIACRITICS = str.maketrans("ëéèêÈÉÊË", "eeeeEEEE")
+# Zero-width chars appear inside cell text on the CoCT page — e.g. the
+# label "Steenbras Lower" arrives as "Steenbras L<U+200B>ower". Strip
+# before matching. Listed: U+200B ZWSP, U+200C ZWNJ, U+200D ZWJ, U+FEFF.
+_ZW_CHARS_RE = re.compile("[​‌‍﻿]")
 # Matches a numeric run with optional thousands separators and decimals.
 _NUM_RE = re.compile(r"\d{1,3}(?:[, ]\d{3})*(?:\.\d+)?")
 # Matches a percentage: "48.3%" or "48,3 %".
@@ -78,6 +83,7 @@ _MONTHS = {m.lower(): i for i, m in enumerate(
 
 
 def _normalise(s: str) -> str:
+    s = _ZW_CHARS_RE.sub("", s)
     return s.translate(_NORM_DIACRITICS).lower().strip()
 
 
@@ -88,8 +94,14 @@ def _match_dam(cell_text: str) -> str | None:
 
 
 def _to_float(s: str) -> float | None:
-    """Parse '433,989' or '48.3' or '48,3' to float."""
-    s = s.strip().replace(" ", "")
+    """Parse '433,989' or '130 010' or '48.3' or '48,3' to float.
+
+    Strips all whitespace (including U+00A0 NBSP, which CoCT uses as
+    thousands separator), then disambiguates ',' as decimal vs.
+    thousand separator using digit-grouping shape."""
+    if not s:
+        return None
+    s = re.sub(r"\s+", "", s)
     if not s:
         return None
     # Heuristic: if there's both '.' and ',' assume comma is a thousands sep.
@@ -152,8 +164,19 @@ def _fetch_html() -> str:
 
 
 def _extract_readings(html: str) -> tuple[datetime, list[tuple[str, float, float | None]]]:
-    """Return (as_of, [(dam_id, pct, storage_ml or None), ...])."""
-    soup = BeautifulSoup(html, "html.parser")
+    """Return (as_of, [(dam_id, pct, storage_ml or None), ...]).
+
+    The CoCT CMS stores the dam-levels table as HTML-encoded text inside
+    a content field — i.e. the raw page contains literal
+    ``&lt;td&gt;Berg River&lt;br&gt;&lt;/td&gt;`` instead of real
+    ``<td>`` markup. We unescape the body once before BeautifulSoup
+    parses it so the table is visible. The published table has a fixed
+    3-column layout: dam name, storage in megalitres, storage % (no
+    percent sign in the cell). We read by column position; rows whose
+    first cell isn't a known dam name (headers, total, blank) fall
+    through naturally."""
+    unescaped = html_lib.unescape(html)
+    soup = BeautifulSoup(unescaped, "html.parser")
     text = soup.get_text(" ", strip=True)
     as_of = _parse_as_of(text)
 
@@ -163,26 +186,18 @@ def _extract_readings(html: str) -> tuple[datetime, list[tuple[str, float, float
     for table in soup.find_all("table"):
         for row in table.find_all("tr"):
             cells = [c.get_text(" ", strip=True) for c in row.find_all(["td", "th"])]
-            if len(cells) < 2:
+            if len(cells) < 3:
                 continue
             dam_id = _match_dam(cells[0])
             if not dam_id or dam_id in seen:
                 continue
-            row_text = " ".join(cells[1:])
-            pct_match = _PCT_RE.search(row_text)
-            if not pct_match:
-                continue
-            pct = _to_float(pct_match.group(1))
+            ml = _to_float(cells[1])
+            pct = _to_float(cells[2])
             if pct is None or not (0.0 <= pct <= 200.0):
                 continue
-            # Storage Ml is the first numeric run before the percent sign.
-            ml: float | None = None
-            for n in _NUM_RE.finditer(row_text):
-                if n.end() <= pct_match.start():
-                    val = _to_float(n.group())
-                    # Filter obviously bogus matches (year-like 2026).
-                    if val is not None and val < 5_000_000:
-                        ml = val
+            # Filter obviously bogus ml matches (year-like 2026, etc.).
+            if ml is not None and ml >= 5_000_000:
+                ml = None
             readings.append((dam_id, pct, ml))
             seen.add(dam_id)
 

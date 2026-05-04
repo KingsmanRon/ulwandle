@@ -1,0 +1,59 @@
+name: DWS Weekly Dam Levels
+
+# Pulls the canonical DWS Weekly State of Dams PDF and writes one
+# DamStorageReading per matched dam into the production Neon DB.
+#
+# Schedule: Mondays at 06:00 UTC (08:00 SAST). DWS publishes the new
+# Weekly.pdf every Monday morning, so this hits a fresh file each week.
+#
+# Manual trigger: Actions tab → "DWS Weekly Dam Levels" → "Run workflow".
+#
+# Required repo secret:
+#   DATABASE_URL — the same Neon connection string Render uses
+#                  (postgresql://...?sslmode=require)
+#
+# SECRET_KEY and ANTHROPIC_API_KEY are required by app.core.config at
+# import time but the scraper itself never reads them, so we pass
+# placeholder values inline.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"     # Monday 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dws-scrape
+  cancel-in-progress: true
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run DWS scraper
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SECRET_KEY: "github-actions-scraper-not-used-32chars-min"
+          ANTHROPIC_API_KEY: "unused-by-scraper"
+          APP_ENV: "development"
+          DEBUG: "false"
+        run: python -m app.services.dws_scraper

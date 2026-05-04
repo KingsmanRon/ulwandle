@@ -29,6 +29,7 @@ const MetroDashboard = lazy(() => import("./components/MetroDashboard"));
 const MetroZoneMap = lazy(() => import("./components/MetroZoneMap"));
 const WaterNetworkVisualization = lazy(() => import("./components/WaterNetworkVisualization"));
 const WorldBankCompliancePanel = lazy(() => import("./components/WorldBankCompliance"));
+const MetroBaselinePanel = lazy(() => import("./components/MetroBaselinePanel"));
 
 const LazyFallback: React.FC = () => <div className="loading">Loading…</div>;
 
@@ -64,7 +65,7 @@ function buildHistoricalSeries(intake: number, wastagePercentage: number): Histo
 
 type TopView = "dashboard" | "metros" | "monitoring" | "killswitch" | "settings";
 
-type MetroSubView = "overview" | "detail" | "zones" | "network" | "reports";
+type MetroSubView = "overview" | "sources" | "detail" | "zones" | "network" | "reports";
 type MonitoringSubView = "districts" | "quality" | "alerts" | "predictions";
 
 interface ZoneData {
@@ -160,7 +161,7 @@ const App: React.FC = () => {
   const renderMetros = (): React.ReactNode => {
     const subNav = (
       <nav className="sub-nav" aria-label="Metro sections">
-        {(["overview", "detail", "zones", "network", "reports"] as const).map(key => (
+        {(["overview", "sources", "detail", "zones", "network", "reports"] as const).map(key => (
           <button
             key={key}
             type="button"
@@ -168,6 +169,7 @@ const App: React.FC = () => {
             className={metroSubView === key ? "active" : undefined}
           >
             {key === "overview"  ? "Overview"  :
+             key === "sources"   ? "Sources"   :
              key === "detail"    ? "Detail"    :
              key === "zones"     ? "Zones"     :
              key === "network"   ? "Network"   :
@@ -193,6 +195,9 @@ const App: React.FC = () => {
             )}
           </div>
         );
+        break;
+      case "sources":
+        body = <MetroBaselinePanel metro={activeMetro} />;
         break;
       case "detail":
         body = <MetroDashboard metroData={activeMetroData} historicalData={historicalData} />;

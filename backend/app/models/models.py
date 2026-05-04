@@ -400,3 +400,128 @@ class Employee(Base):
     last_seen_at = Column(DateTime(timezone=True))
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+# ---------- Real metro reference & telemetry ----------
+
+class Metro(Base):
+    """Authoritative per-metro reference data with source attribution.
+
+    Population, NRW, and per-capita figures originate from cited public
+    reports (Stats SA Census, DWS Blue/No Drop, municipal annual reports).
+    Each numeric carries an as-of label, source name, source URL, and an
+    optional caveat for non-direct figures (e.g. provincial proxy)."""
+    __tablename__ = "metros"
+
+    id = Column(String(64), primary_key=True)
+    code = Column(String(8), unique=True, nullable=False)
+    name = Column(String(120), nullable=False)
+    province = Column(String(64), nullable=False)
+    latitude = Column(Float)
+    longitude = Column(Float)
+
+    population = Column(Integer, nullable=False)
+    population_as_of = Column(String(40), nullable=False)
+    population_source = Column(String(120), nullable=False)
+    population_source_url = Column(String(500))
+
+    nrw_pct = Column(Float, nullable=False)
+    nrw_as_of = Column(String(40), nullable=False)
+    nrw_source = Column(String(120), nullable=False)
+    nrw_source_url = Column(String(500))
+    nrw_caveat = Column(String(255))
+
+    per_capita_lpcd = Column(Float)
+    per_capita_as_of = Column(String(40))
+    per_capita_source = Column(String(120))
+    per_capita_source_url = Column(String(500))
+    per_capita_caveat = Column(String(255))
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    consumption_readings = relationship(
+        "MetroConsumptionReading", back_populates="metro",
+        cascade="all, delete-orphan",
+    )
+
+
+class Dam(Base):
+    __tablename__ = "dams"
+
+    id = Column(String(64), primary_key=True)
+    name = Column(String(120), nullable=False)
+    province = Column(String(64))
+    full_capacity_ml = Column(Float)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    storage_readings = relationship(
+        "DamStorageReading", back_populates="dam",
+        cascade="all, delete-orphan",
+    )
+
+
+class MetroDam(Base):
+    """Many-to-many link table: a metro is supplied by one or more dams."""
+    __tablename__ = "metro_dams"
+
+    metro_id = Column(String(64), ForeignKey("metros.id", ondelete="CASCADE"),
+                      primary_key=True)
+    dam_id = Column(String(64), ForeignKey("dams.id", ondelete="CASCADE"),
+                    primary_key=True)
+    is_primary = Column(Boolean, default=False, nullable=False)
+
+
+class DamStorageReading(Base):
+    __tablename__ = "dam_storage_readings"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    dam_id = Column(String(64), ForeignKey("dams.id", ondelete="CASCADE"),
+                    nullable=False, index=True)
+    storage_pct = Column(Float, nullable=False)
+    storage_ml = Column(Float)
+    as_of = Column(DateTime(timezone=True), nullable=False)
+    source = Column(String(120), nullable=False)
+    source_url = Column(String(500))
+    fetched_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    dam = relationship("Dam", back_populates="storage_readings")
+
+
+Index("ix_dam_readings_dam_asof",
+      DamStorageReading.dam_id, DamStorageReading.as_of)
+
+
+class MetroConsumptionReading(Base):
+    __tablename__ = "metro_consumption_readings"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    metro_id = Column(String(64), ForeignKey("metros.id", ondelete="CASCADE"),
+                      nullable=False, index=True)
+    daily_ml = Column(Float, nullable=False)
+    as_of = Column(DateTime(timezone=True), nullable=False)
+    source = Column(String(120), nullable=False)
+    source_url = Column(String(500))
+    fetched_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    metro = relationship("Metro", back_populates="consumption_readings")
+
+
+Index("ix_consumption_metro_asof",
+      MetroConsumptionReading.metro_id, MetroConsumptionReading.as_of)
+
+
+class DataSource(Base):
+    """Registry of external data feeds + their refresh status."""
+    __tablename__ = "data_sources"
+
+    key = Column(String(64), primary_key=True)
+    name = Column(String(120), nullable=False)
+    url = Column(String(500))
+    description = Column(Text)
+    last_attempted_at = Column(DateTime(timezone=True))
+    last_success_at = Column(DateTime(timezone=True))
+    last_status = Column(String(40))
+    last_error = Column(Text)
+    rows_last_run = Column(Integer)

@@ -1,0 +1,112 @@
+import React from 'react';
+import { Bot, Activity, CheckCircle } from 'lucide-react';
+import './ClaudeRecommendations.css';
+
+export interface Recommendation {
+  title: string;
+  description: string;
+  impact: string;
+  cost: string;
+  timeline: string;
+  kpis: string[];
+}
+
+export interface ClaudeRecommendationsData {
+  priority: 'CRITICAL' | 'HIGH' | 'MEDIUM';
+  recommendations: Recommendation[];
+  potentialSavings: string;
+  roi: string;
+}
+
+interface ClaudeRecommendationsPanelProps {
+  recommendations: ClaudeRecommendationsData | null;
+  loading: boolean;
+  onRefresh: () => void;
+}
+
+const ClaudeRecommendationsPanel: React.FC<ClaudeRecommendationsPanelProps> = ({
+  recommendations,
+  loading,
+  onRefresh,
+}) => {
+  if (loading) {
+    return (
+      <div className="claude-recommendations loading">
+        <div className="loading-content">
+          <Activity className="spinner" size={24} />
+          <p>Analysing water data and generating recommendations…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!recommendations) return null;
+
+  const priorityClass = `priority-${recommendations.priority.toLowerCase()}`;
+
+  return (
+    <div className="claude-recommendations">
+      <div className="recommendations-header">
+        <div className="header-title">
+          <Bot className="bot-icon" size={32} />
+          <div>
+            <h3>AI water-conservation advisor</h3>
+            <p className="subtitle">Recommendations across the selected metro footprint</p>
+          </div>
+        </div>
+        <button onClick={onRefresh} className="refresh-button" type="button">
+          <Activity size={18} />
+          Refresh analysis
+        </button>
+      </div>
+
+      <div className={`priority-banner ${priorityClass}`}>
+        <p className="priority-level">Priority level: {recommendations.priority}</p>
+        <p className="potential-savings">Potential savings: {recommendations.potentialSavings}</p>
+        <p className="roi-info">ROI: {recommendations.roi}</p>
+      </div>
+
+      <div className="recommendations-list">
+        {recommendations.recommendations.map((rec, idx) => (
+          <div key={idx} className="recommendation-card">
+            <div className="recommendation-content">
+              <h4 className="recommendation-title">
+                {idx + 1}. {rec.title}
+              </h4>
+              <p className="recommendation-description">{rec.description}</p>
+
+              <div className="recommendation-metrics">
+                <div className="metric">
+                  <p className="metric-label">Expected impact</p>
+                  <p className="metric-value impact">{rec.impact}</p>
+                </div>
+                <div className="metric">
+                  <p className="metric-label">Cost range</p>
+                  <p className="metric-value cost">{rec.cost}</p>
+                </div>
+                <div className="metric">
+                  <p className="metric-label">Timeline</p>
+                  <p className="metric-value timeline">{rec.timeline}</p>
+                </div>
+              </div>
+
+              <div className="kpis">
+                <p className="kpis-label">Key performance indicators:</p>
+                <ul className="kpis-list">
+                  {rec.kpis.map((kpi, kpiIdx) => (
+                    <li key={kpiIdx} className="kpi-item">
+                      <CheckCircle className="kpi-icon" size={14} />
+                      {kpi}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default ClaudeRecommendationsPanel;

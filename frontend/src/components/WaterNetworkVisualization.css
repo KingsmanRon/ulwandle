@@ -1182,3 +1182,16 @@
     width: 100%;
   }
 }
+
+.water-network-container .water-network-caveat {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.55);
+  margin-top: 0.2rem;
+  font-style: italic;
+  letter-spacing: 0.01em;
+}
+
+.water-network-container .water-network-subtitle em {
+  font-style: normal;
+  color: rgba(255, 255, 255, 0.85);
+}

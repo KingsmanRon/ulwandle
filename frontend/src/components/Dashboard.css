@@ -169,3 +169,142 @@
   color: #64748b;
   font-size: 0.85rem;
 }
+
+/* ---------- System Overview additions (real-data dashboard) ---------- */
+
+.dashboard .overview-subtitle {
+  color: #475569;
+  margin: -0.75rem 0 1.5rem 0;
+  font-size: 0.95rem;
+}
+
+.dashboard .stat-card .stat-value.refresh-fresh {
+  color: #047857;
+}
+
+.dashboard .stat-card .stat-value.refresh-stale {
+  color: #b45309;
+}
+
+.dashboard .stat-card .stat-breakdown .muted {
+  color: #64748b;
+  font-size: 0.78rem;
+}
+
+.dashboard .glance-h {
+  margin: 0.5rem 0 0.25rem 0;
+  color: #0c4a6e;
+}
+
+.dashboard .glance-sub {
+  color: #475569;
+  font-size: 0.88rem;
+  margin: 0 0 0.75rem 0;
+}
+
+.dashboard .metros-glance-table {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+
+.dashboard .glance-row {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 0.7fr 1.4fr 0.7fr;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  align-items: baseline;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.dashboard .glance-row:last-child {
+  border-bottom: 0;
+}
+
+.dashboard .glance-row.glance-head {
+  background: #f8fafc;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #475569;
+  font-weight: 600;
+}
+
+.dashboard .glance-row .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.dashboard .glance-row .muted {
+  color: #94a3b8;
+  font-size: 0.75rem;
+  margin-left: 0.4rem;
+}
+
+.dashboard .caveat-mark {
+  color: #b45309;
+  margin-left: 0.2rem;
+  cursor: help;
+}
+
+.dashboard .data-sources-footer {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+.dashboard .data-sources-footer strong {
+  color: #0c4a6e;
+}
+
+.dashboard .data-sources-footer ul {
+  list-style: none;
+  margin: 0.4rem 0 0.6rem 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+}
+
+.dashboard .data-sources-footer li {
+  font-size: 0.82rem;
+}
+
+.dashboard .data-sources-footer a {
+  color: #0369a1;
+  text-decoration: none;
+}
+
+.dashboard .data-sources-footer a:hover {
+  text-decoration: underline;
+}
+
+.dashboard .data-sources-footer .footer-note {
+  margin: 0.6rem 0 0 0;
+  color: #64748b;
+  font-style: italic;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.dashboard .error-card {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+  padding: 1rem;
+}
+
+@media (max-width: 768px) {
+  .dashboard .glance-row {
+    grid-template-columns: 1.4fr 0.6fr 0.6fr;
+  }
+  .dashboard .glance-row > :nth-child(4),
+  .dashboard .glance-row > :nth-child(5) {
+    display: none;
+  }
+}

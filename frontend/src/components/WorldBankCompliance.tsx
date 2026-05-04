@@ -140,8 +140,8 @@ const WorldBankCompliancePanel: React.FC<WorldBankCompliancePanelProps> = ({
       XLSX.utils.book_append_sheet(wb, ws3, 'Historical Trends');
     }
 
-    // Sheet 4: AI recommendations
-    if (recommendations) {
+    // Sheet 4: AI recommendations (only when generation succeeded)
+    if (recommendations && recommendations.status === 'ok' && recommendations.recommendations) {
       const recRows = recommendations.recommendations.map((r, i) => sanitiseRow({
         'Priority': i + 1,
         'Recommendation': r.title,
@@ -149,7 +149,7 @@ const WorldBankCompliancePanel: React.FC<WorldBankCompliancePanelProps> = ({
         'Impact': r.impact,
         'Estimated cost': r.cost,
         'Timeline': r.timeline,
-        'Key performance indicators': r.kpis.join('; '),
+        'Key performance indicators': (r.kpis || []).join('; '),
       }));
       const ws4 = XLSX.utils.json_to_sheet(recRows);
       ws4['!cols'] = [
@@ -161,9 +161,9 @@ const WorldBankCompliancePanel: React.FC<WorldBankCompliancePanelProps> = ({
       const summaryRows = [
         {},
         { 'Priority': 'SUMMARY' },
-        { 'Priority': 'Overall priority level:', 'Recommendation': recommendations.priority },
-        { 'Priority': 'Potential savings:',      'Recommendation': recommendations.potentialSavings },
-        { 'Priority': 'ROI estimate:',           'Recommendation': recommendations.roi },
+        { 'Priority': 'Overall priority level:', 'Recommendation': recommendations.priority || '' },
+        { 'Priority': 'Potential savings:',      'Recommendation': recommendations.potential_savings || '' },
+        { 'Priority': 'ROI estimate:',           'Recommendation': recommendations.roi || '' },
       ].map(row => sanitiseRow(row));
       XLSX.utils.sheet_add_json(ws4, summaryRows, { skipHeader: true, origin: -1 });
     }

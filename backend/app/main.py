@@ -21,7 +21,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
-from app.api import alerts, dashboard, districts, kill_switch, metros, monitoring, predictions, water_quality
+from app.api import alerts, dashboard, data_sources, districts, kill_switch, metros, monitoring, predictions, recommendations, water_quality
 from app.auth import router as auth_router
 from app.auth.security import decode_token
 from app.core.config import settings
@@ -159,3 +159,5 @@ app.include_router(districts.router, prefix="/api/v1/districts", tags=["District
 app.include_router(alerts.router, prefix="/api/v1/alerts", tags=["Alerts"])
 app.include_router(dashboard.router, prefix="/api/v1/dashboard", tags=["Dashboard"])
 app.include_router(metros.router, prefix="/api/v1/metros", tags=["Metros"])
+app.include_router(data_sources.router, prefix="/api/v1/data-sources", tags=["Data Sources"])
+app.include_router(recommendations.router, prefix="/api/v1/recommendations", tags=["AI Recommendations"])

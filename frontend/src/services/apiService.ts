@@ -97,6 +97,16 @@ export const apiService = {
     (await apiClient.get("/api/v1/metros/stats/overview")).data,
   updateLeakStatus:     async (leakId: string, body: { new_status: string; notes?: string }) =>
     (await apiClient.post(`/api/v1/metros/leaks/${encodeURIComponent(leakId)}/update-status`, body)).data,
+
+  // External data feed registry — last-refresh / status per scraper.
+  getDataSources:       async () =>
+    (await apiClient.get("/api/v1/data-sources/")).data as DataSourceStatus[],
+
+  // Claude AI recommendations per metro. Returns structured advice or
+  // a degraded `unavailable` payload if Anthropic is rate-limited /
+  // out-of-credit.
+  getRecommendations:   async (metroId: string) =>
+    (await apiClient.post(`/api/v1/recommendations/${encodeURIComponent(metroId)}`)).data as RecommendationsResponse,
 };
 
 // ---------- Real-data response types ----------
@@ -139,6 +149,37 @@ export interface MetroDamsResponse {
   dams: DamLevel[];
   weighted_storage_pct?: number | null;
   has_data: boolean;
+}
+
+export interface DataSourceStatus {
+  key: string;
+  name: string;
+  url?: string | null;
+  description?: string | null;
+  last_attempted_at?: string | null;
+  last_success_at?: string | null;
+  last_status?: string | null;
+  rows_last_run?: number | null;
+}
+
+export interface RecommendationItem {
+  title: string;
+  description: string;
+  impact: string;
+  cost: string;
+  timeline: string;
+  kpis: string[];
+}
+
+export interface RecommendationsResponse {
+  status: "ok" | "unavailable";
+  metro_id: string;
+  priority?: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
+  recommendations?: RecommendationItem[];
+  potential_savings?: string;
+  roi?: string;
+  generated_at?: string;
+  reason?: string;  // present when status === "unavailable"
 }
 
 export default apiService;

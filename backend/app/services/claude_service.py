@@ -196,6 +196,66 @@ class ClaudeService:
             max_tokens=1024, fallback={"summary": "Advisory unavailable; proceed with manual judgement."}
         )
 
+    async def metro_recommendations(
+        self,
+        metro_summary: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Generate water-efficiency recommendations for a single metro.
+
+        Inputs are pre-sanitised numeric/enum fields from the metros +
+        dam_storage_readings tables. No free-text user content is
+        forwarded. On any Claude failure (rate limit, insufficient
+        credit, network) returns ``{"status": "unavailable", "reason": ...}``
+        so the UI can render a degraded state instead of breaking."""
+        forwarded = {
+            "metro_name": _safe_str(metro_summary.get("metro_name"), 60),
+            "province": _safe_str(metro_summary.get("province"), 30),
+            "population": int(metro_summary.get("population") or 0),
+            "nrw_pct": _num(metro_summary.get("nrw_pct")) or 0.0,
+            "per_capita_lpcd": _num(metro_summary.get("per_capita_lpcd")) or 0.0,
+            "primary_dam_storage_pct": _num(metro_summary.get("primary_dam_storage_pct")) or 0.0,
+            "weighted_storage_pct": _num(metro_summary.get("weighted_storage_pct")) or 0.0,
+        }
+
+        system = [{
+            "type": "text",
+            "text": (
+                "You advise South African metropolitan water utilities on "
+                "Non-Revenue Water reduction and supply resilience. Your "
+                "advice is structured, costed, and references South "
+                "African market rates (Rand). Reply with one JSON object "
+                "only — no prose, no markdown fences."
+            ),
+            "cache_control": {"type": "ephemeral"},
+        }]
+        user_text = (
+            f"Metro context: {json.dumps(forwarded)}\n\n"
+            "Generate 3-5 concrete recommendations ordered by impact-to-"
+            "cost ratio. Each recommendation must include realistic SA "
+            "Rand cost ranges and timelines.\n\n"
+            "Schema:\n"
+            "{\n"
+            '  "status": "ok",\n'
+            '  "priority": "CRITICAL|HIGH|MEDIUM|LOW",\n'
+            '  "recommendations": [\n'
+            '    {"title": "string", "description": "string", '
+            '"impact": "string e.g. 15-25 ML/day reduction", '
+            '"cost": "string e.g. R50-80 million", '
+            '"timeline": "string e.g. 12-18 months", '
+            '"kpis": ["string", "string"]}\n'
+            '  ],\n'
+            '  "potential_savings": "string e.g. 45-70 ML/day total",\n'
+            '  "roi": "string e.g. Investment recovered within 3-5 years"\n'
+            "}"
+        )
+
+        return await self._invoke(
+            system, user_text,
+            model=settings.CLAUDE_MODEL,
+            max_tokens=2048,
+            fallback=self._fallback_metro_recommendations(forwarded["metro_name"]),
+        )
+
     # ---------- Internals ----------
 
     async def _invoke(self, system, user_text: str, *, model: str,
@@ -213,11 +273,26 @@ class ClaudeService:
             parsed = _parse_json(text)
             return parsed if parsed is not None else fallback
         except APIError as e:
-            logger.warning("Claude API error: %s", e)
-            return fallback
+            # Surface the failure category so the UI can show an honest
+            # degraded state. Anthropic returns 429 / 400 with distinct
+            # error.type values for rate_limit / insufficient_credit.
+            err_type = getattr(e, "type", None) or e.__class__.__name__
+            err_msg = str(e)
+            logger.warning("Claude API error (type=%s): %s", err_type, err_msg)
+            unavailable = dict(fallback)
+            unavailable["status"] = "unavailable"
+            unavailable["reason"] = (
+                "AI advisor temporarily unavailable (rate limited)" if "rate_limit" in err_type or "rate_limit" in err_msg
+                else "AI advisor temporarily unavailable (insufficient credit)" if "credit" in err_msg.lower()
+                else "AI advisor temporarily unavailable"
+            )
+            return unavailable
         except Exception:
             logger.exception("Claude invocation failed")
-            return fallback
+            unavailable = dict(fallback)
+            unavailable["status"] = "unavailable"
+            unavailable["reason"] = "AI advisor temporarily unavailable"
+            return unavailable
 
     def _summarise_flow(self, flow_data, historical_data):
         if not flow_data:
@@ -255,6 +330,54 @@ class ClaudeService:
             "recommendations": {"immediate": ["AI advisory unavailable"], "treatment": [], "longterm": []},
             "district_status": "yellow",
             "summary": "AI advisory unavailable.",
+        }
+
+    @staticmethod
+    def _fallback_metro_recommendations(metro_name: str) -> dict[str, Any]:
+        """Sane structural fallback when Claude is unavailable. The
+        endpoint will additionally set status='unavailable' + reason."""
+        return {
+            "status": "ok",  # overridden to 'unavailable' by _invoke on error
+            "priority": "MEDIUM",
+            "recommendations": [
+                {
+                    "title": "Active leak detection programme",
+                    "description": (
+                        "Deploy acoustic loggers and pressure-step testing across "
+                        f"the {metro_name} distribution network to find background "
+                        "leaks before they surface."
+                    ),
+                    "impact": "10-25 ML/day NRW reduction",
+                    "cost": "R40-80 million phased",
+                    "timeline": "12-18 months",
+                    "kpis": ["Mean leak repair < 24h", "Acoustic survey 100% coverage in 18 months"],
+                },
+                {
+                    "title": "Pressure management zones",
+                    "description": (
+                        "Establish DMAs with PRV control to reduce burst frequency "
+                        "and background leakage in high-pressure suburbs."
+                    ),
+                    "impact": "15-30 ML/day reduction in high-pressure zones",
+                    "cost": "R20-40 million per zone",
+                    "timeline": "6-12 months per zone",
+                    "kpis": ["Pressure 200-400 kPa", "Burst frequency -40%"],
+                },
+                {
+                    "title": "Smart-metering rollout",
+                    "description": (
+                        "AMI rollout starting with high-consumption commercial "
+                        "and prepaid-conversion candidates. Real-time usage "
+                        "reduces commercial losses and improves billing."
+                    ),
+                    "impact": "5-15 ML/day from commercial loss reduction",
+                    "cost": "R150-250 million for full rollout",
+                    "timeline": "24-36 months",
+                    "kpis": ["AMI coverage 80% by year 3", "Commercial NRW -30%"],
+                },
+            ],
+            "potential_savings": "30-70 ML/day combined",
+            "roi": "Investment typically recovered within 3-5 years through reduced bulk-water purchases",
         }
 
 

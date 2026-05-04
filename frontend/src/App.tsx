@@ -7,6 +7,7 @@ import Alerts from "./components/Alerts";
 import ClaudeRecommendationsPanel, {
   ClaudeRecommendationsData,
 } from "./components/ClaudeRecommendations";
+import { apiService } from "./services/apiService";
 import Dashboard from "./components/Dashboard";
 import DistrictMap from "./components/DistrictMap";
 import KillSwitch from "./components/KillSwitch";
@@ -114,8 +115,31 @@ const App: React.FC = () => {
 
   const [activeMetroZones, setActiveMetroZones] = useState<ZoneData[]>([]);
 
-  // Live Claude recommendations are not wired in this PR; reserved for follow-up.
-  const [recommendations] = useState<ClaudeRecommendationsData | null>(null);
+  // Live Claude recommendations — fetched per active metro on demand.
+  // Cache-warmed by the backend (1h LRU keyed on metro+NRW bucket).
+  const [recommendations, setRecommendations] = useState<ClaudeRecommendationsData | null>(null);
+  const [recommendationsLoading, setRecommendationsLoading] = useState(false);
+
+  const fetchRecommendations = useCallback(async (metroId: string) => {
+    setRecommendationsLoading(true);
+    try {
+      const data = await apiService.getRecommendations(metroId);
+      setRecommendations(data);
+    } catch {
+      setRecommendations({
+        status: "unavailable",
+        metro_id: metroId,
+        reason: "Could not reach the recommendations service. Try again in a moment.",
+      });
+    } finally {
+      setRecommendationsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!activeMetro?.id) return;
+    fetchRecommendations(activeMetro.id);
+  }, [activeMetro?.id, fetchRecommendations]);
 
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   useEffect(() => {
@@ -218,8 +242,8 @@ const App: React.FC = () => {
           <div className="stacked-panels">
             <ClaudeRecommendationsPanel
               recommendations={recommendations}
-              loading={false}
-              onRefresh={() => { /* Live Claude wiring is a follow-up PR. */ }}
+              loading={recommendationsLoading}
+              onRefresh={() => activeMetro?.id && fetchRecommendations(activeMetro.id)}
             />
             <ShutdownNotification metroData={activeMetroData} />
             <WorldBankCompliancePanel

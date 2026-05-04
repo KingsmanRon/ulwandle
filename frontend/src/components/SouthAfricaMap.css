@@ -12,7 +12,7 @@
 }
 
 /* Header Section */
-.map-header {
+.south-africa-map-container .map-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -21,18 +21,18 @@
   border-bottom: 2px solid #e5e7eb;
 }
 
-.map-header h2 {
+.south-africa-map-container .map-header h2 {
   margin: 0;
   color: #1f2937;
   font-size: 1.5rem;
 }
 
-.map-legend {
+.south-africa-map-container .map-legend {
   display: flex;
   gap: 1.5rem;
 }
 
-.legend-item {
+.south-africa-map-container .legend-item {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -40,7 +40,7 @@
   color: #4b5563;
 }
 
-.legend-color {
+.south-africa-map-container .legend-color {
   width: 20px;
   height: 20px;
   border-radius: 4px;
@@ -49,7 +49,7 @@
 
 /* The Wrapper for Image + Dots */
 /* This MUST be relative so dots position absolutely inside it */
-.map-wrapper {
+.south-africa-map-container .map-wrapper {
   position: relative;
   width: 100%;
   max-width: 1000px;
@@ -59,7 +59,7 @@
 }
 
 /* The Actual Map Image */
-.sa-map-image {
+.south-africa-map-container .sa-map-image {
   width: 100%;
   height: auto;
   display: block;
@@ -69,7 +69,7 @@
 /* THE DOTS (Div-based instead of SVG)              */
 /* ------------------------------------------------ */
 
-.metro-marker {
+.south-africa-map-container .metro-marker {
   position: absolute;
   width: 16px;       /* Size of the dot */
   height: 16px;
@@ -86,13 +86,13 @@
   transform: translate(-50%, -50%);
 }
 
-.metro-marker:hover {
+.south-africa-map-container .metro-marker:hover {
   transform: translate(-50%, -50%) scale(1.3); /* Scale up but keep centered */
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
   z-index: 10;
 }
 
-.metro-marker.selected {
+.south-africa-map-container .metro-marker.selected {
   box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3); /* Ring effect */
   animation: pulse-ring 2s infinite;
 }
@@ -101,7 +101,7 @@
 /* Tooltips & UI Overlay                            */
 /* ------------------------------------------------ */
 
-.map-tooltip {
+.south-africa-map-container .map-tooltip {
   position: absolute;
   top: 20px;
   right: 20px;
@@ -118,46 +118,46 @@
   pointer-events: none; /* Lets clicks pass through if it overlaps slightly */
 }
 
-.map-tooltip h4 {
+.south-africa-map-container .map-tooltip h4 {
   margin: 0 0 0.5rem 0;
   color: #111827;
   font-size: 1.1rem;
   font-weight: 700;
 }
 
-.map-tooltip p {
+.south-africa-map-container .map-tooltip p {
   margin: 0.25rem 0;
   font-size: 0.9rem;
   color: #4b5563;
 }
 
-.map-tooltip strong {
+.south-africa-map-container .map-tooltip strong {
   color: #1f2937;
 }
 
 /* Footer Section */
-.map-footer {
+.south-africa-map-container .map-footer {
   margin-top: 1.5rem;
   padding-top: 1rem;
   border-top: 2px solid #e5e7eb;
 }
 
-.map-footer p {
+.south-africa-map-container .map-footer p {
   margin: 0.5rem 0;
   color: #4b5563;
   font-size: 0.95rem;
 }
 
-.map-footer strong {
+.south-africa-map-container .map-footer strong {
   color: #1f2937;
 }
 
-.selected-metros-list {
+.south-africa-map-container .selected-metros-list {
   color: #3b82f6;
   font-weight: 600;
 }
 
-.map-hint {
+.south-africa-map-container .map-hint {
   color: #6b7280 !important;
   font-size: 0.85rem !important;
   font-style: italic;
@@ -188,24 +188,24 @@
     padding: 1.5rem;
   }
 
-  .map-header {
+  .south-africa-map-container .map-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
   }
 
-  .map-legend {
+  .south-africa-map-container .map-legend {
     flex-wrap: wrap;
     gap: 1rem;
   }
 
-  .map-tooltip {
+  .south-africa-map-container .map-tooltip {
     position: static;
     margin-top: 1rem;
     width: 100%;
   }
 
-  .metro-marker {
+  .south-africa-map-container .metro-marker {
     width: 14px;
     height: 14px;
   }

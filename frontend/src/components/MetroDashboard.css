@@ -2,174 +2,174 @@
   margin-top: 24px;
 }
 
-.dashboard-title {
+.metro-dashboard .dashboard-title {
   font-size: 24px;
   font-weight: bold;
   color: #1f2937;
   margin: 0 0 24px 0;
 }
 
-.metrics-grid {
+.metro-dashboard .metrics-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 16px;
   margin-bottom: 24px;
 }
 
-.metric-card {
+.metro-dashboard .metric-card {
   border-radius: 8px;
   padding: 24px;
   color: white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.metric-card.blue {
+.metro-dashboard .metric-card.blue {
   background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   border-left: 4px solid #1d4ed8;
 }
 
-.metric-card.green {
+.metro-dashboard .metric-card.green {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   border-left: 4px solid #047857;
 }
 
-.metric-card.red {
+.metro-dashboard .metric-card.red {
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   border-left: 4px solid #b91c1c;
 }
 
-.metric-card.purple {
+.metro-dashboard .metric-card.purple {
   background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
   border-left: 4px solid #7e22ce;
 }
 
-.metric-content {
+.metro-dashboard .metric-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.metric-info {
+.metro-dashboard .metric-info {
   flex: 1;
 }
 
-.metric-label {
+.metro-dashboard .metric-label {
   font-size: 13px;
   font-weight: 600;
   margin: 0 0 8px 0;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
-.metric-value {
+.metro-dashboard .metric-value {
   font-size: 32px;
   font-weight: bold;
   margin: 0 0 4px 0;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
-.metric-value .unit {
+.metro-dashboard .metric-value .unit {
   font-size: 18px;
   font-weight: normal;
 }
 
-.metric-subtitle {
+.metro-dashboard .metric-subtitle {
   font-size: 12px;
   margin: 0;
   font-weight: 500;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
-.metric-icon {
+.metro-dashboard .metric-icon {
   opacity: 0.3;
 }
 
-.charts-grid {
+.metro-dashboard .charts-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
   gap: 24px;
   margin-bottom: 24px;
 }
 
-.chart-card {
+.metro-dashboard .chart-card {
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   padding: 24px;
 }
 
-.chart-title {
+.metro-dashboard .chart-title {
   font-size: 20px;
   font-weight: bold;
   color: #1f2937;
   margin: 0 0 16px 0;
 }
 
-.stress-level-card {
+.metro-dashboard .stress-level-card {
   border-radius: 8px;
   padding: 20px;
   margin-bottom: 24px;
   border-left: 4px solid;
 }
 
-.stress-level-card h4 {
+.metro-dashboard .stress-level-card h4 {
   margin: 0 0 8px 0;
   font-size: 18px;
 }
 
-.stress-level-card p {
+.metro-dashboard .stress-level-card p {
   margin: 0 0 12px 0;
 }
 
-.stress-level-card.stress-critical {
+.metro-dashboard .stress-level-card.stress-critical {
   background: #fee2e2;
   border-color: #dc2626;
   color: #7f1d1d;
 }
 
-.stress-level-card.stress-high {
+.metro-dashboard .stress-level-card.stress-high {
   background: #fed7aa;
   border-color: #ea580c;
   color: #7c2d12;
 }
 
-.stress-level-card.stress-medium {
+.metro-dashboard .stress-level-card.stress-medium {
   background: #fef3c7;
   border-color: #eab308;
   color: #78350f;
 }
 
-.stress-level-card.stress-low {
+.metro-dashboard .stress-level-card.stress-low {
   background: #d1fae5;
   border-color: #10b981;
   color: #064e3b;
 }
 
-.benchmark-info p {
+.metro-dashboard .benchmark-info p {
   font-size: 13px;
   margin: 4px 0;
 }
 
-.text-green-600 {
+.metro-dashboard .text-green-600 {
   color: #059669 !important;
   font-weight: 600;
 }
 
-.text-orange-600 {
+.metro-dashboard .text-orange-600 {
   color: #ea580c !important;
   font-weight: 600;
 }
 
-.text-red-600 {
+.metro-dashboard .text-red-600 {
   color: #dc2626 !important;
   font-weight: 600;
 }
 
 @media (max-width: 768px) {
-  .metrics-grid {
+  .metro-dashboard .metrics-grid {
     grid-template-columns: 1fr;
   }
 
-  .charts-grid {
+  .metro-dashboard .charts-grid {
     grid-template-columns: 1fr;
   }
 }

@@ -13,14 +13,14 @@
   padding: 48px 24px;
 }
 
-.loading-content {
+.claude-recommendations .loading-content {
   display: flex;
   align-items: center;
   gap: 12px;
   color: #6b7280;
 }
 
-.spinner {
+.claude-recommendations .spinner {
   animation: spin 1s linear infinite;
 }
 
@@ -33,37 +33,37 @@
   }
 }
 
-.recommendations-header {
+.claude-recommendations .recommendations-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
 }
 
-.header-title {
+.claude-recommendations .header-title {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.bot-icon {
+.claude-recommendations .bot-icon {
   color: #9333ea;
 }
 
-.recommendations-header h3 {
+.claude-recommendations .recommendations-header h3 {
   margin: 0;
   font-size: 20px;
   font-weight: bold;
   color: #1f2937;
 }
 
-.subtitle {
+.claude-recommendations .subtitle {
   font-size: 13px;
   color: #6b7280;
   margin: 2px 0 0 0;
 }
 
-.refresh-button {
+.claude-recommendations .refresh-button {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -77,88 +77,87 @@
   transition: background 0.2s;
 }
 
-.refresh-button:hover {
+.claude-recommendations .refresh-button:hover {
   background: #7e22ce;
 }
 
-.priority-banner {
+.claude-recommendations .priority-banner {
   border-left: 4px solid;
   border-radius: 6px;
   padding: 16px;
   margin-bottom: 16px;
 }
 
-.priority-banner.priority-critical {
+.claude-recommendations .priority-banner.priority-critical {
   background: #fee2e2;
   border-color: #dc2626;
   color: #7f1d1d;
 }
 
-.priority-banner.priority-high {
+.claude-recommendations .priority-banner.priority-high {
   background: #fed7aa;
   border-color: #ea580c;
   color: #7c2d12;
 }
 
-.priority-banner.priority-medium {
+.claude-recommendations .priority-banner.priority-medium {
   background: #fef3c7;
   border-color: #eab308;
   color: #78350f;
 }
 
-.priority-level {
+.claude-recommendations .priority-level {
   font-weight: bold;
   margin: 0 0 4px 0;
 }
 
-.potential-savings,
-.roi-info {
+.claude-recommendations .potential-savings, .claude-recommendations .roi-info {
   font-size: 13px;
   margin: 2px 0;
 }
 
-.recommendations-list {
+.claude-recommendations .recommendations-list {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-.recommendation-card {
+.claude-recommendations .recommendation-card {
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   padding: 20px;
   transition: all 0.2s;
 }
 
-.recommendation-card:hover {
+.claude-recommendations .recommendation-card:hover {
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.recommendation-title {
+.claude-recommendations .recommendation-title {
   font-size: 18px;
   font-weight: bold;
   color: #1f2937;
   margin: 0 0 12px 0;
 }
 
-.recommendation-description {
+.claude-recommendations .recommendation-description {
   color: #4b5563;
   margin: 0 0 16px 0;
   line-height: 1.6;
 }
 
-.recommendation-metrics {
+.claude-recommendations .recommendation-metrics {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
   margin-bottom: 16px;
 }
 
-.metric {
+.claude-recommendations .metric {
   /* No additional styles needed, inherits from grid */
 }
 
-.metric-label {
+.claude-recommendations .metric-label {
   font-size: 11px;
   color: #9ca3af;
   margin: 0 0 4px 0;
@@ -166,30 +165,30 @@
   letter-spacing: 0.5px;
 }
 
-.metric-value {
+.claude-recommendations .metric-value {
   font-weight: 600;
   margin: 0;
 }
 
-.metric-value.impact {
+.claude-recommendations .metric-value.impact {
   color: #059669;
 }
 
-.metric-value.cost {
+.claude-recommendations .metric-value.cost {
   color: #1f2937;
 }
 
-.metric-value.timeline {
+.claude-recommendations .metric-value.timeline {
   color: #1f2937;
 }
 
-.kpis {
+.claude-recommendations .kpis {
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid #e5e7eb;
 }
 
-.kpis-label {
+.claude-recommendations .kpis-label {
   font-size: 12px;
   color: #9ca3af;
   margin: 0 0 8px 0;
@@ -197,13 +196,13 @@
   letter-spacing: 0.5px;
 }
 
-.kpis-list {
+.claude-recommendations .kpis-list {
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
-.kpi-item {
+.claude-recommendations .kpi-item {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -212,24 +211,24 @@
   color: #4b5563;
 }
 
-.kpi-icon {
+.claude-recommendations .kpi-icon {
   color: #10b981;
   flex-shrink: 0;
 }
 
 @media (max-width: 768px) {
-  .recommendations-header {
+  .claude-recommendations .recommendations-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
   }
 
-  .refresh-button {
+  .claude-recommendations .refresh-button {
     width: 100%;
     justify-content: center;
   }
 
-  .recommendation-metrics {
+  .claude-recommendations .recommendation-metrics {
     grid-template-columns: 1fr;
   }
 }

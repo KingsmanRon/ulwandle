@@ -54,22 +54,12 @@ function buildHistoricalSeries(intake: number, wastagePercentage: number): Histo
   });
 }
 
-type View =
-  | "dashboard"
-  | "districts"
-  | "quality"
-  | "killswitch"
-  | "predictions"
-  | "alerts"
-  | "settings"
-  | "sa-map"
-  | "metros"
-  | "metro-detail"
-  | "problem-areas"
-  | "network"
-  | "notices"
-  | "compliance"
-  | "recommendations";
+// ---------- Navigation: 5 top-level tabs, two with sub-nav ----------
+
+type TopView = "dashboard" | "metros" | "monitoring" | "killswitch" | "settings";
+
+type MetroSubView = "overview" | "detail" | "zones" | "network" | "reports";
+type MonitoringSubView = "districts" | "quality" | "alerts" | "predictions";
 
 interface ZoneData {
   zone_id: string;
@@ -86,7 +76,9 @@ interface ZoneData {
 
 const App: React.FC = () => {
   const { user, loading, logout } = useAuth();
-  const [view, setView] = useState<View>("dashboard");
+  const [view, setView] = useState<TopView>("dashboard");
+  const [metroSubView, setMetroSubView] = useState<MetroSubView>("overview");
+  const [monitoringSubView, setMonitoringSubView] = useState<MonitoringSubView>("districts");
 
   const [selectedMetros, setSelectedMetros] = useState<Metro[]>([METROS[0]]);
   const activeMetro: Metro = selectedMetros[0] ?? METROS[0];
@@ -157,78 +149,124 @@ const App: React.FC = () => {
 
   const canSeeKillSwitch = ["operator", "supervisor", "admin"].includes(user.role);
 
-  const render = (): React.ReactNode => {
-    switch (view) {
-      case "dashboard":   return <Dashboard />;
-      case "districts":   return <DistrictMap />;
-      case "quality":     return <WaterQuality />;
-      case "killswitch":  return canSeeKillSwitch ? <KillSwitch /> : <NoAccess />;
-      case "predictions": return <Predictions />;
-      case "alerts":      return <Alerts />;
-      case "settings":    return <SigningKeySetup />;
+  // ---------- Sub-views ----------
 
-      case "sa-map":
-        return (
-          <SouthAfricaMap
-            selectedMetros={selectedMetros}
-            onMetroClick={handleMetroToggle}
-            metroStressLevels={metroStressLevels}
-          />
-        );
+  const renderMetros = (): React.ReactNode => {
+    const subNav = (
+      <nav className="sub-nav" aria-label="Metro sections">
+        {(["overview", "detail", "zones", "network", "reports"] as const).map(key => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setMetroSubView(key)}
+            className={metroSubView === key ? "active" : undefined}
+          >
+            {key === "overview"  ? "Overview"  :
+             key === "detail"    ? "Detail"    :
+             key === "zones"     ? "Zones"     :
+             key === "network"   ? "Network"   :
+                                   "Reports"}
+          </button>
+        ))}
+      </nav>
+    );
 
-      case "metros":
-        return (
+    let body: React.ReactNode;
+    switch (metroSubView) {
+      case "overview":
+        body = (
           <>
+            <SouthAfricaMap
+              selectedMetros={selectedMetros}
+              onMetroClick={handleMetroToggle}
+              metroStressLevels={metroStressLevels}
+            />
             <MetroSelector selectedMetros={selectedMetros} onMultiSelect={handleMultiSelect} />
             {selectedMetroData.length > 0 && (
               <MultiMetroAggregate allMetroData={selectedMetroData} />
             )}
           </>
         );
-
-      case "metro-detail":
-        return <MetroDashboard metroData={activeMetroData} historicalData={historicalData} />;
-
-      case "problem-areas":
-        return <MetroZoneMap metro={activeMetro} onZonesUpdate={setActiveMetroZones} />;
-
+        break;
+      case "detail":
+        body = <MetroDashboard metroData={activeMetroData} historicalData={historicalData} />;
+        break;
+      case "zones":
+        body = <MetroZoneMap metro={activeMetro} onZonesUpdate={setActiveMetroZones} />;
+        break;
       case "network":
-        return (
+        body = (
           <WaterNetworkVisualization
             selectedMetroId={activeMetro.id}
             onMetroChange={handleNetworkMetroChange}
           />
         );
-
-      case "notices":
-        return <ShutdownNotification metroData={activeMetroData} />;
-
-      case "compliance":
-        return (
-          <WorldBankCompliancePanel
-            allMetroData={selectedMetroData}
-            selectedMetro={activeMetro}
-            zones={activeMetroZones}
-            recommendations={recommendations}
-            historicalData={historicalData}
-          />
+        break;
+      case "reports":
+        body = (
+          <>
+            <ClaudeRecommendationsPanel
+              recommendations={recommendations}
+              loading={false}
+              onRefresh={() => { /* Live Claude wiring is a follow-up PR. */ }}
+            />
+            <ShutdownNotification metroData={activeMetroData} />
+            <WorldBankCompliancePanel
+              allMetroData={selectedMetroData}
+              selectedMetro={activeMetro}
+              zones={activeMetroZones}
+              recommendations={recommendations}
+              historicalData={historicalData}
+            />
+          </>
         );
+        break;
+    }
 
-      case "recommendations":
-        return (
-          <ClaudeRecommendationsPanel
-            recommendations={recommendations}
-            loading={false}
-            onRefresh={() => { /* Live Claude wiring is a follow-up PR. */ }}
-          />
-        );
+    return <>{subNav}{body}</>;
+  };
 
-      default:
-        return <Dashboard />;
+  const renderMonitoring = (): React.ReactNode => {
+    const subNav = (
+      <nav className="sub-nav" aria-label="Monitoring sections">
+        {(["districts", "quality", "alerts", "predictions"] as const).map(key => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setMonitoringSubView(key)}
+            className={monitoringSubView === key ? "active" : undefined}
+          >
+            {key === "districts"   ? "Districts" :
+             key === "quality"     ? "Water quality" :
+             key === "alerts"      ? "Alerts" :
+                                     "Predictions"}
+          </button>
+        ))}
+      </nav>
+    );
+
+    let body: React.ReactNode;
+    switch (monitoringSubView) {
+      case "districts":   body = <DistrictMap />;  break;
+      case "quality":     body = <WaterQuality />; break;
+      case "alerts":      body = <Alerts />;       break;
+      case "predictions": body = <Predictions />;  break;
+    }
+    return <>{subNav}{body}</>;
+  };
+
+  const render = (): React.ReactNode => {
+    switch (view) {
+      case "dashboard":  return <Dashboard />;
+      case "metros":     return renderMetros();
+      case "monitoring": return renderMonitoring();
+      case "killswitch": return canSeeKillSwitch ? <KillSwitch /> : <NoAccess />;
+      case "settings":   return <SigningKeySetup />;
+      default:           return <Dashboard />;
     }
   };
 
-  const navButton = (target: View, label: string) => (
+  const navButton = (target: TopView, label: string) => (
     <button
       key={target}
       onClick={() => setView(target)}
@@ -257,21 +295,11 @@ const App: React.FC = () => {
         </div>
       </header>
 
-      <nav className="app-nav">
+      <nav className="app-nav" aria-label="Main">
         {navButton("dashboard", "Dashboard")}
-        {navButton("districts", "Districts")}
-        {navButton("quality", "Water Quality")}
-        {canSeeKillSwitch && navButton("killswitch", "Kill Switch")}
-        {navButton("predictions", "Predictions")}
-        {navButton("alerts", "Alerts")}
-        {navButton("sa-map", "SA Map")}
         {navButton("metros", "Metros")}
-        {navButton("metro-detail", "Metro Detail")}
-        {navButton("problem-areas", "Problem Areas")}
-        {navButton("network", "Network")}
-        {navButton("notices", "Notices")}
-        {navButton("compliance", "Compliance")}
-        {navButton("recommendations", "Recommendations")}
+        {navButton("monitoring", "Monitoring")}
+        {canSeeKillSwitch && navButton("killswitch", "Kill Switch")}
         {navButton("settings", "Signing Key")}
       </nav>
 

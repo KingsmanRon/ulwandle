@@ -27,10 +27,11 @@ from __future__ import annotations
 
 import logging
 import re
+import urllib.error
+import urllib.request
 from datetime import datetime, timezone
 from typing import Iterable
 
-import httpx
 from bs4 import BeautifulSoup
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
@@ -132,17 +133,22 @@ def _parse_as_of(text: str) -> datetime:
     return today
 
 
-def _fetch_html(client: httpx.Client | None = None) -> str:
-    own = client is None
-    c = client or httpx.Client(timeout=60.0, follow_redirects=True,
-                                headers={"User-Agent": "Ulwandle/1.0 (+ingest)"})
-    try:
-        resp = c.get(COCT_DASHBOARD_URL)
-        resp.raise_for_status()
-        return resp.text
-    finally:
-        if own:
-            c.close()
+def _fetch_html() -> str:
+    """Fetch the City of Cape Town dam-levels dashboard.
+
+    Uses the stdlib urllib instead of httpx because the CoCT origin
+    emits duplicate Transfer-Encoding headers, which httpx (via h11)
+    refuses by RFC 7230. urllib's parser is permissive about this and
+    returns the body cleanly. urllib also follows redirects by default
+    and sets a sane connection timeout via the urlopen ``timeout`` kw.
+    """
+    req = urllib.request.Request(
+        COCT_DASHBOARD_URL,
+        headers={"User-Agent": "Ulwandle/1.0 (+ingest)"},
+    )
+    with urllib.request.urlopen(req, timeout=60) as resp:
+        charset = resp.headers.get_content_charset() or "utf-8"
+        return resp.read().decode(charset, errors="replace")
 
 
 def _extract_readings(html: str) -> tuple[datetime, list[tuple[str, float, float | None]]]:

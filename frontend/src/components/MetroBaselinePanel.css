@@ -1,0 +1,210 @@
+.metro-baseline-panel {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  padding: 1.75rem 1.5rem;
+  border: 1px solid #e5e7eb;
+}
+
+.metro-baseline-panel.error {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
+.metro-baseline-panel .mbp-header h2 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.25rem;
+  color: #0c4a6e;
+}
+
+.metro-baseline-panel .mbp-subtitle {
+  color: #475569;
+  font-size: 0.9rem;
+  margin: 0 0 1.25rem 0;
+}
+
+.metro-baseline-panel .mbp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.metro-baseline-panel .mbp-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 1rem 1.1rem;
+}
+
+.metro-baseline-panel .mbp-card h3 {
+  margin: 0 0 0.4rem 0;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #334155;
+  font-weight: 600;
+}
+
+.metro-baseline-panel .mbp-figure {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #0c4a6e;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.1;
+}
+
+.metro-baseline-panel .mbp-unit {
+  font-size: 0.7em;
+  font-weight: 500;
+  color: #64748b;
+  margin-left: 0.25em;
+}
+
+.metro-baseline-panel .mbp-derived {
+  font-size: 0.8rem;
+  color: #475569;
+  margin: 0 0 0.5rem 0;
+  font-style: italic;
+}
+
+.metro-baseline-panel .source-line {
+  font-size: 0.78rem;
+  color: #475569;
+  margin-top: 0.4rem;
+}
+
+.metro-baseline-panel .source-label {
+  font-weight: 600;
+  color: #334155;
+}
+
+.metro-baseline-panel .source-line a {
+  color: #0369a1;
+  text-decoration: none;
+}
+
+.metro-baseline-panel .source-line a:hover {
+  text-decoration: underline;
+}
+
+.metro-baseline-panel .source-asof {
+  color: #64748b;
+}
+
+.metro-baseline-panel .source-caveat {
+  font-size: 0.74rem;
+  color: #b45309;
+  font-style: italic;
+  margin-top: 0.2rem;
+  line-height: 1.35;
+}
+
+.metro-baseline-panel .mbp-section-h {
+  margin: 1.5rem 0 0.5rem 0;
+  font-size: 1rem;
+  color: #0c4a6e;
+}
+
+.metro-baseline-panel .mbp-weighted {
+  margin: 0.5rem 0 0.75rem 0;
+  font-size: 0.95rem;
+  color: #1e293b;
+}
+
+.metro-baseline-panel .mbp-weighted strong {
+  color: #0369a1;
+  font-size: 1.05rem;
+}
+
+.metro-baseline-panel .mbp-weighted-note {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.metro-baseline-panel .mbp-dams {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 0.75rem;
+}
+
+.metro-baseline-panel .mbp-dam-row {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+}
+
+.metro-baseline-panel .mbp-dam-row.is-primary {
+  border-color: #38bdf8;
+  background: #f0f9ff;
+}
+
+.metro-baseline-panel .mbp-dam-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.4rem;
+}
+
+.metro-baseline-panel .mbp-dam-name {
+  font-weight: 600;
+  color: #0c4a6e;
+}
+
+.metro-baseline-panel .mbp-tag {
+  font-size: 0.65rem;
+  background: #0369a1;
+  color: #fff;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  margin-left: 0.4rem;
+  vertical-align: middle;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.metro-baseline-panel .mbp-dam-pct {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0369a1;
+}
+
+.metro-baseline-panel .mbp-dam-bar {
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 0.4rem;
+}
+
+.metro-baseline-panel .mbp-dam-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #38bdf8, #0369a1);
+  transition: width 0.4s ease;
+}
+
+.metro-baseline-panel .mbp-dam-meta {
+  font-size: 0.78rem;
+  color: #475569;
+}
+
+.metro-baseline-panel .mbp-empty {
+  background: #fefce8;
+  border: 1px solid #fde68a;
+  color: #713f12;
+  padding: 0.85rem 1rem;
+  border-radius: 8px;
+  font-size: 0.88rem;
+}
+
+.metro-baseline-panel .mbp-empty code {
+  background: #fef3c7;
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+  font-size: 0.85em;
+}

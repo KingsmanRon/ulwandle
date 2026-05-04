@@ -69,11 +69,19 @@ export const apiService = {
   getComplianceSummary: async () =>
     (await apiClient.get("/api/v1/water-quality/standards")).data,
 
-  // Metros (synthetic topology + zones + leak detections)
+  // Metros — mix of real (population, NRW, dam levels) + synthetic
+  // (topology, zones, leak detections). Real-data endpoints carry full
+  // SourceRef attribution; synthetic ones do not.
   getMetros:            async () =>
     (await apiClient.get("/api/v1/metros/")).data,
   getMetro:             async (metroId: string) =>
     (await apiClient.get(`/api/v1/metros/${encodeURIComponent(metroId)}`)).data,
+  getMetroBaselines:    async () =>
+    (await apiClient.get("/api/v1/metros/baseline")).data as MetroBaseline[],
+  getMetroBaseline:     async (metroId: string) =>
+    (await apiClient.get(`/api/v1/metros/baseline/${encodeURIComponent(metroId)}`)).data as MetroBaseline,
+  getMetroDamLevels:    async (metroId: string) =>
+    (await apiClient.get(`/api/v1/metros/${encodeURIComponent(metroId)}/dams`)).data as MetroDamsResponse,
   getMetroNetwork:      async (metroId: string) =>
     (await apiClient.get(`/api/v1/metros/${encodeURIComponent(metroId)}/network`)).data,
   getMetroZones:        async (metroId: string) =>
@@ -90,5 +98,47 @@ export const apiService = {
   updateLeakStatus:     async (leakId: string, body: { new_status: string; notes?: string }) =>
     (await apiClient.post(`/api/v1/metros/leaks/${encodeURIComponent(leakId)}/update-status`, body)).data,
 };
+
+// ---------- Real-data response types ----------
+
+export interface SourceRef {
+  name: string;
+  as_of: string;
+  url?: string | null;
+  caveat?: string | null;
+}
+
+export interface MetroBaseline {
+  metro_id: string;
+  code: string;
+  name: string;
+  province: string;
+  lat?: number | null;
+  lng?: number | null;
+  population: number;
+  population_source: SourceRef;
+  nrw_pct: number;
+  nrw_source: SourceRef;
+  per_capita_lpcd?: number | null;
+  per_capita_source?: SourceRef | null;
+}
+
+export interface DamLevel {
+  dam_id: string;
+  name: string;
+  storage_pct: number;
+  storage_ml?: number | null;
+  full_capacity_ml?: number | null;
+  as_of: string;
+  source: SourceRef;
+  is_primary: boolean;
+}
+
+export interface MetroDamsResponse {
+  metro_id: string;
+  dams: DamLevel[];
+  weighted_storage_pct?: number | null;
+  has_data: boolean;
+}
 
 export default apiService;

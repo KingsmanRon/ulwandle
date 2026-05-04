@@ -56,3 +56,50 @@ services:
         value: 10/minute
       - key: RATE_LIMIT_VALVE
         value: 20/hour
+
+  # Weekly DWS dam-level scrape (Mondays 06:00 UTC = 08:00 SAST). Pulls
+  # storage % per dam from https://www.dws.gov.za/Hydrology/Weekly/Weekly.pdf
+  # and writes to dam_storage_readings.
+  - type: cron
+    name: ulwandle-dws-weekly
+    runtime: docker
+    plan: free
+    region: frankfurt
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    schedule: "0 6 * * 1"
+    dockerCommand: python -m app.services.dws_scraper
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: APP_ENV
+        value: production
+      - key: DEBUG
+        value: "false"
+
+  # Daily Cape Town dam-level scrape (06:00 UTC = 08:00 SAST). Pulls the
+  # 6 dams supplying CoCT from the public dashboard.
+  - type: cron
+    name: ulwandle-coct-daily
+    runtime: docker
+    plan: free
+    region: frankfurt
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    schedule: "0 6 * * *"
+    dockerCommand: python -m app.services.coct_scraper
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: APP_ENV
+        value: production
+      - key: DEBUG
+        value: "false"

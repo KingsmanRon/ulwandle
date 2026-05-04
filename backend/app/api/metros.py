@@ -1,14 +1,19 @@
 """
 Metro and network topology API.
 
-Serves synthetic distribution-network data for the eight South African
-metropolitan municipalities. All routes require an authenticated user; the
-mutating ``/leaks/{leak_id}/update-status`` route additionally requires an
-operator-or-higher role.
+Real-data routes (population, NRW, dam levels, daily consumption) read from
+the ``metros``, ``dams``, ``dam_storage_readings``, and
+``metro_consumption_readings`` tables seeded by ``scripts.seed_metros`` and
+refreshed by ``services.dws_scraper`` / ``services.coct_scraper``.
 
-The underlying data lives in ``app.services.network_generator`` and is
-in-memory synthetic (no DB persistence). When real telemetry persistence
-exists, swap the ``get_all_networks()`` calls for queries against it.
+Synthetic-data routes (network topology, intersections, zones, leaks) still
+back onto ``app.services.network_generator`` because no real telemetry feed
+is wired yet. The synthetic responses are explicitly labelled so the UI can
+display a "synthetic" badge.
+
+All routes require an authenticated user; the mutating
+``/leaks/{leak_id}/update-status`` route additionally requires an
+operator-or-higher role.
 """
 
 from datetime import datetime, timezone
@@ -16,9 +21,15 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from pydantic import BaseModel, Field
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user, require_roles
-from app.models.models import User, UserRole
+from app.db.database import get_db
+from app.models.models import (
+    Dam, DamStorageReading, DataSource, Metro, MetroConsumptionReading,
+    MetroDam, User, UserRole,
+)
 from app.services.network_generator import (
     METRO_CONFIGS,
     generate_sensor_readings,
@@ -30,6 +41,52 @@ router = APIRouter()
 
 # ---------- Schemas ----------
 
+class SourceRef(BaseModel):
+    """Citation for a single figure: the report/system it came from, the
+    'as of' date string from the source, and the URL for verification."""
+    name: str
+    as_of: str
+    url: Optional[str] = None
+    caveat: Optional[str] = None
+
+
+class MetroBaseline(BaseModel):
+    """Authoritative per-metro reference data with full source attribution."""
+    metro_id: str
+    code: str
+    name: str
+    province: str
+    lat: Optional[float] = None
+    lng: Optional[float] = None
+
+    population: int
+    population_source: SourceRef
+
+    nrw_pct: float
+    nrw_source: SourceRef
+
+    per_capita_lpcd: Optional[float] = None
+    per_capita_source: Optional[SourceRef] = None
+
+
+class DamLevel(BaseModel):
+    dam_id: str
+    name: str
+    storage_pct: float
+    storage_ml: Optional[float] = None
+    full_capacity_ml: Optional[float] = None
+    as_of: str
+    source: SourceRef
+    is_primary: bool
+
+
+class MetroDamsResponse(BaseModel):
+    metro_id: str
+    dams: list[DamLevel]
+    weighted_storage_pct: Optional[float] = None
+    has_data: bool
+
+
 class MetroInfo(BaseModel):
     metro_id: str
     name: str
@@ -38,6 +95,13 @@ class MetroInfo(BaseModel):
     lat: float
     lng: float
     base_intake: float
+    data_kind: str = Field(
+        default="synthetic",
+        description=(
+            "'real' when the metro figures are sourced from cited reports, "
+            "'synthetic' for in-memory simulated topology."
+        ),
+    )
 
 
 class IntersectionData(BaseModel):
@@ -144,7 +208,21 @@ def _network_or_404(metro_id: str) -> dict:
     return get_all_networks()[metro_id]
 
 
-def _to_metro_info(config: dict) -> MetroInfo:
+def _to_metro_info(config: dict, real_metro: Metro | None = None) -> MetroInfo:
+    """Build a MetroInfo combining the synthetic topology config with the
+    real population figure when available. ``base_intake`` remains synthetic
+    until a metered intake feed is wired."""
+    if real_metro is not None:
+        return MetroInfo(
+            metro_id=real_metro.id,
+            name=real_metro.name,
+            province=real_metro.province,
+            population=real_metro.population,
+            lat=real_metro.latitude if real_metro.latitude is not None else config["lat"],
+            lng=real_metro.longitude if real_metro.longitude is not None else config["lng"],
+            base_intake=config["base_intake"],
+            data_kind="real",
+        )
     return MetroInfo(
         metro_id=config["metro_id"],
         name=config["name"],
@@ -153,14 +231,148 @@ def _to_metro_info(config: dict) -> MetroInfo:
         lat=config["lat"],
         lng=config["lng"],
         base_intake=config["base_intake"],
+        data_kind="synthetic",
     )
+
+
+def _to_metro_baseline(metro: Metro) -> MetroBaseline:
+    return MetroBaseline(
+        metro_id=metro.id,
+        code=metro.code,
+        name=metro.name,
+        province=metro.province,
+        lat=metro.latitude,
+        lng=metro.longitude,
+        population=metro.population,
+        population_source=SourceRef(
+            name=metro.population_source,
+            as_of=metro.population_as_of,
+            url=metro.population_source_url,
+        ),
+        nrw_pct=metro.nrw_pct,
+        nrw_source=SourceRef(
+            name=metro.nrw_source,
+            as_of=metro.nrw_as_of,
+            url=metro.nrw_source_url,
+            caveat=metro.nrw_caveat,
+        ),
+        per_capita_lpcd=metro.per_capita_lpcd,
+        per_capita_source=(
+            SourceRef(
+                name=metro.per_capita_source,
+                as_of=metro.per_capita_as_of or "",
+                url=metro.per_capita_source_url,
+                caveat=metro.per_capita_caveat,
+            )
+            if metro.per_capita_source else None
+        ),
+    )
+
+
+def _real_metro_or_404(db: Session, metro_id: str) -> Metro:
+    metro = db.get(Metro, metro_id)
+    if metro is None:
+        raise HTTPException(status_code=404,
+                            detail="Metro not found in baseline table — run scripts.seed_metros")
+    return metro
 
 
 # ---------- Routes (read-only, any authenticated user) ----------
 
 @router.get("/", response_model=list[MetroInfo])
-def list_metros(_user: User = Depends(get_current_user)) -> list[MetroInfo]:
-    return [_to_metro_info(config) for config in METRO_CONFIGS.values()]
+def list_metros(
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
+) -> list[MetroInfo]:
+    real_by_id: dict[str, Metro] = {m.id: m for m in db.query(Metro).all()}
+    return [_to_metro_info(cfg, real_by_id.get(mid)) for mid, cfg in METRO_CONFIGS.items()]
+
+
+@router.get("/baseline", response_model=list[MetroBaseline])
+def list_metro_baselines(
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
+) -> list[MetroBaseline]:
+    """Authoritative per-metro figures with full source attribution.
+
+    Population is from Stats SA Census 2022. NRW is from Joburg Water /
+    Daily Maverick / Tshwane Water Balance / DWS depending on metro;
+    each row's ``nrw_source`` field cites the actual report. Per-capita
+    is the DWS national 2023 baseline (216 L/c/d) until per-metro figures
+    are sourced from each municipal annual report."""
+    metros = db.query(Metro).order_by(Metro.name).all()
+    return [_to_metro_baseline(m) for m in metros]
+
+
+@router.get("/baseline/{metro_id}", response_model=MetroBaseline)
+def get_metro_baseline(
+    metro_id: str,
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
+) -> MetroBaseline:
+    return _to_metro_baseline(_real_metro_or_404(db, metro_id))
+
+
+@router.get("/{metro_id}/dams", response_model=MetroDamsResponse)
+def get_metro_dam_levels(
+    metro_id: str,
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
+) -> MetroDamsResponse:
+    """Latest storage % per dam supplying this metro, with source attribution.
+
+    For each dam we pick the most recent reading. If multiple sources have
+    data for the same dam we prefer the one with the latest ``as_of``;
+    ties broken by ``fetched_at``."""
+    _real_metro_or_404(db, metro_id)
+
+    rows = (
+        db.query(Dam, MetroDam.is_primary)
+        .join(MetroDam, MetroDam.dam_id == Dam.id)
+        .filter(MetroDam.metro_id == metro_id)
+        .all()
+    )
+    if not rows:
+        return MetroDamsResponse(metro_id=metro_id, dams=[], has_data=False)
+
+    out: list[DamLevel] = []
+    weighted_total = 0.0
+    weighted_capacity = 0.0
+    for dam, is_primary in rows:
+        latest = (
+            db.query(DamStorageReading)
+            .filter(DamStorageReading.dam_id == dam.id)
+            .order_by(DamStorageReading.as_of.desc(),
+                      DamStorageReading.fetched_at.desc())
+            .first()
+        )
+        if latest is None:
+            continue
+        out.append(DamLevel(
+            dam_id=dam.id,
+            name=dam.name,
+            storage_pct=latest.storage_pct,
+            storage_ml=latest.storage_ml,
+            full_capacity_ml=dam.full_capacity_ml,
+            as_of=latest.as_of.date().isoformat(),
+            source=SourceRef(name=latest.source, as_of=latest.as_of.date().isoformat(),
+                             url=latest.source_url),
+            is_primary=is_primary,
+        ))
+        if dam.full_capacity_ml:
+            weighted_total += (latest.storage_pct / 100.0) * dam.full_capacity_ml
+            weighted_capacity += dam.full_capacity_ml
+
+    weighted_pct: float | None = None
+    if weighted_capacity > 0:
+        weighted_pct = round((weighted_total / weighted_capacity) * 100.0, 2)
+
+    return MetroDamsResponse(
+        metro_id=metro_id,
+        dams=out,
+        weighted_storage_pct=weighted_pct,
+        has_data=bool(out),
+    )
 
 
 @router.get("/stats/overview", response_model=NetworkStatsOverview)
@@ -211,8 +423,14 @@ def intersection_readings(
 
 
 @router.get("/{metro_id}", response_model=MetroInfo)
-def get_metro(metro_id: str, _user: User = Depends(get_current_user)) -> MetroInfo:
-    return _to_metro_info(_metro_or_404(metro_id))
+def get_metro(
+    metro_id: str,
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
+) -> MetroInfo:
+    config = _metro_or_404(metro_id)
+    real = db.get(Metro, metro_id)
+    return _to_metro_info(config, real)
 
 
 @router.get("/{metro_id}/network", response_model=NetworkTopologyResponse)

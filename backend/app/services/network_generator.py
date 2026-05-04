@@ -20,93 +20,98 @@ from typing import Any
 
 # Canonical metro IDs. Keep in sync with frontend/src/constants/metros.ts.
 METRO_CONFIGS: dict[str, dict[str, Any]] = {
+    # Population values match Stats SA Census 2022 figures and are
+    # canonical fallbacks for when the metros table is empty (e.g.
+    # before scripts.seed_metros has run on a fresh database). The real
+    # Metro row in the DB takes precedence in API responses; see
+    # api/metros.py _to_metro_info.
     "johannesburg": {
         "metro_id": "johannesburg",
         "name": "City of Johannesburg",
         "province": "Gauteng",
-        "population": 5_635_127,
+        "population": 4_803_262,  # Census 2022
         "lat": -26.2041,
         "lng": 28.0473,
         "intersection_count": 12,
         "zones": ["North", "South", "East", "West", "Central"],
-        "base_intake": 1972.25,  # ML/day
+        "base_intake": 1681.14,  # ML/day, derived 4_803_262 * 350 L/c/d / 1e6
     },
     "cape_town": {
         "metro_id": "cape_town",
         "name": "City of Cape Town",
         "province": "Western Cape",
-        "population": 4_618_188,
+        "population": 4_772_846,  # Census 2022
         "lat": -33.9249,
         "lng": 18.4241,
         "intersection_count": 12,
         "zones": ["Northern", "Southern", "Eastern", "Western", "CBD"],
-        "base_intake": 1702.17,
+        "base_intake": 1670.50,
     },
     "ekurhuleni": {
         "metro_id": "ekurhuleni",
-        "name": "Ekurhuleni",
+        "name": "City of Ekurhuleni",
         "province": "Gauteng",
-        "population": 3_816_476,
+        "population": 4_066_691,  # Census 2022
         "lat": -26.1841,
         "lng": 28.1935,
         "intersection_count": 10,
         "zones": ["North", "South", "East", "West"],
-        "base_intake": 1407.01,
+        "base_intake": 1423.34,
     },
     "ethekwini": {
         "metro_id": "ethekwini",
         "name": "eThekwini",
         "province": "KwaZulu-Natal",
-        "population": 3_995_000,
+        "population": 4_239_901,  # Census 2022
         "lat": -29.8587,
         "lng": 31.0218,
         "intersection_count": 11,
         "zones": ["North", "South", "Central", "Coastal"],
-        "base_intake": 1472.57,
+        "base_intake": 1483.97,
     },
     "tshwane": {
         "metro_id": "tshwane",
         "name": "City of Tshwane",
         "province": "Gauteng",
-        "population": 3_275_152,
+        "population": 4_040_315,  # Census 2022
         "lat": -25.7479,
         "lng": 28.2293,
         "intersection_count": 10,
         "zones": ["North", "South", "East", "West", "Central"],
-        "base_intake": 1207.17,
+        "base_intake": 1414.11,
     },
     "nelson_mandela_bay": {
         "metro_id": "nelson_mandela_bay",
         "name": "Nelson Mandela Bay",
         "province": "Eastern Cape",
-        "population": 1_292_816,
+        "population": 1_190_496,  # Census 2022
         "lat": -33.9615,
         "lng": 25.6022,
         "intersection_count": 8,
         "zones": ["North", "South", "Central"],
-        "base_intake": 476.38,
+        "base_intake": 416.67,
     },
     "buffalo_city": {
         "metro_id": "buffalo_city",
         "name": "Buffalo City",
         "province": "Eastern Cape",
-        "population": 832_229,
+        "population": 975_255,  # Census 2022
         "lat": -32.9795,
         "lng": 27.8671,
         "intersection_count": 6,
         "zones": ["North", "South"],
-        "base_intake": 306.70,
+        "base_intake": 341.34,
     },
     "mangaung": {
         "metro_id": "mangaung",
         "name": "Mangaung",
         "province": "Free State",
-        "population": 783_294,
+        "population": 811_431,  # Census 2022
         "lat": -29.1217,
         "lng": 26.2137,
         "intersection_count": 6,
         "zones": ["North", "South"],
-        "base_intake": 288.60,
+        "base_intake": 284.00,
     },
 }
 

@@ -1,0 +1,57 @@
+name: CoCT Daily Dam Levels
+
+# Pulls the City of Cape Town daily dam dashboard and writes one
+# DamStorageReading per dam into the production Neon DB. Today's six
+# reservoirs: Berg River, Steenbras Lower/Upper, Theewaterskloof,
+# Voëlvlei, Wemmershoek.
+#
+# Schedule: every day at 06:30 UTC (08:30 SAST). Offset 30min from the
+# DWS workflow so they don't compete for the runner queue or hammer the
+# DB at the exact same moment.
+#
+# Manual trigger: Actions tab → "CoCT Daily Dam Levels" → "Run workflow".
+#
+# Required repo secret:
+#   DATABASE_URL — same Neon connection string used by Render.
+
+on:
+  schedule:
+    - cron: "30 6 * * *"    # 06:30 UTC daily
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: coct-scrape
+  cancel-in-progress: true
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run CoCT scraper
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SECRET_KEY: "github-actions-scraper-not-used-32chars-min"
+          ANTHROPIC_API_KEY: "unused-by-scraper"
+          APP_ENV: "development"
+          DEBUG: "false"
+        run: python -m app.services.coct_scraper

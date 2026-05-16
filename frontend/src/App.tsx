@@ -224,17 +224,30 @@ const App: React.FC = () => {
         body = <MetroBaselinePanel metro={activeMetro} />;
         break;
       case "detail":
-        body = <MetroDashboard metroData={activeMetroData} historicalData={historicalData} />;
+        body = (
+          <>
+            <DemoDataPill note="Intake / wastage / per-capita series are synthetic. Replace with the buyer's SCADA telemetry feed." />
+            <MetroDashboard metroData={activeMetroData} historicalData={historicalData} />
+          </>
+        );
         break;
       case "zones":
-        body = <MetroZoneMap metro={activeMetro} onZonesUpdate={setActiveMetroZones} />;
+        body = (
+          <>
+            <DemoDataPill note="Zone topology is generated for demo. Replace with the buyer's GIS / DMA boundary export." />
+            <MetroZoneMap metro={activeMetro} onZonesUpdate={setActiveMetroZones} />
+          </>
+        );
         break;
       case "network":
         body = (
-          <WaterNetworkVisualization
-            selectedMetroId={activeMetro.id}
-            onMetroChange={handleNetworkMetroChange}
-          />
+          <>
+            <DemoDataPill note="Pipe network is generated for demo. Replace with the buyer's asset-register / hydraulic-model export." />
+            <WaterNetworkVisualization
+              selectedMetroId={activeMetro.id}
+              onMetroChange={handleNetworkMetroChange}
+            />
+          </>
         );
         break;
       case "reports":
@@ -347,6 +360,13 @@ const App: React.FC = () => {
 
 const NoAccess: React.FC = () => (
   <div className="card"><h2>Access denied</h2><p>You do not have permission to view this page.</p></div>
+);
+
+const DemoDataPill: React.FC<{ note: string }> = ({ note }) => (
+  <div className="demo-data-pill" role="status">
+    <span>Demo data</span>
+    <span className="pill-note">— {note}</span>
+  </div>
 );
 
 export default App;

@@ -1,0 +1,136 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 760" role="img" aria-label="Ulwandle RAC dashboard preview">
+  <title>Ulwandle RAC — System Overview dashboard</title>
+  <defs>
+    <linearGradient id="header" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#0369a1"/>
+    </linearGradient>
+    <linearGradient id="hero" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"  stop-color="#0c4a6e"/>
+      <stop offset="60%" stop-color="#0369a1"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#0284c7" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+
+  <!-- Page background -->
+  <rect width="1280" height="760" fill="#f0f9ff"/>
+
+  <!-- App header -->
+  <rect x="0" y="0" width="1280" height="78" fill="url(#header)"/>
+  <text x="48" y="40" fill="#ffffff" font-family="Helvetica, Arial, sans-serif" font-size="24" font-weight="700">Ulwandle Tech</text>
+  <text x="48" y="62" fill="#e0f2fe" font-family="Helvetica, Arial, sans-serif" font-size="12" letter-spacing="0.8">RESOURCE ALLOCATION &amp; COMPLIANCE</text>
+  <text x="1232" y="42" fill="#e0f2fe" font-family="Helvetica, Arial, sans-serif" font-size="12" text-anchor="end">Ron Mokuena · admin</text>
+  <rect x="1146" y="50" width="86" height="22" rx="4" fill="rgba(255,255,255,0.18)" stroke="rgba(255,255,255,0.4)"/>
+  <text x="1189" y="65" fill="#ffffff" font-family="Helvetica, Arial, sans-serif" font-size="11" text-anchor="middle">Sign out</text>
+
+  <!-- App nav -->
+  <rect x="0" y="78" width="1280" height="56" fill="#ffffff"/>
+  <rect x="0" y="133" width="1280" height="1" fill="#e0f2fe"/>
+  <g font-family="Helvetica, Arial, sans-serif" font-size="14">
+    <rect x="450" y="92" width="110" height="32" rx="8" fill="#0369a1"/>
+    <text x="505" y="113" fill="#ffffff" font-weight="600" text-anchor="middle">Dashboard</text>
+    <text x="588" y="113" fill="#334155" text-anchor="middle">Metros</text>
+    <text x="675" y="113" fill="#334155" text-anchor="middle">Monitoring</text>
+    <text x="770" y="113" fill="#334155" text-anchor="middle">Kill Switch</text>
+    <text x="860" y="113" fill="#334155" text-anchor="middle">Signing Key</text>
+  </g>
+
+  <!-- Section title -->
+  <text x="48" y="174" fill="#0c4a6e" font-family="Helvetica, Arial, sans-serif" font-size="22" font-weight="700">System Overview</text>
+  <text x="48" y="196" fill="#475569" font-family="Helvetica, Arial, sans-serif" font-size="13">Real per-metro reference data + live dam levels with full source citations. Updated by scheduled scrapers — no manual data entry.</text>
+
+  <!-- Hero stat -->
+  <g filter="url(#shadow)">
+    <rect x="48" y="218" width="1184" height="148" rx="14" fill="url(#hero)"/>
+  </g>
+  <text x="74" y="252" fill="#e0f2fe" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="600" letter-spacing="1">WATER LOST TO NRW ACROSS 8 METROS</text>
+  <text x="74" y="316" fill="#ffffff" font-family="Helvetica, Arial, sans-serif" font-size="58" font-weight="700">R 17.4 bn<tspan font-size="20" fill="#e0f2fe" font-weight="500" dx="8">/ year</tspan></text>
+  <text x="74" y="342" fill="#ffffff" font-family="Helvetica, Arial, sans-serif" font-size="14">Population-weighted NRW <tspan fill="#bae6fd" font-weight="700">47.2%</tspan> across <tspan fill="#bae6fd" font-weight="700">24,248,282</tspan> residents.</text>
+  <text x="74" y="358" fill="rgba(255,255,255,0.78)" font-family="Helvetica, Arial, sans-serif" font-size="11">Assumption: population × per-capita L/d × NRW% × R12/kL bulk treated water. Editable in Dashboard.tsx.</text>
+
+  <!-- Stat tiles -->
+  <g font-family="Helvetica, Arial, sans-serif">
+    <!-- Tile template -->
+    <g>
+      <rect x="48" y="386" width="285" height="118" rx="12" fill="#ffffff" filter="url(#shadow)"/>
+      <rect x="48" y="386" width="4" height="118" fill="#0284c7"/>
+      <text x="68" y="412" fill="#0369a1" font-size="11" font-weight="700" letter-spacing="0.8">METROS MONITORED</text>
+      <text x="68" y="455" fill="#0c4a6e" font-size="32" font-weight="700">8</text>
+      <text x="68" y="478" fill="#475569" font-size="12">24,248,282 residents covered</text>
+      <text x="68" y="494" fill="#64748b" font-size="11">Source: Stats SA Census 2022</text>
+    </g>
+    <g>
+      <rect x="349" y="386" width="285" height="118" rx="12" fill="#ffffff" filter="url(#shadow)"/>
+      <rect x="349" y="386" width="4" height="118" fill="#0284c7"/>
+      <text x="369" y="412" fill="#0369a1" font-size="11" font-weight="700" letter-spacing="0.8">AVG NON-REVENUE WATER</text>
+      <text x="369" y="455" fill="#0c4a6e" font-size="32" font-weight="700">47.2%</text>
+      <text x="369" y="478" fill="#475569" font-size="12">Population-weighted across 8 metros</text>
+      <text x="369" y="494" fill="#64748b" font-size="11">DWS national 2023: 47%</text>
+    </g>
+    <g>
+      <rect x="650" y="386" width="285" height="118" rx="12" fill="#ffffff" filter="url(#shadow)"/>
+      <rect x="650" y="386" width="4" height="118" fill="#0284c7"/>
+      <text x="670" y="412" fill="#0369a1" font-size="11" font-weight="700" letter-spacing="0.8">DAMS TRACKED</text>
+      <text x="670" y="455" fill="#0c4a6e" font-size="32" font-weight="700">31</text>
+      <text x="670" y="478" fill="#475569" font-size="12">2 dams below 30% storage</text>
+      <text x="670" y="494" fill="#64748b" font-size="11">Sources: DWS Weekly + CoCT Daily</text>
+    </g>
+    <g>
+      <rect x="951" y="386" width="281" height="118" rx="12" fill="#ffffff" filter="url(#shadow)"/>
+      <rect x="951" y="386" width="4" height="118" fill="#0284c7"/>
+      <text x="971" y="412" fill="#0369a1" font-size="11" font-weight="700" letter-spacing="0.8">COCT DATA REFRESH</text>
+      <text x="971" y="455" fill="#047857" font-size="32" font-weight="700">3h ago</text>
+      <text x="971" y="478" fill="#475569" font-size="12">14 dam readings</text>
+      <text x="971" y="494" fill="#64748b" font-size="11">capetown.gov.za daily</text>
+    </g>
+  </g>
+
+  <!-- Metros at a glance table -->
+  <text x="48" y="538" fill="#0c4a6e" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="700">Metros at a glance</text>
+  <text x="48" y="556" fill="#475569" font-family="Helvetica, Arial, sans-serif" font-size="11">Ordered by NRW%. Click a row's metro name in the Metros tab → Sources for full detail.</text>
+
+  <g font-family="Helvetica, Arial, sans-serif" font-size="12">
+    <rect x="48" y="568" width="1184" height="172" rx="10" fill="#ffffff" stroke="#e2e8f0"/>
+    <!-- Header row -->
+    <rect x="48" y="568" width="1184" height="32" fill="#f8fafc"/>
+    <text x="72"   y="588" fill="#475569" font-size="10" font-weight="700" letter-spacing="0.6">METRO</text>
+    <text x="540"  y="588" fill="#475569" font-size="10" font-weight="700" letter-spacing="0.6" text-anchor="end">POPULATION</text>
+    <text x="680"  y="588" fill="#475569" font-size="10" font-weight="700" letter-spacing="0.6" text-anchor="end">NRW</text>
+    <text x="780"  y="588" fill="#475569" font-size="10" font-weight="700" letter-spacing="0.6">PRIMARY DAM</text>
+    <text x="1208" y="588" fill="#475569" font-size="10" font-weight="700" letter-spacing="0.6" text-anchor="end">STORAGE</text>
+
+    <!-- Rows -->
+    <g fill="#0c4a6e">
+      <line x1="48" y1="600" x2="1232" y2="600" stroke="#0284c7" stroke-opacity="0.3"/>
+      <text x="72"   y="620" font-weight="700">Mangaung <tspan fill="#94a3b8" font-weight="400" font-size="10" dx="2">MAN</tspan></text>
+      <text x="540"  y="620" text-anchor="end">783,294</text>
+      <text x="680"  y="620" text-anchor="end" fill="#b91c1c">63.0%</text>
+      <text x="780"  y="620">Mockes Dam</text>
+      <text x="1208" y="620" text-anchor="end">82.4%</text>
+
+      <line x1="48" y1="632" x2="1232" y2="632" stroke="#0284c7" stroke-opacity="0.3"/>
+      <text x="72"   y="652" font-weight="700">eThekwini <tspan fill="#94a3b8" font-weight="400" font-size="10" dx="2">ETH</tspan></text>
+      <text x="540"  y="652" text-anchor="end">3,995,000</text>
+      <text x="680"  y="652" text-anchor="end" fill="#b91c1c">53.0%</text>
+      <text x="780"  y="652">Inanda Dam</text>
+      <text x="1208" y="652" text-anchor="end">78.1%</text>
+
+      <line x1="48" y1="664" x2="1232" y2="664" stroke="#0284c7" stroke-opacity="0.3"/>
+      <text x="72"   y="684" font-weight="700">City of Johannesburg <tspan fill="#94a3b8" font-weight="400" font-size="10" dx="2">JHB</tspan></text>
+      <text x="540"  y="684" text-anchor="end">5,635,127</text>
+      <text x="680"  y="684" text-anchor="end" fill="#c2410c">46.0%</text>
+      <text x="780"  y="684">Vaal Dam</text>
+      <text x="1208" y="684" text-anchor="end">42.3%</text>
+
+      <line x1="48" y1="696" x2="1232" y2="696" stroke="#0284c7" stroke-opacity="0.3"/>
+      <text x="72"   y="716" font-weight="700">City of Cape Town <tspan fill="#94a3b8" font-weight="400" font-size="10" dx="2">CPT</tspan></text>
+      <text x="540"  y="716" text-anchor="end">4,618,188</text>
+      <text x="680"  y="716" text-anchor="end" fill="#a16207">25.0%</text>
+      <text x="780"  y="716">Theewaterskloof Dam</text>
+      <text x="1208" y="716" text-anchor="end">61.7%</text>
+    </g>
+  </g>
+</svg>

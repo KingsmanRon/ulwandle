@@ -1,55 +1,84 @@
-# Ulwandle Tech - Resource Allocation & Compliance (RAC)
+# Ulwandle Tech — Resource Allocation & Compliance (RAC)
 
-## Smart Water Monitoring System for South Africa
+**Compliance-grade water-loss reporting, live dam levels, and AI-driven
+action plans for South African metros.**
 
-**Tagline:** Resource Allocation & Compliance (RAC)
-**Program:** South Africa Program-for-Results
+South African municipalities lose roughly **47% of treated water** before it
+reaches a paying customer — somewhere in the order of **R17 billion per year**
+across the eight metros, on a R12/kL replacement-cost basis. Ulwandle RAC
+turns that number into a daily, sourced, auditable dashboard, and a
+Claude-generated action plan a city manager can act on this week.
+
+![Ulwandle RAC dashboard](docs/dashboard-preview.svg)
 
 ---
 
-## Overview
+## Why a buyer cares
 
-Ulwandle Tech is an intelligent water monitoring and management system designed for South African municipalities. The system provides real-time monitoring, AI-powered predictive analytics, and automated control for water distribution networks.
+- **One headline number, on day one.** The dashboard opens with the estimated
+  rand-value of non-revenue water across your portfolio. The assumption (tariff
+  × population × per-capita × NRW%) is shown inline and editable.
+- **Every figure is sourced.** Population from Stats SA Census 2022. NRW from
+  DWS Drop reports. Dam levels scraped daily from capetown.gov.za and weekly
+  from dws.gov.za — refresh timestamps visible to the operator.
+- **Compliance-ready exports.** SANS 241 quality dashboard and a one-click
+  World Bank Program-for-Results compliance report.
+- **Safe by construction.** Dual-control, Ed25519-signed kill-switch
+  operations; HMAC-gated sensor ingestion; rate-limited valve API; full audit
+  trail. Built so a procurement reviewer can sign off.
+- **Deployable in a day.** Free-tier-friendly: Vercel + Render + Neon +
+  Upstash + Anthropic. See [`DEPLOY.md`](DEPLOY.md).
 
-## Key Features
+## Who it's for
 
-### 1. **Water Loss Detection**
+- **Municipal water utilities** running 100k+ connections that need defensible
+  NRW reporting and want to move from spreadsheets to a live system.
+- **National and provincial water departments** (DWS, provincial COGTAs) that
+  need a portfolio view across metros.
+- **Multilateral funders** (World Bank PforR, AFD, AfDB) that require
+  outcome-linked, audited compliance evidence.
+
+## Try the live demo
+
+A staging instance runs on Vercel + Render free tiers — see
+[`DEPLOY.md`](DEPLOY.md) to spin up your own copy (15-minute walkthrough),
+or contact us for read-only credentials on the hosted demo.
+
+---
+
+## Feature detail
+
+### Water-loss detection
 - Real-time flow monitoring across the distribution network
 - AI-powered leak detection using pattern analysis
 - Automated alerts for abnormal consumption patterns
 - Historical data analysis for loss quantification
 
-### 2. **Kill Switch (Remote Valve Control)**
+### Kill switch (remote valve control)
 - Remote valve control for emergency shutoffs
-- Automated notifications to field employees
-- GPS-based employee dispatch for manual interventions
+- Dual-control approval with Ed25519 signatures and TTL'd proposals
 - Pump control for high-pressure areas
-- Audit trail for all valve operations
+- Full audit trail for every valve operation
 
-### 3. **Water Quality Monitoring**
+### Water-quality monitoring
 - Real-time pH and TDS (Total Dissolved Solids) monitoring
 - Automated quality alerts for red-flagged districts
-- Compliance tracking with SANS 241 drinking water standards
-- Quality trend analysis and predictions
+- Compliance tracking against SANS 241 drinking-water standards
 
-### 4. **Red-Flagged Districts**
-- District-level water quality classification
-- Automated alerts when water becomes undrinkable
-- Public notification system integration
+### Red-flagged districts
+- District-level water-quality classification
+- Automated alerts when water becomes non-compliant
 - Compliance reporting for regulatory bodies
 
-### 5. **Predictive Consumption (Pattern Analysis)**
-- AI/ML-powered consumption prediction using Claude API
+### Predictive consumption (Claude-powered)
+- Per-metro Claude recommendations: priority, items, potential savings, ROI
 - Pattern recognition for leak detection
-- Demand forecasting for capacity planning
-- Anomaly detection for early warning
-- Seasonal trend analysis
+- Demand forecasting and seasonal trend analysis
 
-### 6. **Smart Grid Monitoring**
+### Smart-grid monitoring
 - Real-time pressure monitoring
-- Flow rate tracking across zones
+- Flow-rate tracking across zones
 - Network health visualization
-- Infrastructure maintenance scheduling
 
 ## Architecture
 

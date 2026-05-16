@@ -23,6 +23,30 @@ import "./Dashboard.css";
 const fmtInt = (n: number): string => n.toLocaleString("en-ZA");
 const fmtPct = (n: number, decimals = 1): string => `${n.toFixed(decimals)}%`;
 
+// Headline "rand value lost to NRW" assumptions. Both values are
+// auditable and conservative — buyers can substitute their own.
+//   - TARIFF_ZAR_PER_KL: bulk treated-water replacement cost. SA municipal
+//     bulk-supply tariffs sit in the R10–R15/kL band; R12 is a defensible
+//     midpoint. 1 kL = 1 m³.
+//   - FALLBACK_LPCD: DWS national 2023 baseline per-capita figure, used
+//     only when a metro's baseline omits per_capita_lpcd.
+const TARIFF_ZAR_PER_KL = 12;
+const FALLBACK_LPCD = 216;
+
+function metroAnnualLossZar(m: MetroBaseline): number {
+  const lpcd = m.per_capita_lpcd ?? FALLBACK_LPCD;
+  const intakeMldPerDay = (m.population * lpcd) / 1_000_000;     // ML/day
+  const lossKlPerYear = intakeMldPerDay * (m.nrw_pct / 100) * 365 * 1000;
+  return lossKlPerYear * TARIFF_ZAR_PER_KL;
+}
+
+function fmtZarCompact(rand: number): string {
+  if (rand >= 1_000_000_000) return `R${(rand / 1_000_000_000).toFixed(1)} bn`;
+  if (rand >= 1_000_000)     return `R${(rand / 1_000_000).toFixed(0)} m`;
+  if (rand >= 1_000)         return `R${(rand / 1_000).toFixed(0)} k`;
+  return `R${rand.toFixed(0)}`;
+}
+
 function relativeAge(iso?: string | null): string {
   if (!iso) return "never";
   const then = new Date(iso).getTime();
@@ -88,6 +112,7 @@ const Dashboard: React.FC = () => {
     if (baselines.length === 0) return null;
     const totalPop = baselines.reduce((s, m) => s + m.population, 0);
     const popWeightedNRW = baselines.reduce((s, m) => s + m.nrw_pct * m.population, 0) / totalPop;
+    const annualLossZar = baselines.reduce((s, m) => s + metroAnnualLossZar(m), 0);
     const allDams = Array.from(damsByMetro.values()).flatMap(d => d.dams);
     const seenDamIds = new Set(allDams.map(d => d.dam_id));
     const critical = allDams.filter(d => d.storage_pct < 30);
@@ -95,6 +120,7 @@ const Dashboard: React.FC = () => {
       metroCount: baselines.length,
       totalPop,
       popWeightedNRW,
+      annualLossZar,
       damCount: seenDamIds.size,
       criticalDams: critical,
     };
@@ -117,6 +143,20 @@ const Dashboard: React.FC = () => {
         Real per-metro reference data + live dam levels with full source citations.
         Updated by scheduled scrapers — no manual data entry.
       </p>
+
+      <div className="hero-stat" role="figure" aria-label="Estimated annual non-revenue water loss">
+        <div className="hero-stat-label">Water lost to NRW across {stats.metroCount} metros</div>
+        <div className="hero-stat-value">{fmtZarCompact(stats.annualLossZar)}<span className="hero-stat-unit">/ year</span></div>
+        <div className="hero-stat-sub">
+          Population-weighted NRW <strong>{fmtPct(stats.popWeightedNRW)}</strong> across{" "}
+          <strong>{fmtInt(stats.totalPop)}</strong> residents.
+        </div>
+        <div className="hero-stat-assumption">
+          Assumption: population × per-capita L/d × NRW% × <strong>R{TARIFF_ZAR_PER_KL}/kL</strong>{" "}
+          bulk treated water. Tariff is editable in <code>Dashboard.tsx</code> — swap for any
+          buyer&apos;s real cost-of-water figure.
+        </div>
+      </div>
 
       <div className="stats-grid">
         <div className="stat-card metros">

@@ -3,6 +3,85 @@
   color: #0c4a6e;
 }
 
+/* Headline rand-value tile. Lives above the stats-grid so a buyer sees
+ * the money number first. Width spans the full content column. */
+.dashboard .hero-stat {
+  background: linear-gradient(135deg, #0c4a6e 0%, #0369a1 60%, #0284c7 100%);
+  color: white;
+  padding: 1.75rem 1.75rem 1.5rem;
+  border-radius: 14px;
+  box-shadow: 0 6px 22px rgba(2, 132, 199, 0.28);
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.dashboard .hero-stat-label {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 600;
+}
+
+.dashboard .hero-stat-value {
+  font-size: 3.4rem;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  color: white;
+  font-variant-numeric: tabular-nums;
+}
+
+.dashboard .hero-stat-unit {
+  font-size: 1.15rem;
+  font-weight: 500;
+  margin-left: 0.5rem;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0;
+}
+
+.dashboard .hero-stat-sub {
+  font-size: 0.98rem;
+  color: rgba(255, 255, 255, 0.95);
+  margin-top: 0.25rem;
+}
+
+.dashboard .hero-stat-sub strong {
+  color: #bae6fd;
+  font-weight: 700;
+}
+
+.dashboard .hero-stat-assumption {
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.78);
+  margin-top: 0.4rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.dashboard .hero-stat-assumption code {
+  background: rgba(255, 255, 255, 0.13);
+  padding: 0.05rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.85em;
+  color: #e0f2fe;
+}
+
+@media (max-width: 768px) {
+  .dashboard .hero-stat {
+    padding: 1.25rem 1.1rem 1rem;
+  }
+  .dashboard .hero-stat-value {
+    font-size: 2.4rem;
+  }
+  .dashboard .hero-stat-unit {
+    font-size: 0.95rem;
+  }
+}
+
 .dashboard .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));

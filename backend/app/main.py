@@ -21,13 +21,14 @@ from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
-from app.api import alerts, dashboard, data_sources, districts, kill_switch, metros, monitoring, predictions, recommendations, water_quality
+from app.api import alerts, audit_logs, dashboard, data_sources, districts, kill_switch, metros, monitoring, predictions, recommendations, water_quality
 from app.auth import router as auth_router
 from app.auth.security import decode_token
 from app.core.config import settings
 from app.db.database import SessionLocal
 from app.middleware.security import MaxBodySizeMiddleware, SecurityHeadersMiddleware
 from app.models.models import User
+from app.observability.metrics import PrometheusMiddleware, metrics_endpoint
 from app.services.websocket_manager import websocket_manager
 
 
@@ -71,6 +72,11 @@ app.add_middleware(MaxBodySizeMiddleware, max_bytes=settings.MAX_REQUEST_BYTES)
 # Security response headers
 app.add_middleware(SecurityHeadersMiddleware)
 
+# Prometheus instrumentation (per-route, before security headers / CORS so the
+# /metrics endpoint itself is not double-counted).
+if settings.ENABLE_METRICS:
+    app.add_middleware(PrometheusMiddleware)
+
 # Strict trusted hosts (production only — empty list disables)
 if settings.TRUSTED_HOSTS:
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.TRUSTED_HOSTS)
@@ -98,6 +104,15 @@ async def unhandled(request: Request, exc: Exception):
 @app.get("/health", tags=["Health"])
 async def health():
     return {"status": "ok", "version": settings.APP_VERSION}
+
+
+# ---------- Prometheus metrics ----------
+
+if settings.ENABLE_METRICS:
+    app.add_api_route(
+        settings.METRICS_PATH, metrics_endpoint, methods=["GET"],
+        include_in_schema=False, tags=["Health"],
+    )
 
 
 # ---------- Authenticated WebSocket ----------
@@ -161,3 +176,4 @@ app.include_router(dashboard.router, prefix="/api/v1/dashboard", tags=["Dashboar
 app.include_router(metros.router, prefix="/api/v1/metros", tags=["Metros"])
 app.include_router(data_sources.router, prefix="/api/v1/data-sources", tags=["Data Sources"])
 app.include_router(recommendations.router, prefix="/api/v1/recommendations", tags=["AI Recommendations"])
+app.include_router(audit_logs.router, prefix="/api/v1/audit-logs", tags=["Audit Logs"])

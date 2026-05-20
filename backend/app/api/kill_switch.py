@@ -30,7 +30,9 @@ from app.models.models import (
     ReasonCode, UsedNonce, User, UserRole, Valve, ValveOperation,
     ValveOperationProposal, ValveStatus,
 )
+from app.observability.metrics import ALERTS_CREATED_TOTAL, VALVE_OPERATIONS_TOTAL
 from app.services.claude_service import claude_service
+from app.services.notifications import dispatch_alert
 from app.services.websocket_manager import websocket_manager
 
 router = APIRouter()
@@ -348,7 +350,7 @@ async def approve_proposal(
     db.add(op)
 
     alert_level = AlertLevel.CRITICAL if proposal.action == "close" else AlertLevel.WARNING
-    db.add(Alert(
+    alert = Alert(
         district_id=valve.district_id,
         alert_type="valve",
         level=alert_level,
@@ -361,7 +363,8 @@ async def approve_proposal(
             "approver_id": current.id,
             "proposal_id": proposal.id,
         },
-    ))
+    )
+    db.add(alert)
     _audit(db, actor=current, action="valve.executed",
            resource_id=valve.valve_id,
            payload={"proposal_id": proposal.id, "action": proposal.action,
@@ -369,11 +372,19 @@ async def approve_proposal(
            request=request)
     db.commit()
     db.refresh(valve)
+    db.refresh(alert)
+
+    try:
+        ALERTS_CREATED_TOTAL.labels(alert.alert_type, alert.level.value).inc()
+        VALVE_OPERATIONS_TOTAL.labels(proposal.action).inc()
+    except Exception:
+        pass
 
     background.add_task(_post_execute_notify,
                         valve_id=valve.valve_id,
                         district_id=valve.district_id,
                         action=proposal.action)
+    background.add_task(_dispatch_alert_safe, alert_id=alert.id)
 
     return {
         "status": "executed",
@@ -449,6 +460,22 @@ def operations_for_valve(
 
 
 # ---------- Background tasks ----------
+
+async def _dispatch_alert_safe(alert_id: int) -> None:
+    """Send an alert via the configured notification channels.
+
+    Runs outside the request lifecycle so SMTP latency doesn't add to the
+    approve-valve response time. Failures are swallowed.
+    """
+    try:
+        with db_session() as db:
+            alert = db.query(Alert).filter(Alert.id == alert_id).first()
+            if alert is not None:
+                dispatch_alert(alert)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception("alert dispatch failed (id=%s)", alert_id)
+
 
 async def _post_execute_notify(valve_id: str, district_id: int | None, action: str) -> None:
     try:

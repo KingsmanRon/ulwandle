@@ -2,18 +2,40 @@
 Alerts API.
 """
 
+import csv
+import io
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
+from starlette.responses import StreamingResponse
 
 from app.auth.dependencies import get_current_user, require_roles
 from app.db.database import get_db
 from app.models.models import Alert, AlertLevel, District, User, UserRole
 
 router = APIRouter()
+
+
+def _apply_alert_filters(
+    q, *, district_id, alert_type, level, is_resolved, hours: int,
+):
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+    q = q.filter(Alert.created_at >= cutoff)
+    if district_id:
+        q = q.filter(Alert.district_id == district_id)
+    if alert_type:
+        q = q.filter(Alert.alert_type == alert_type)
+    if level:
+        try:
+            q = q.filter(Alert.level == AlertLevel(level))
+        except ValueError:
+            raise HTTPException(400, "Invalid alert level")
+    if is_resolved is not None:
+        q = q.filter(Alert.is_resolved == is_resolved)
+    return q
 
 
 class AlertResolve(BaseModel):
@@ -27,25 +49,25 @@ def list_alerts(
     level: Optional[str] = None,
     is_resolved: Optional[bool] = None,
     hours: int = Query(24, ge=1, le=24 * 30),
+    page: int = Query(1, ge=1, le=10_000),
+    page_size: int = Query(50, ge=1, le=500),
     db: Session = Depends(get_db),
     _user: User = Depends(get_current_user),
 ):
-    cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
-    q = db.query(Alert).filter(Alert.created_at >= cutoff)
-    if district_id:
-        q = q.filter(Alert.district_id == district_id)
-    if alert_type:
-        q = q.filter(Alert.alert_type == alert_type)
-    if level:
-        try:
-            q = q.filter(Alert.level == AlertLevel(level))
-        except ValueError:
-            raise HTTPException(400, "Invalid alert level")
-    if is_resolved is not None:
-        q = q.filter(Alert.is_resolved == is_resolved)
-
-    rows = q.order_by(Alert.created_at.desc()).limit(500).all()
+    q = _apply_alert_filters(db.query(Alert), district_id=district_id,
+                             alert_type=alert_type, level=level,
+                             is_resolved=is_resolved, hours=hours)
+    total = q.count()
+    rows = (
+        q.order_by(Alert.created_at.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+        .all()
+    )
     return {
+        "page": page,
+        "page_size": page_size,
+        "total": total,
         "count": len(rows),
         "alerts": [
             {
@@ -57,6 +79,50 @@ def list_alerts(
             } for a in rows
         ],
     }
+
+
+@router.get("/export.csv")
+def export_alerts_csv(
+    district_id: Optional[int] = None,
+    alert_type: Optional[str] = None,
+    level: Optional[str] = None,
+    is_resolved: Optional[bool] = None,
+    hours: int = Query(168, ge=1, le=24 * 365),
+    limit: int = Query(10_000, ge=1, le=100_000),
+    db: Session = Depends(get_db),
+    _user: User = Depends(require_roles(UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.OPERATOR)),
+) -> StreamingResponse:
+    q = _apply_alert_filters(db.query(Alert), district_id=district_id,
+                             alert_type=alert_type, level=level,
+                             is_resolved=is_resolved, hours=hours)
+    rows = q.order_by(Alert.created_at.desc()).limit(limit).all()
+
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow([
+        "id", "created_at", "alert_type", "level", "title", "message",
+        "district_id", "is_resolved", "resolved_at", "resolved_by",
+    ])
+    for a in rows:
+        writer.writerow([
+            a.id,
+            a.created_at.isoformat() if a.created_at else "",
+            a.alert_type,
+            a.level.value,
+            a.title,
+            (a.message or "").replace("\r", " ").replace("\n", " "),
+            a.district_id or "",
+            "yes" if a.is_resolved else "no",
+            a.resolved_at.isoformat() if a.resolved_at else "",
+            a.resolved_by or "",
+        ])
+    buf.seek(0)
+    filename = f"alerts-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}.csv"
+    return StreamingResponse(
+        iter([buf.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.get("/{alert_id}")

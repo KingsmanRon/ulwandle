@@ -193,6 +193,29 @@ def logout(body: RefreshRequest, db: Session = Depends(get_db),
             db.commit()
 
 
+@router.post("/logout-all", status_code=200)
+def logout_all(request: Request, db: Session = Depends(get_db),
+               current: User = Depends(get_current_user)):
+    """
+    Revoke every refresh token belonging to the current user. Use this when a
+    refresh token is suspected to be compromised: access tokens still expire
+    naturally within 15 min, and no further refresh can occur.
+    """
+    rows = (
+        db.query(RefreshToken)
+        .filter(RefreshToken.user_id == current.id, RefreshToken.revoked == False)  # noqa: E712
+        .all()
+    )
+    revoked = 0
+    for rt in rows:
+        rt.revoked = True
+        revoked += 1
+    _record_audit(db, actor=current, action="token.revoke_all",
+                  payload={"revoked": revoked}, request=request)
+    db.commit()
+    return {"revoked": revoked}
+
+
 @router.get("/me", response_model=UserPublic)
 def me(current: User = Depends(get_current_user)):
     return _user_public(current)

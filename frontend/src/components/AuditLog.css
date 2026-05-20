@@ -1,0 +1,200 @@
+.audit-log {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.audit-log .audit-log-header h2 {
+  color: #0c4a6e;
+  margin: 0 0 0.25rem 0;
+}
+
+.audit-log .audit-log-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e0f2fe;
+  box-shadow: 0 1px 3px rgba(2, 132, 199, 0.08);
+}
+
+.audit-log .audit-log-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.audit-log .audit-log-filters input,
+.audit-log .audit-log-filters select {
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: #f8fafc;
+  font-family: inherit;
+}
+
+.audit-log .audit-log-filters input:focus,
+.audit-log .audit-log-filters select:focus {
+  outline: none;
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+  background: #fff;
+}
+
+.audit-log .audit-log-actions {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.audit-log .audit-log-actions button {
+  padding: 0.55rem 1rem;
+  border: 1px solid #0284c7;
+  background: white;
+  color: #0369a1;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.audit-log .audit-log-actions button:first-child {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: white;
+  border-color: transparent;
+}
+
+.audit-log .audit-log-actions button:hover:not(:disabled) {
+  background: #e0f2fe;
+  color: #0c4a6e;
+}
+
+.audit-log .audit-log-actions button:first-child:hover:not(:disabled) {
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+  background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+}
+
+.audit-log .audit-log-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.audit-log .audit-log-table-wrap {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e0f2fe;
+  box-shadow: 0 1px 3px rgba(2, 132, 199, 0.08);
+  overflow-x: auto;
+}
+
+.audit-log .audit-log-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.audit-log .audit-log-table th,
+.audit-log .audit-log-table td {
+  padding: 0.7rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: top;
+}
+
+.audit-log .audit-log-table th {
+  background: #f0f9ff;
+  color: #0c4a6e;
+  font-weight: 700;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.audit-log .audit-log-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.audit-log .audit-when {
+  white-space: nowrap;
+  color: #475569;
+  font-variant-numeric: tabular-nums;
+}
+
+.audit-log .audit-log-table code {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 0.82rem;
+  background: #f1f5f9;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  color: #0c4a6e;
+}
+
+.audit-log .audit-log-table pre {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 0.78rem;
+  background: #f1f5f9;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  margin: 0.35rem 0 0 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-width: 30rem;
+}
+
+.audit-log .audit-log-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  flex-wrap: wrap;
+}
+
+.audit-log .audit-log-pager button {
+  padding: 0.45rem 0.85rem;
+  border: 1px solid #cbd5e1;
+  background: white;
+  color: #334155;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.audit-log .audit-log-pager button:hover:not(:disabled) {
+  background: #f1f5f9;
+}
+
+.audit-log .audit-log-pager button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .audit-log .audit-log-filters {
+    grid-template-columns: 1fr;
+    padding: 0.75rem;
+  }
+
+  .audit-log .audit-log-table th,
+  .audit-log .audit-log-table td {
+    padding: 0.55rem 0.7rem;
+    font-size: 0.82rem;
+  }
+
+  .audit-log .audit-log-table pre {
+    max-width: 18rem;
+  }
+
+  .audit-log .audit-log-pager {
+    justify-content: center;
+  }
+}

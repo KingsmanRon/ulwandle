@@ -4,6 +4,7 @@ import { useAuth } from "./auth/AuthContext";
 import LoginPage from "./auth/LoginPage";
 import SigningKeySetup from "./auth/SigningKeySetup";
 import Alerts from "./components/Alerts";
+import AuditLog from "./components/AuditLog";
 import ClaudeRecommendationsPanel, {
   ClaudeRecommendationsData,
 } from "./components/ClaudeRecommendations";
@@ -64,7 +65,7 @@ function buildHistoricalSeries(intake: number, wastagePercentage: number): Histo
 
 // ---------- Navigation: 5 top-level tabs, two with sub-nav ----------
 
-type TopView = "dashboard" | "metros" | "monitoring" | "killswitch" | "settings";
+type TopView = "dashboard" | "metros" | "monitoring" | "killswitch" | "audit" | "settings";
 
 type MetroSubView = "overview" | "sources" | "detail" | "zones" | "network" | "reports";
 type MonitoringSubView = "districts" | "quality" | "alerts" | "predictions";
@@ -179,6 +180,7 @@ const App: React.FC = () => {
   if (!user) return <LoginPage />;
 
   const canSeeKillSwitch = ["operator", "supervisor", "admin"].includes(user.role);
+  const canSeeAudit = ["supervisor", "admin"].includes(user.role);
 
   // ---------- Sub-views ----------
 
@@ -309,6 +311,7 @@ const App: React.FC = () => {
       case "metros":     return renderMetros();
       case "monitoring": return renderMonitoring();
       case "killswitch": return canSeeKillSwitch ? <KillSwitch /> : <NoAccess />;
+      case "audit":      return canSeeAudit ? <AuditLog /> : <NoAccess />;
       case "settings":   return <SigningKeySetup />;
       default:           return <Dashboard />;
     }
@@ -348,6 +351,7 @@ const App: React.FC = () => {
         {navButton("metros", "Metros")}
         {navButton("monitoring", "Monitoring")}
         {canSeeKillSwitch && navButton("killswitch", "Kill Switch")}
+        {canSeeAudit && navButton("audit", "Audit log")}
         {navButton("settings", "Signing Key")}
       </nav>
 

@@ -39,9 +39,25 @@
 
 ## Data
 - Audit log (`audit_logs`) appends actor, action, resource, IP-hash,
-  payload for every state-changing operation.
+  payload for every state-changing operation. Admin/supervisor users can
+  read and CSV-export the trail via `GET /api/v1/audit-logs[/export.csv]`.
 - Refresh tokens are rotated on every refresh and revoked on logout.
+  `POST /api/v1/auth/logout-all` revokes every refresh token belonging to
+  the current user — use it when a token may be compromised.
 - IPs are stored only as a salted SHA-256 hash.
+
+## Observability
+- `/metrics` exposes Prometheus counters for HTTP requests, scraper runs,
+  alert creations, and valve operations. Route templates (not raw paths)
+  are used as labels to cap cardinality.
+- Scraper failures raise an `alert_type=scraper` row with a 6-hour
+  dedup window and fan out to the configured notification channels.
+
+## Notification dispatch
+- Alerts at or above `NOTIFICATION_MIN_LEVEL` (default `warning`) are
+  dispatched out-of-band via SMTP (`SMTP_HOST` / `SMTP_PORT` / …) and an
+  optional webhook (`NOTIFICATION_WEBHOOK_URL`). Dispatch never raises
+  back into the request lifecycle.
 
 ## Config posture
 - `SECRET_KEY`, `DATABASE_URL`, `ANTHROPIC_API_KEY` are required —

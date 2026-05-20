@@ -5,7 +5,7 @@ require supervisor or admin.
 
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -46,6 +46,8 @@ def list_districts(
     status: Optional[str] = None,
     province: Optional[str] = None,
     municipality: Optional[str] = None,
+    page: int = Query(1, ge=1, le=10_000),
+    page_size: int = Query(100, ge=1, le=500),
     db: Session = Depends(get_db),
     _user: User = Depends(get_current_user),
 ):
@@ -59,8 +61,20 @@ def list_districts(
         q = q.filter(District.province == province)
     if municipality:
         q = q.filter(District.municipality == municipality)
-    items = q.all()
-    return {"count": len(items), "districts": [_district_view(d) for d in items]}
+    total = q.count()
+    items = (
+        q.order_by(District.id)
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+        .all()
+    )
+    return {
+        "page": page,
+        "page_size": page_size,
+        "total": total,
+        "count": len(items),
+        "districts": [_district_view(d) for d in items],
+    }
 
 
 @router.post("/", status_code=201)

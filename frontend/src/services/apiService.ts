@@ -107,7 +107,68 @@ export const apiService = {
   // out-of-credit.
   getRecommendations:   async (metroId: string) =>
     (await apiClient.post(`/api/v1/recommendations/${encodeURIComponent(metroId)}`)).data as RecommendationsResponse,
+
+  // Append-only audit trail (admin/supervisor only).
+  getAuditLogs:         async (params: AuditLogQuery) =>
+    (await apiClient.get("/api/v1/audit-logs/", { params })).data as AuditLogPage,
+  auditLogsExportUrl:   (params: AuditLogQuery): string => {
+    const q = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== "") q.append(k, String(v));
+    });
+    return `/api/v1/audit-logs/export.csv?${q.toString()}`;
+  },
+  alertsExportUrl:      (params: AlertExportQuery): string => {
+    const q = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== "") q.append(k, String(v));
+    });
+    return `/api/v1/alerts/export.csv?${q.toString()}`;
+  },
+
+  // Revoke every refresh token for the current user.
+  logoutAll:            async () =>
+    (await apiClient.post("/api/v1/auth/logout-all")).data as { revoked: number },
 };
+
+export interface AuditLogQuery {
+  action?: string;
+  actor_email?: string;
+  resource_type?: string;
+  resource_id?: string;
+  hours?: number;
+  page?: number;
+  page_size?: number;
+}
+
+export interface AuditLogRow {
+  id: number;
+  action: string;
+  actor_id: number | null;
+  actor_email: string | null;
+  resource_type: string | null;
+  resource_id: string | null;
+  payload: Record<string, unknown> | null;
+  ip_hash: string | null;
+  created_at: string | null;
+}
+
+export interface AuditLogPage {
+  page: number;
+  page_size: number;
+  total: number;
+  count: number;
+  logs: AuditLogRow[];
+}
+
+export interface AlertExportQuery {
+  district_id?: number;
+  alert_type?: string;
+  level?: string;
+  is_resolved?: boolean;
+  hours?: number;
+  limit?: number;
+}
 
 // ---------- Real-data response types ----------
 

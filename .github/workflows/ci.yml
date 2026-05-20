@@ -33,6 +33,13 @@ jobs:
           APP_ENV: "development"
           DEBUG: "false"
         run: python -c "import importlib; importlib.import_module('app.main')"
+      - name: Pytest
+        env:
+          SECRET_KEY: "ci-test-secret-key-must-be-at-least-32-chars"
+          ANTHROPIC_API_KEY: "test"
+          APP_ENV: "development"
+          DEBUG: "false"
+        run: python -m pytest -q
 
   frontend:
     runs-on: ubuntu-latest

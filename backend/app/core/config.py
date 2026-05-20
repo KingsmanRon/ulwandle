@@ -78,8 +78,24 @@ class Settings(BaseSettings):
     NOTIFICATION_WEBHOOK_URL: str = ""
     EMPLOYEE_NOTIFICATION_ENABLED: bool = True
 
+    # SMTP for alert dispatch (optional — if SMTP_HOST is empty, email is skipped)
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: str = ""
+    SMTP_PASSWORD: SecretStr = SecretStr("")
+    SMTP_FROM: str = ""
+    SMTP_USE_TLS: bool = True
+    # Minimum alert level that triggers a notification dispatch.
+    # One of: info, warning, critical, emergency.
+    NOTIFICATION_MIN_LEVEL: str = "warning"
+
+    # Scraper resilience
+    SCRAPER_RETRY_ATTEMPTS: int = 3
+    SCRAPER_RETRY_BASE_DELAY_SECONDS: float = 2.0
+
     # Observability
     ENABLE_METRICS: bool = True
+    METRICS_PATH: str = "/metrics"
     LOG_LEVEL: str = "INFO"
 
     @field_validator("CORS_ORIGINS", "TRUSTED_HOSTS", mode="before")

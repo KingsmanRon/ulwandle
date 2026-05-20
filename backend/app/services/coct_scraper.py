@@ -38,6 +38,9 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from app.db.database import SessionLocal
 from app.models.models import DamStorageReading, DataSource, Metro, MetroConsumptionReading
+from app.services.scraper_support import (
+    emit_scrape_failure_alert, record_metrics, with_retries,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -250,16 +253,22 @@ def _record_run(session, status: str, rows: int, error: str | None = None) -> No
 
 
 def run_once() -> int:
-    """Fetch + parse + upsert. Returns number of dam readings written."""
+    """Fetch + parse + upsert. Returns number of dam readings written.
+
+    On failure: records the error on the data source row, raises an alert
+    (de-duplicated to one row per 6h window), and emits a Prometheus counter.
+    """
     db = SessionLocal()
     try:
         try:
-            html = _fetch_html()
+            html = with_retries(_fetch_html, label="coct_scraper.fetch")
             as_of, readings = _extract_readings(html)
         except Exception as exc:
             _record_run(db, status="error", rows=0, error=str(exc)[:1000])
             db.commit()
             logger.exception("coct_scraper: fetch/parse failed")
+            record_metrics(source_key=SOURCE_KEY, status="error", rows=0)
+            emit_scrape_failure_alert(db, source_name=SOURCE_NAME, error=str(exc))
             return 0
 
         known = {row[0] for row in db.query(DamStorageReading.dam_id).distinct().all()}  # noqa: F841 (unused but kept for future cross-check)
@@ -272,6 +281,12 @@ def run_once() -> int:
         _record_run(db, status=status, rows=written,
                     error=None if written else "No dam rows matched on the page")
         db.commit()
+        record_metrics(source_key=SOURCE_KEY, status=status, rows=written)
+        if status == "partial":
+            emit_scrape_failure_alert(
+                db, source_name=SOURCE_NAME,
+                error="CoCT page fetched but no dam rows matched — layout may have changed",
+            )
         logger.info("coct_scraper: wrote %d dam readings as_of=%s",
                     written, as_of.isoformat())
         return written

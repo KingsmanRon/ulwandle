@@ -47,6 +47,9 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from app.db.database import SessionLocal
 from app.models.models import Dam, DamStorageReading, DataSource
+from app.services.scraper_support import (
+    emit_scrape_failure_alert, record_metrics, with_retries,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -212,16 +215,22 @@ def _record_run(session, status: str, rows: int, error: str | None = None) -> No
 
 
 def run_once() -> int:
-    """Fetch + parse + upsert. Returns number of readings written."""
+    """Fetch + parse + upsert. Returns number of readings written.
+
+    On failure: records the error on the data source row, raises an alert
+    (de-duplicated to one row per 6h window), and emits a Prometheus counter.
+    """
     db = SessionLocal()
     try:
         try:
-            pdf_bytes = _fetch_pdf()
+            pdf_bytes = with_retries(_fetch_pdf, label="dws_scraper.fetch")
             as_of, readings = _extract_readings(pdf_bytes)
         except Exception as exc:
             _record_run(db, status="error", rows=0, error=str(exc)[:1000])
             db.commit()
             logger.exception("dws_scraper: fetch/parse failed")
+            record_metrics(source_key=SOURCE_KEY, status="error", rows=0)
+            emit_scrape_failure_alert(db, source_name=SOURCE_NAME, error=str(exc))
             return 0
 
         known_ids = {row[0] for row in db.query(Dam.id).all()}
@@ -236,6 +245,12 @@ def run_once() -> int:
         _record_run(db, status=status, rows=written,
                     error=None if written else "No readings matched known dams")
         db.commit()
+        record_metrics(source_key=SOURCE_KEY, status=status, rows=written)
+        if status == "partial":
+            emit_scrape_failure_alert(
+                db, source_name=SOURCE_NAME,
+                error="DWS Weekly PDF parsed but no rows matched known dams",
+            )
         logger.info("dws_scraper: wrote %d readings as_of=%s", written, as_of.isoformat())
         return written
     finally:

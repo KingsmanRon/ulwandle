@@ -1,0 +1,50 @@
+name: Keep Demo Warm
+
+# Pings the backend readiness probe on a short interval so the demo never
+# greets a cold prospect with a ~50s Render cold-start (and so the free-tier
+# Neon database doesn't auto-suspend). /ready touches the DB, so one ping keeps
+# both the web service and the database awake.
+#
+# Setup: add a repo *variable* (Settings -> Secrets and variables -> Actions ->
+# Variables) named DEMO_BASE_URL, e.g. https://ulwandle-backend.onrender.com
+# If it's unset the job no-ops (so forks don't ping a stranger's server).
+#
+# Note: GitHub may throttle/queue scheduled runs on free runners, so treat this
+# as best-effort. For a hard SLA on demo warmth, use a paid Render plan or an
+# uptime pinger (UptimeRobot/cron-job.org) instead.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"   # every 10 min (Render spins down after ~15 min idle)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: keep-warm
+  cancel-in-progress: true
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ping readiness probe
+        env:
+          BASE_URL: ${{ vars.DEMO_BASE_URL }}
+        run: |
+          if [ -z "${BASE_URL}" ]; then
+            echo "DEMO_BASE_URL not set — skipping warm ping."
+            exit 0
+          fi
+          url="${BASE_URL%/}/ready"
+          echo "Warming ${url}"
+          # Generous timeout: the very first hit may itself pay the cold start.
+          code=$(curl -fsS -o /dev/null -w "%{http_code}" --max-time 90 "${url}" || true)
+          echo "HTTP ${code}"
+          # 200 ready or 503 degraded both mean the service is awake; only a
+          # connection failure (000) is worth surfacing.
+          if [ "${code}" = "000" ]; then
+            echo "::warning::Warm ping could not reach ${url}"
+          fi

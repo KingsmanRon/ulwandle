@@ -70,6 +70,24 @@
   color: #e0f2fe;
 }
 
+.dashboard .hero-stat-provenance {
+  font-size: 0.74rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.66);
+  margin-top: 0.45rem;
+}
+
+.dashboard .stale-banner {
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  color: #991b1b;
+  padding: 0.7rem 1rem;
+  border-radius: 10px;
+  font-size: 0.86rem;
+  line-height: 1.45;
+  margin: 0 0 1rem 0;
+}
+
 @media (max-width: 768px) {
   .dashboard .hero-stat {
     padding: 1.25rem 1.1rem 1rem;

@@ -116,6 +116,7 @@ const Dashboard: React.FC = () => {
     const allDams = Array.from(damsByMetro.values()).flatMap(d => d.dams);
     const seenDamIds = new Set(allDams.map(d => d.dam_id));
     const critical = allDams.filter(d => d.storage_pct < 30);
+    const staleDamCount = new Set(allDams.filter(d => d.stale).map(d => d.dam_id)).size;
     return {
       metroCount: baselines.length,
       totalPop,
@@ -123,6 +124,7 @@ const Dashboard: React.FC = () => {
       annualLossZar,
       damCount: seenDamIds.size,
       criticalDams: critical,
+      staleDamCount,
     };
   }, [baselines, damsByMetro]);
 
@@ -144,6 +146,15 @@ const Dashboard: React.FC = () => {
         Updated by scheduled scrapers — no manual data entry.
       </p>
 
+      {stats.staleDamCount > 0 && (
+        <div className="stale-banner" role="alert">
+          ⚠ <strong>{stats.staleDamCount} dam{stats.staleDamCount === 1 ? "" : "s"}</strong>{" "}
+          showing readings older than the freshness window — a dam scraper may have
+          stopped. Storage figures below are last-known, not live; check the
+          CoCT / DWS refresh cards.
+        </div>
+      )}
+
       <div className="hero-stat" role="figure" aria-label="Estimated annual non-revenue water loss">
         <div className="hero-stat-label">Water lost to NRW across {stats.metroCount} metros</div>
         <div className="hero-stat-value">{fmtZarCompact(stats.annualLossZar)}<span className="hero-stat-unit">/ year</span></div>
@@ -155,6 +166,11 @@ const Dashboard: React.FC = () => {
           Assumption: population × per-capita L/d × NRW% × <strong>R{TARIFF_ZAR_PER_KL}/kL</strong>{" "}
           bulk treated water. Tariff is editable in <code>Dashboard.tsx</code> — swap for any
           buyer&apos;s real cost-of-water figure.
+        </div>
+        <div className="hero-stat-provenance">
+          Inputs sourced: population — <strong>Stats SA Census 2022</strong>; NRW% — per-metro
+          utility &amp; DWS reports (each cited under the Metros → Sources tab); tariff —{" "}
+          <strong>R{TARIFF_ZAR_PER_KL}/kL</strong> assumption shown above.
         </div>
       </div>
 
@@ -247,7 +263,13 @@ const Dashboard: React.FC = () => {
                 {m.nrw_source.caveat && <span className="caveat-mark" title={m.nrw_source.caveat}>*</span>}
               </span>
               <span>{primary?.name ?? "—"}</span>
-              <span className="num">{primary ? fmtPct(primary.storage_pct) : "—"}</span>
+              <span className="num">
+                {primary ? fmtPct(primary.storage_pct) : "—"}
+                {primary?.stale && (
+                  <span className="caveat-mark"
+                        title={`Reading ~${primary.age_days ?? "?"} days old — possibly stale`}>*</span>
+                )}
+              </span>
             </div>
           );
         })}

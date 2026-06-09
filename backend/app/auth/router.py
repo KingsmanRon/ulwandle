@@ -21,6 +21,7 @@ from app.auth.security import (
     hash_ip, hash_password, password_needs_rehash, verify_password,
 )
 from app.core.config import settings
+from app.core.net import get_client_ip
 from app.db.database import get_db
 from app.models.models import AuditLog, RefreshToken, User, UserRole
 
@@ -62,7 +63,7 @@ def _record_audit(db: Session, *, actor: User | None, action: str,
                   resource_type: str | None = None, resource_id: str | None = None,
                   payload: dict | None = None, request: Request | None = None) -> None:
     try:
-        ip = request.client.host if request and request.client else None
+        ip = get_client_ip(request) if request else None
         db.add(AuditLog(
             actor_id=actor.id if actor else None,
             actor_email=actor.email if actor else None,
@@ -116,7 +117,7 @@ def login(body: LoginRequest, request: Request, db: Session = Depends(get_db)):
     refresh, refresh_exp = create_refresh_token(user.id, jti)
 
     ua = (request.headers.get("user-agent") or "")[:255]
-    ip_h = hash_ip(request.client.host) if (request and request.client) else None
+    ip_h = hash_ip(get_client_ip(request))
     db.add(RefreshToken(jti=jti, user_id=user.id, expires_at=refresh_exp,
                         user_agent=ua, ip_hash=ip_h))
     _record_audit(db, actor=user, action="login.success", request=request)
@@ -161,7 +162,7 @@ def refresh(body: RefreshRequest, request: Request, db: Session = Depends(get_db
     new_jti = secrets.token_hex(16)
     new_refresh, new_exp = create_refresh_token(user.id, new_jti)
     ua = (request.headers.get("user-agent") or "")[:255]
-    ip_h = hash_ip(request.client.host) if request.client else None
+    ip_h = hash_ip(get_client_ip(request))
     db.add(RefreshToken(jti=new_jti, user_id=user.id, expires_at=new_exp,
                         user_agent=ua, ip_hash=ip_h))
 

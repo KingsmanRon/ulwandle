@@ -46,6 +46,17 @@ class Settings(BaseSettings):
     CLAUDE_MODEL: str = "claude-sonnet-4-6"
     CLAUDE_DECISION_MODEL: str = "claude-opus-4-7"
     CLAUDE_TIMEOUT_SECONDS: float = 30.0
+    # Ordered fallback chain tried only when a primary/decision model ID is
+    # rejected as unknown/retired (HTTP 404). Keeps the AI advisor alive when
+    # a pinned model is deprecated out from under us. Latest first.
+    CLAUDE_FALLBACK_MODELS: Annotated[List[str], NoDecode] = [
+        "claude-opus-4-8", "claude-sonnet-4-6", "claude-haiku-4-5",
+    ]
+
+    # Data freshness — a dam reading older than this is shown as STALE in the
+    # API/UI and is NOT forwarded to Claude as if it were current. DWS publishes
+    # weekly and CoCT daily, so two weeks comfortably flags a broken scraper.
+    DAM_DATA_STALE_AFTER_DAYS: int = 14
 
     # SANS 241 thresholds
     PH_MIN: float = 6.0
@@ -82,7 +93,7 @@ class Settings(BaseSettings):
     ENABLE_METRICS: bool = True
     LOG_LEVEL: str = "INFO"
 
-    @field_validator("CORS_ORIGINS", "TRUSTED_HOSTS", mode="before")
+    @field_validator("CORS_ORIGINS", "TRUSTED_HOSTS", "CLAUDE_FALLBACK_MODELS", mode="before")
     @classmethod
     def _split_csv(cls, v):
         if isinstance(v, str):

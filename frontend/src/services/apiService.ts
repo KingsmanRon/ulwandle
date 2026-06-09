@@ -140,6 +140,8 @@ export interface DamLevel {
   storage_ml?: number | null;
   full_capacity_ml?: number | null;
   as_of: string;
+  age_days?: number;
+  stale?: boolean;
   source: SourceRef;
   is_primary: boolean;
 }
@@ -149,6 +151,11 @@ export interface MetroDamsResponse {
   dams: DamLevel[];
   weighted_storage_pct?: number | null;
   has_data: boolean;
+  // True when any reading is older than stale_after_days — the UI should badge
+  // the figures rather than present them as live.
+  stale?: boolean;
+  stale_after_days?: number;
+  oldest_as_of?: string | null;
 }
 
 export interface DataSourceStatus {

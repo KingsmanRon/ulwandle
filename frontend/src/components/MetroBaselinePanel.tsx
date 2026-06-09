@@ -128,6 +128,13 @@ const MetroBaselinePanel: React.FC<Props> = ({ metro }) => {
       </div>
 
       <h3 className="mbp-section-h">Supplying dams — latest storage</h3>
+      {dams?.stale && (
+        <p className="mbp-stale-warning" role="alert">
+          ⚠ Some readings are over {dams.stale_after_days} days old
+          {dams.oldest_as_of ? ` (oldest: ${dams.oldest_as_of})` : ""}. The dam
+          scraper may have stopped — treat these as last-known, not live.
+        </p>
+      )}
       {!dams?.has_data ? (
         <p className="mbp-empty">
           No dam-level readings yet. The DWS weekly scraper hasn't run, or the
@@ -163,6 +170,12 @@ const DamRow: React.FC<{ dam: DamLevel }> = ({ dam }) => {
       <div className="mbp-dam-head">
         <span className="mbp-dam-name">
           {dam.name} {dam.is_primary && <span className="mbp-tag">primary</span>}
+          {dam.stale && (
+            <span className="mbp-stale-tag"
+                  title={`Last verified ${dam.age_days ?? "?"} days ago — possibly stale`}>
+              STALE
+            </span>
+          )}
         </span>
         <span className="mbp-dam-pct">{fmtPct(dam.storage_pct)}</span>
       </div>

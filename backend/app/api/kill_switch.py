@@ -24,6 +24,7 @@ from sqlalchemy.orm import Session
 from app.auth.dependencies import get_current_user, require_roles
 from app.auth.security import canonical_op_message, verify_ed25519, hash_ip
 from app.core.config import settings
+from app.core.net import get_client_ip
 from app.db.database import db_session, get_db
 from app.models.models import (
     Alert, AlertLevel, AuditLog, District, Employee, ProposalStatus,
@@ -91,7 +92,7 @@ def _parse_iso(s: str) -> datetime:
 
 def _audit(db: Session, *, actor: User | None, action: str,
            resource_id: str | None, payload: dict, request: Request) -> None:
-    ip = request.client.host if request.client else None
+    ip = get_client_ip(request)
     db.add(AuditLog(
         actor_id=actor.id if actor else None,
         actor_email=actor.email if actor else None,

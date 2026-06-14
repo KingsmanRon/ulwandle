@@ -15,16 +15,17 @@ import jwt as pyjwt
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from sqlalchemy import text
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
-from slowapi.util import get_remote_address
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from app.api import alerts, dashboard, data_sources, districts, kill_switch, metros, monitoring, predictions, recommendations, water_quality
 from app.auth import router as auth_router
 from app.auth.security import decode_token
 from app.core.config import settings
+from app.core.net import rate_limit_key
 from app.db.database import SessionLocal
 from app.middleware.security import MaxBodySizeMiddleware, SecurityHeadersMiddleware
 from app.models.models import User
@@ -38,7 +39,17 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-limiter = Limiter(key_func=get_remote_address, default_limits=[settings.RATE_LIMIT_DEFAULT])
+# key_func honours X-Forwarded-For behind the proxy (see app.core.net) so limits
+# are per-client, not shared across everyone behind Render's single egress IP.
+# storage_uri=Redis makes the limit counters shared across the 2 gunicorn
+# workers and durable across spin-downs; swallow_errors keeps a Redis hiccup
+# from 500-ing requests (fails open on limiting, not on the request).
+limiter = Limiter(
+    key_func=rate_limit_key,
+    default_limits=[settings.RATE_LIMIT_DEFAULT],
+    storage_uri=settings.REDIS_URL,
+    swallow_errors=True,
+)
 
 
 @asynccontextmanager
@@ -97,7 +108,26 @@ async def unhandled(request: Request, exc: Exception):
 
 @app.get("/health", tags=["Health"])
 async def health():
+    # DB-free on purpose: this is Render's healthCheckPath, so a transient DB
+    # blip must not fail the deploy / kill the container.
     return {"status": "ok", "version": settings.APP_VERSION}
+
+
+@app.get("/ready", tags=["Health"])
+async def ready():
+    """Readiness probe that touches the DB. An external warm-ping against this
+    keeps both the (free-tier, spin-down) web service and the (free-tier,
+    auto-suspending) Neon database awake, so a cold prospect hitting the demo
+    doesn't wait ~50s. Never raises — returns 503 on DB failure."""
+    db = SessionLocal()
+    try:
+        db.execute(text("SELECT 1"))
+        return {"status": "ready", "db": "ok", "version": settings.APP_VERSION}
+    except Exception:
+        logger.exception("readiness check: DB unreachable")
+        return JSONResponse({"status": "degraded", "db": "down"}, status_code=503)
+    finally:
+        db.close()
 
 
 # ---------- Authenticated WebSocket ----------

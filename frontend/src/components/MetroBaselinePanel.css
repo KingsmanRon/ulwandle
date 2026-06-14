@@ -208,3 +208,26 @@
   border-radius: 3px;
   font-size: 0.85em;
 }
+
+.metro-baseline-panel .mbp-stale-warning {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  padding: 0.65rem 0.9rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  margin: 0.25rem 0 0.85rem 0;
+  line-height: 1.4;
+}
+
+.metro-baseline-panel .mbp-stale-tag {
+  font-size: 0.62rem;
+  background: #b91c1c;
+  color: #fff;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  margin-left: 0.4rem;
+  vertical-align: middle;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+}

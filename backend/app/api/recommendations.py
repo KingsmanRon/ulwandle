@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import logging
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -28,6 +28,8 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
+from app.core.cache import JsonCache
+from app.core.config import settings
 from app.db.database import get_db
 from app.models.models import (
     Dam, DamStorageReading, Metro, MetroDam, User,
@@ -59,38 +61,27 @@ class RecommendationsResponse(BaseModel):
     reason: Optional[str] = None
 
 
-# (metro_id, hour_bucket, nrw_bucket) -> (epoch_seconds, payload)
-_CACHE: dict[tuple[str, int, int], tuple[float, dict]] = {}
+# Redis-backed (Upstash in prod) so the cache survives free-tier spin-downs and
+# is shared across gunicorn workers; degrades to in-process on Redis failure.
 _CACHE_TTL_SECONDS = 3600
+_rec_cache = JsonCache("recommendations")
 
 
-def _cache_key(metro: Metro) -> tuple[str, int, int]:
+def _cache_key(metro: Metro) -> str:
+    """Key on (metro, hour bucket, 5%-NRW bucket) so repeated views within ~1h
+    of stable inputs share one Claude generation."""
     hour_bucket = int(time.time() // _CACHE_TTL_SECONDS)
-    nrw_bucket = int(round(metro.nrw_pct / 5) * 5)  # 5% buckets
-    return (metro.id, hour_bucket, nrw_bucket)
-
-
-def _cache_get(key: tuple[str, int, int]) -> dict | None:
-    entry = _CACHE.get(key)
-    if entry is None:
-        return None
-    ts, payload = entry
-    if time.time() - ts > _CACHE_TTL_SECONDS:
-        _CACHE.pop(key, None)
-        return None
-    return payload
-
-
-def _cache_put(key: tuple[str, int, int], payload: dict) -> None:
-    # Trim if cache grows beyond 64 entries.
-    if len(_CACHE) > 64:
-        _CACHE.clear()
-    _CACHE[key] = (time.time(), payload)
+    nrw_bucket = int(round(metro.nrw_pct / 5) * 5)
+    return f"{metro.id}:{hour_bucket}:{nrw_bucket}"
 
 
 def _latest_dam_pcts(db: Session, metro_id: str) -> tuple[float | None, float | None]:
     """Return (primary_dam_pct, weighted_pct) for the metro. Either may
-    be None if no readings exist yet."""
+    be None if no readings exist yet.
+
+    Readings older than ``DAM_DATA_STALE_AFTER_DAYS`` are treated as missing
+    rather than current — we never hand Claude a months-old storage figure
+    dressed up as today's, which would make the recommendation silently wrong."""
     rows = (
         db.query(Dam, MetroDam.is_primary)
         .join(MetroDam, MetroDam.dam_id == Dam.id)
@@ -99,6 +90,8 @@ def _latest_dam_pcts(db: Session, metro_id: str) -> tuple[float | None, float | 
     )
     if not rows:
         return None, None
+    stale_before = (datetime.now(timezone.utc)
+                    - timedelta(days=settings.DAM_DATA_STALE_AFTER_DAYS))
     primary_pct: float | None = None
     weighted_total = 0.0
     weighted_capacity = 0.0
@@ -111,6 +104,12 @@ def _latest_dam_pcts(db: Session, metro_id: str) -> tuple[float | None, float | 
             .first()
         )
         if latest is None:
+            continue
+        as_of = latest.as_of
+        if as_of.tzinfo is None:
+            as_of = as_of.replace(tzinfo=timezone.utc)
+        if as_of < stale_before:
+            # Reading too old to be trusted as current — skip it.
             continue
         if is_primary and primary_pct is None:
             primary_pct = latest.storage_pct
@@ -135,7 +134,7 @@ async def generate_recommendations(
         raise HTTPException(status_code=404, detail="Metro not found")
 
     cache_key = _cache_key(metro)
-    cached = _cache_get(cache_key)
+    cached = _rec_cache.get(cache_key)
     if cached is not None:
         logger.info("recommendations: cache hit metro=%s actor=%s", metro_id, user.id)
         return RecommendationsResponse(**cached)
@@ -170,6 +169,6 @@ async def generate_recommendations(
 
     # Cache only successful generations — re-attempt next call on failure.
     if status_field == "ok":
-        _cache_put(cache_key, payload)
+        _rec_cache.put(cache_key, payload, _CACHE_TTL_SECONDS)
 
     return RecommendationsResponse(**payload)

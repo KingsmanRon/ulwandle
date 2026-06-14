@@ -12,7 +12,7 @@ import json
 import logging
 from typing import Any
 
-from anthropic import AsyncAnthropic, APIError
+from anthropic import AsyncAnthropic, APIError, NotFoundError
 
 from app.core.config import settings
 
@@ -258,16 +258,54 @@ class ClaudeService:
 
     # ---------- Internals ----------
 
+    @staticmethod
+    def _model_chain(primary: str) -> list[str]:
+        """Primary model first, then configured fallbacks (deduped)."""
+        chain = [primary]
+        for m in settings.CLAUDE_FALLBACK_MODELS:
+            if m and m not in chain:
+                chain.append(m)
+        return chain
+
+    async def _create_with_fallback(self, client, *, model: str, max_tokens: int,
+                                    system, user_text: str):
+        """Call messages.create, walking the fallback chain only when a model
+        ID is rejected as unknown/retired (404). Other errors propagate to the
+        caller's APIError handler unchanged (we don't burn the chain on rate
+        limits)."""
+        chain = self._model_chain(model)
+        last_not_found: NotFoundError | None = None
+        for candidate in chain:
+            try:
+                msg = await client.messages.create(
+                    model=candidate,
+                    max_tokens=max_tokens,
+                    temperature=0.1,
+                    system=system,
+                    messages=[{"role": "user", "content": user_text}],
+                )
+                if candidate != model:
+                    logger.warning(
+                        "Claude model %s unavailable; served via fallback %s",
+                        model, candidate)
+                return msg
+            except NotFoundError as e:
+                last_not_found = e
+                logger.warning("Claude model %s rejected as unknown/retired; "
+                               "trying next fallback", candidate)
+                continue
+        # Whole chain is unknown — surface the last 404 for the unavailable path.
+        # The chain always contains at least the primary model, so this is set.
+        assert last_not_found is not None
+        raise last_not_found
+
     async def _invoke(self, system, user_text: str, *, model: str,
                       max_tokens: int, fallback: dict[str, Any]) -> dict[str, Any]:
         try:
             client = _client_singleton()
-            msg = await client.messages.create(
-                model=model,
-                max_tokens=max_tokens,
-                temperature=0.1,
-                system=system,
-                messages=[{"role": "user", "content": user_text}],
+            msg = await self._create_with_fallback(
+                client, model=model, max_tokens=max_tokens,
+                system=system, user_text=user_text,
             )
             text = "".join(b.text for b in msg.content if getattr(b, "type", None) == "text")
             parsed = _parse_json(text)

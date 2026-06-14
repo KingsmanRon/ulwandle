@@ -56,4 +56,7 @@ jobs:
           ANTHROPIC_API_KEY: "unused-by-scraper"
           APP_ENV: "development"
           DEBUG: "false"
+          # Optional: set this repo secret to a Slack/Discord/webhook URL to be
+          # paged when the scraper fails or matches 0 rows. Unset = no-op.
+          NOTIFICATION_WEBHOOK_URL: ${{ secrets.NOTIFICATION_WEBHOOK_URL }}
         run: python -m app.services.dws_scraper

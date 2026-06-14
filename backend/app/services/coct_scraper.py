@@ -38,6 +38,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from app.db.database import SessionLocal
 from app.models.models import DamStorageReading, DataSource, Metro, MetroConsumptionReading
+from app.services.notifications import notify_ops
 
 
 logger = logging.getLogger(__name__)
@@ -260,6 +261,8 @@ def run_once() -> int:
             _record_run(db, status="error", rows=0, error=str(exc)[:1000])
             db.commit()
             logger.exception("coct_scraper: fetch/parse failed")
+            notify_ops(f"CoCT daily dam scraper FAILED to fetch/parse: "
+                       f"{str(exc)[:200]}", level="error")
             return 0
 
         known = {row[0] for row in db.query(DamStorageReading.dam_id).distinct().all()}  # noqa: F841 (unused but kept for future cross-check)
@@ -274,6 +277,10 @@ def run_once() -> int:
         db.commit()
         logger.info("coct_scraper: wrote %d dam readings as_of=%s",
                     written, as_of.isoformat())
+        if status != "ok":
+            notify_ops("CoCT daily dam scraper matched 0 dam rows — the "
+                       "capetown.gov.za page format likely changed. Dam levels "
+                       "will go stale until fixed.", level="error")
         return written
     finally:
         db.close()

@@ -36,6 +36,8 @@ services:
         sync: false             # https://your-frontend.vercel.app
       - key: TRUSTED_HOSTS
         sync: false             # ulwandle-backend.onrender.com
+      - key: NOTIFICATION_WEBHOOK_URL
+        sync: false             # optional: Slack/Discord webhook for ops alerts
 
       # Production hardening — fixed values.
       - key: APP_ENV

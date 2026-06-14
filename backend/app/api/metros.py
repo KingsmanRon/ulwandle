@@ -25,6 +25,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user, require_roles
+from app.core.config import settings
 from app.db.database import get_db
 from app.models.models import (
     Dam, DamStorageReading, DataSource, Metro, MetroConsumptionReading,
@@ -76,6 +77,8 @@ class DamLevel(BaseModel):
     storage_ml: Optional[float] = None
     full_capacity_ml: Optional[float] = None
     as_of: str
+    age_days: int
+    stale: bool
     source: SourceRef
     is_primary: bool
 
@@ -85,6 +88,12 @@ class MetroDamsResponse(BaseModel):
     dams: list[DamLevel]
     weighted_storage_pct: Optional[float] = None
     has_data: bool
+    # True when *any* dam reading is older than the staleness threshold — the UI
+    # should badge the figures and not present them as live.
+    stale: bool = False
+    stale_after_days: int = settings.DAM_DATA_STALE_AFTER_DAYS
+    # ISO date of the oldest reading in the set (the limiting figure).
+    oldest_as_of: Optional[str] = None
 
 
 class MetroInfo(BaseModel):
@@ -269,6 +278,13 @@ def _to_metro_baseline(metro: Metro) -> MetroBaseline:
     )
 
 
+def _reading_age_days(as_of: datetime) -> int:
+    """Whole days between a reading's as-of date and now (clamped at 0)."""
+    if as_of.tzinfo is None:
+        as_of = as_of.replace(tzinfo=timezone.utc)
+    return max((datetime.now(timezone.utc) - as_of).days, 0)
+
+
 def _real_metro_or_404(db: Session, metro_id: str) -> Metro:
     metro = db.get(Metro, metro_id)
     if metro is None:
@@ -335,9 +351,12 @@ def get_metro_dam_levels(
     if not rows:
         return MetroDamsResponse(metro_id=metro_id, dams=[], has_data=False)
 
+    threshold = settings.DAM_DATA_STALE_AFTER_DAYS
     out: list[DamLevel] = []
     weighted_total = 0.0
     weighted_capacity = 0.0
+    any_stale = False
+    oldest_as_of: datetime | None = None
     for dam, is_primary in rows:
         latest = (
             db.query(DamStorageReading)
@@ -348,6 +367,11 @@ def get_metro_dam_levels(
         )
         if latest is None:
             continue
+        age_days = _reading_age_days(latest.as_of)
+        stale = age_days > threshold
+        any_stale = any_stale or stale
+        if oldest_as_of is None or latest.as_of < oldest_as_of:
+            oldest_as_of = latest.as_of
         out.append(DamLevel(
             dam_id=dam.id,
             name=dam.name,
@@ -355,6 +379,8 @@ def get_metro_dam_levels(
             storage_ml=latest.storage_ml,
             full_capacity_ml=dam.full_capacity_ml,
             as_of=latest.as_of.date().isoformat(),
+            age_days=age_days,
+            stale=stale,
             source=SourceRef(name=latest.source, as_of=latest.as_of.date().isoformat(),
                              url=latest.source_url),
             is_primary=is_primary,
@@ -372,6 +398,9 @@ def get_metro_dam_levels(
         dams=out,
         weighted_storage_pct=weighted_pct,
         has_data=bool(out),
+        stale=any_stale,
+        stale_after_days=threshold,
+        oldest_as_of=oldest_as_of.date().isoformat() if oldest_as_of else None,
     )
 
 

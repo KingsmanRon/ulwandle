@@ -47,6 +47,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from app.db.database import SessionLocal
 from app.models.models import Dam, DamStorageReading, DataSource
+from app.services.notifications import notify_ops
 
 
 logger = logging.getLogger(__name__)
@@ -129,46 +130,53 @@ def _fetch_pdf(client: httpx.Client | None = None) -> bytes:
             c.close()
 
 
-def _extract_readings(pdf_bytes: bytes) -> tuple[datetime, list[tuple[str, float]]]:
-    """Parse the PDF and return (as_of, [(dam_id, pct), ...]).
+def _extract_readings_from_text(text: str) -> tuple[datetime, list[tuple[str, float]]]:
+    """Parse already-extracted PDF text. Split out from ``_extract_readings``
+    so the fragile, format-dependent parsing (station codes, last-decimal,
+    ISO date) is unit-testable against a representative text fixture without
+    needing a binary PDF.
 
     Strategy:
-    1. Walk every line on every page.
+    1. Walk every line.
     2. If a line contains a station code we care about, it's a body row.
     3. Strip the "#" "Latest available data" markers and take the LAST
        decimal value on the row — that's "Today %Full". Validate 0-200.
     4. First occurrence per dam wins (the PDF repeats subtotals later)."""
     readings: dict[str, float] = {}
-    full_text_chunks: list[str] = []
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        m = _STATION_RE.search(line)
+        if m is None:
+            continue
+        dam_id = DWS_STATION_TO_DAM_ID.get(m.group(1))
+        if dam_id is None:
+            continue
+        clean = line.replace("#", "").replace("&", "")
+        decimals = _DECIMAL_RE.findall(clean)
+        if not decimals:
+            continue
+        try:
+            pct = float(decimals[-1])
+        except ValueError:
+            continue
+        if not (0.0 <= pct <= 200.0):
+            continue
+        readings.setdefault(dam_id, pct)
 
+    as_of = _parse_as_of(text)
+    return as_of, list(readings.items())
+
+
+def _extract_readings(pdf_bytes: bytes) -> tuple[datetime, list[tuple[str, float]]]:
+    """Extract text from every page, then parse it (see
+    ``_extract_readings_from_text``)."""
+    full_text_chunks: list[str] = []
     with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
         for page in pdf.pages:
-            text = page.extract_text() or ""
-            full_text_chunks.append(text)
-            for raw_line in text.splitlines():
-                line = raw_line.strip()
-                if not line:
-                    continue
-                m = _STATION_RE.search(line)
-                if m is None:
-                    continue
-                dam_id = DWS_STATION_TO_DAM_ID.get(m.group(1))
-                if dam_id is None:
-                    continue
-                clean = line.replace("#", "").replace("&", "")
-                decimals = _DECIMAL_RE.findall(clean)
-                if not decimals:
-                    continue
-                try:
-                    pct = float(decimals[-1])
-                except ValueError:
-                    continue
-                if not (0.0 <= pct <= 200.0):
-                    continue
-                readings.setdefault(dam_id, pct)
-
-    as_of = _parse_as_of("\n".join(full_text_chunks))
-    return as_of, list(readings.items())
+            full_text_chunks.append(page.extract_text() or "")
+    return _extract_readings_from_text("\n".join(full_text_chunks))
 
 
 def _upsert_reading(session, dam_id: str, pct: float, as_of: datetime) -> None:
@@ -222,6 +230,8 @@ def run_once() -> int:
             _record_run(db, status="error", rows=0, error=str(exc)[:1000])
             db.commit()
             logger.exception("dws_scraper: fetch/parse failed")
+            notify_ops(f"DWS weekly dam scraper FAILED to fetch/parse: "
+                       f"{str(exc)[:200]}", level="error")
             return 0
 
         known_ids = {row[0] for row in db.query(Dam.id).all()}
@@ -237,6 +247,10 @@ def run_once() -> int:
                     error=None if written else "No readings matched known dams")
         db.commit()
         logger.info("dws_scraper: wrote %d readings as_of=%s", written, as_of.isoformat())
+        if status != "ok":
+            notify_ops("DWS weekly dam scraper matched 0 known dams — the "
+                       "Weekly.pdf layout or station codes likely changed. Dam "
+                       "levels will go stale until fixed.", level="error")
         return written
     finally:
         db.close()

@@ -34,6 +34,19 @@ jobs:
           DEBUG: "false"
         run: python -c "import importlib; importlib.import_module('app.main')"
 
+      - name: Unit tests
+        env:
+          SECRET_KEY: "ci-test-secret-key-must-be-at-least-32-chars"
+          DATABASE_URL: "postgresql://u:p@127.0.0.1/db"
+          ANTHROPIC_API_KEY: "test"
+          APP_ENV: "development"
+          DEBUG: "false"
+        # Scraper-parser regression tests + staleness/model-fallback units.
+        # These guard the format-dependent gov-site parsers — the things most
+        # likely to break silently — so a layout change fails the build, not
+        # the customer's dashboard.
+        run: python -m pytest tests/ -q
+
   frontend:
     runs-on: ubuntu-latest
     defaults:

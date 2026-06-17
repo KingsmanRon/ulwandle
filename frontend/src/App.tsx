@@ -226,7 +226,7 @@ const App: React.FC = () => {
       case "detail":
         body = (
           <>
-            <DemoDataPill note="Intake / wastage / per-capita series are synthetic. Replace with the buyer's SCADA telemetry feed." />
+            <DemoDataPill note="Representative water-balance model. Replace with buyer's SCADA / billing feed during implementation." />
             <MetroDashboard metroData={activeMetroData} historicalData={historicalData} />
           </>
         );
@@ -234,7 +234,7 @@ const App: React.FC = () => {
       case "zones":
         body = (
           <>
-            <DemoDataPill note="Zone topology is generated for demo. Replace with the buyer's GIS / DMA boundary export." />
+            <DemoDataPill note="Sample DMA topology. Replace with buyer's GIS boundary export during implementation." />
             <MetroZoneMap metro={activeMetro} onZonesUpdate={setActiveMetroZones} />
           </>
         );
@@ -242,7 +242,7 @@ const App: React.FC = () => {
       case "network":
         body = (
           <>
-            <DemoDataPill note="Pipe network is generated for demo. Replace with the buyer's asset-register / hydraulic-model export." />
+            <DemoDataPill note="Sample pipe network. Replace with buyer's asset-register / hydraulic model during implementation." />
             <WaterNetworkVisualization
               selectedMetroId={activeMetro.id}
               onMetroChange={handleNetworkMetroChange}

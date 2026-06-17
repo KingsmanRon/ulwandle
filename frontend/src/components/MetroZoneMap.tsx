@@ -278,7 +278,7 @@ const MetroZoneMap: React.FC<MetroZoneMapProps> = ({ metro, onZonesUpdate }) => 
                     {zone.has_active_leaks && (
                       <span className="leak-badge">{zone.leak_count} leak{zone.leak_count > 1 ? 's' : ''}</span>
                     )}
-                    <span className="loss-value">~R{(zone.daily_wastage_ml * 400).toLocaleString()}/day loss</span>
+                    <span className="loss-value">~R{(zone.daily_wastage_ml * 12000).toLocaleString()}/day loss</span>
                   </div>
                 </div>
                 <div className="priority-arrow">

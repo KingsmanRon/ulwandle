@@ -440,6 +440,7 @@ body {
   flex-direction: column;
   gap: 1rem;
   max-width: 720px;
+  margin-inline: auto;
 }
 
 .card h2 {

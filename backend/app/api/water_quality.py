@@ -57,25 +57,15 @@ async def add_reading(
     if not district:
         raise HTTPException(404, "District not found")
 
-    meets = True
-    violations: list[str] = []
-    if body.ph is not None and (body.ph < settings.PH_MIN or body.ph > settings.PH_MAX):
-        meets = False
-        violations.append(f"pH out of range: {body.ph}")
-    if body.tds is not None and body.tds > settings.TDS_MAX:
-        meets = False
-        violations.append(f"TDS exceeds limit: {body.tds}")
-    if body.turbidity is not None and body.turbidity > settings.TURBIDITY_MAX:
-        meets = False
-        violations.append(f"Turbidity exceeds limit: {body.turbidity}")
+    target_status, violations = _classify_reading(body)
+    meets = target_status == DistrictStatus.GREEN
 
     reading = WaterQualityReading(**body.model_dump(), meets_sans_241=meets)
     db.add(reading)
     db.commit()
     db.refresh(reading)
 
-    if not meets:
-        background.add_task(_district_status_update, district.id, violations)
+    background.add_task(_district_status_update, district.id, target_status, violations)
 
     return {
         "reading_id": reading.id,
@@ -196,34 +186,69 @@ def standards():
     }
 
 
+# ---------- Severity classification ----------
+
+# Severity thresholds expressed as multiples of the SANS 241 limit (or
+# absolute pH offset). Anything beyond these is "severe" -> RED; a milder
+# breach is YELLOW; full compliance is GREEN. Centralised here so the
+# magnitudes (not string content) determine status.
+_PH_SEVERE_OFFSET = 1.0
+_TDS_SEVERE_MULTIPLIER = 1.5
+_TURBIDITY_SEVERE_MULTIPLIER = 3.0
+
+
+def _classify_reading(body: "WaterQualityCreate") -> tuple[DistrictStatus, list[str]]:
+    violations: list[str] = []
+    severe = False
+    if body.ph is not None and (body.ph < settings.PH_MIN or body.ph > settings.PH_MAX):
+        violations.append(f"pH out of range: {body.ph}")
+        if body.ph < settings.PH_MIN - _PH_SEVERE_OFFSET or body.ph > settings.PH_MAX + _PH_SEVERE_OFFSET:
+            severe = True
+    if body.tds is not None and body.tds > settings.TDS_MAX:
+        violations.append(f"TDS exceeds limit: {body.tds}")
+        if body.tds > settings.TDS_MAX * _TDS_SEVERE_MULTIPLIER:
+            severe = True
+    if body.turbidity is not None and body.turbidity > settings.TURBIDITY_MAX:
+        violations.append(f"Turbidity exceeds limit: {body.turbidity}")
+        if body.turbidity > settings.TURBIDITY_MAX * _TURBIDITY_SEVERE_MULTIPLIER:
+            severe = True
+    if not violations:
+        return DistrictStatus.GREEN, violations
+    return (DistrictStatus.RED if severe else DistrictStatus.YELLOW), violations
+
+
 # ---------- Background ----------
 
-async def _district_status_update(district_id: int, violations: list[str]) -> None:
+async def _district_status_update(
+    district_id: int,
+    new_status: DistrictStatus,
+    violations: list[str],
+) -> None:
     try:
+        district_name: Optional[str] = None
+        old_status: Optional[DistrictStatus] = None
         with db_session() as db:
             district = db.query(District).filter(District.id == district_id).first()
             if not district:
                 return
-            severe = any(k in v.lower() for v in violations
-                         for k in ("critical", "unsafe", "exceeds"))
-            new_status = (DistrictStatus.RED if severe
-                          else DistrictStatus.YELLOW if violations
-                          else DistrictStatus.GREEN)
             if district.status == new_status:
                 return
-            old = district.status
+            district_name = district.name
+            old_status = district.status
             district.status = new_status
             db.add(Alert(
                 district_id=district.id,
                 alert_type="water_quality",
                 level=AlertLevel.CRITICAL if new_status == DistrictStatus.RED else AlertLevel.WARNING,
-                title=f"Water quality status changed: {district.name}",
-                message=f"{old.value} -> {new_status.value}. Violations: {', '.join(violations)[:500]}",
-                alert_metadata={"violations": violations[:20], "from": old.value, "to": new_status.value},
+                title=f"Water quality status changed: {district_name}",
+                message=f"{old_status.value} -> {new_status.value}. Violations: {', '.join(violations)[:500] or 'none (recovered)'}",
+                alert_metadata={"violations": violations[:20], "from": old_status.value, "to": new_status.value},
             ))
+        if district_name is None:
+            return
         await websocket_manager.send_water_quality_alert(
             district_id=district_id,
-            district_name=district.name,
+            district_name=district_name,
             quality_status=new_status.value,
             payload={"violations_count": len(violations)},
         )

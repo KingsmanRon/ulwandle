@@ -39,7 +39,7 @@ const DistrictMap: React.FC = () => {
             <p><strong>Code:</strong> {district.code}</p>
             <p><strong>Municipality:</strong> {district.municipality}</p>
             <p><strong>Province:</strong> {district.province}</p>
-            <p><strong>Population:</strong> {district.population?.toLocaleString()}</p>
+            <p><strong>Population:</strong> {district.population != null ? district.population.toLocaleString() : "Unknown"}</p>
             <div className={`status-badge ${district.status}`}>
               {district.status.toUpperCase()}
             </div>

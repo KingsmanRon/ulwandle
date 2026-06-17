@@ -177,6 +177,22 @@ body {
   color: #0369a1;
 }
 
+.monitoring-state {
+  margin: 1rem 0;
+  padding: 1rem 1.25rem;
+  background: #ffffff;
+  border: 1px solid #bae6fd;
+  border-radius: 10px;
+  color: #0f172a;
+  box-shadow: 0 1px 3px rgba(2, 132, 199, 0.08);
+}
+
+.monitoring-state.error {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
 /* Status badges */
 .status-green {
   color: #10b981;

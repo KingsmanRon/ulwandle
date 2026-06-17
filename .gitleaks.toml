@@ -15,4 +15,5 @@ regexes = [
   '''test-secret-key-must-be-at-least-32-chars-long''',
   '''github-actions-scraper-not-used-32chars-min''',
   '''unused-by-scraper''',
+  '''ulwandle\.signingKey\.v1''',
 ]

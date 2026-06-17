@@ -1,5 +1,8 @@
 # Web framework
-fastapi==0.124.0
+# fastapi >= 0.137 pulls starlette >= 1.3.1, which clears
+# PYSEC-2026-161 / CVE-2026-48817 / CVE-2026-48818 / CVE-2026-54282 /
+# CVE-2026-54283 (DoS + header-handling). Keep both pinned together.
+fastapi==0.137.1
 uvicorn[standard]==0.32.1
 gunicorn==23.0.0
 python-multipart==0.0.32
@@ -39,7 +42,10 @@ python-dateutil==2.9.0
 pytz==2024.2
 
 # Data ingestion (DWS dam-levels PDF parsing, Cape Town HTML scraping)
-pdfplumber==0.11.8
+# pdfminer.six is a transitive dep of pdfplumber; pinning directly to
+# the 20251230+ release clears CVE-2025-70559.
+pdfplumber==0.11.10
+pdfminer.six==20260107
 beautifulsoup4==4.12.3
 
 # Testing

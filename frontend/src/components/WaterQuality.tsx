@@ -3,23 +3,35 @@ import { apiService } from '../services/apiService';
 
 const WaterQuality: React.FC = () => {
   const [summary, setSummary] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadComplianceSummary();
   }, []);
 
   const loadComplianceSummary = async () => {
+    setLoading(true);
+    setError(null);
     try {
       const data = await apiService.getComplianceSummary();
       setSummary(data);
     } catch (error) {
       console.error('Failed to load compliance summary:', error);
+      setError('Water-quality compliance data could not be loaded. Check the API connection or try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="water-quality">
       <h2>Water Quality & Compliance</h2>
+      {loading && <div className="monitoring-state">Loading water-quality summary…</div>}
+      {!loading && error && <div className="monitoring-state error">{error}</div>}
+      {!loading && !error && summary && (summary.districts?.length ?? 0) === 0 && (
+        <div className="monitoring-state">No water-quality readings are available yet.</div>
+      )}
       {summary && (
         <>
           <div className="stats-row">

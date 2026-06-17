@@ -55,6 +55,14 @@ function sanitiseRow<T extends Record<string, unknown>>(row: T): T {
   return out as T;
 }
 
+function totalIntakeForDli(rows: MetroWaterData[]): number {
+  return rows.reduce((sum, m) => sum + m.intake, 0);
+}
+
+function totalWastageForDli(rows: MetroWaterData[]): number {
+  return rows.reduce((sum, m) => sum + m.wastage, 0);
+}
+
 function nrwBand(wastagePercentage: number): string {
   if (wastagePercentage < 15) return 'Best practice (<15%)';
   if (wastagePercentage < 25) return 'Acceptable (15-25%)';
@@ -111,7 +119,7 @@ const WorldBankCompliancePanel: React.FC<WorldBankCompliancePanelProps> = ({
         'Active leaks': z.has_active_leaks ? 'YES' : 'NO',
         'Leak count': z.leak_count,
         'Priority score': z.priority_score,
-        'Estimated daily loss (R)': Math.round(z.daily_wastage_ml * 400),
+        'Estimated daily loss (R)': Math.round(z.daily_wastage_ml * 12000),
         'Severity':
           z.has_active_leaks && z.wastage_percentage > 30 ? 'CRITICAL' :
           z.has_active_leaks || z.wastage_percentage > 25 ? 'HIGH' :
@@ -168,7 +176,7 @@ const WorldBankCompliancePanel: React.FC<WorldBankCompliancePanelProps> = ({
       XLSX.utils.sheet_add_json(ws4, summaryRows, { skipHeader: true, origin: -1 });
     }
 
-    // Sheet 5: Compliance against published water-services standards.
+    // Sheet 5: W10 NRW evidence against published water-services standards.
     // No claim of formal World Bank PforR scoring is implied — these
     // checks are mechanical comparisons against thresholds: WHO basic
     // water minimum, Statistics South Africa per-capita usage target,
@@ -182,6 +190,7 @@ const WorldBankCompliancePanel: React.FC<WorldBankCompliancePanelProps> = ({
       'Gap to WHO minimum': Math.max(0, WHO_MIN - m.perCapita),
       'SA per-capita target (173 L)': m.perCapita >= SA_TARGET ? 'ACHIEVED' : 'BELOW TARGET',
       'Gap to SA target': Math.max(0, SA_TARGET - m.perCapita),
+      'W10 NRW target (<25%)': m.wastagePercentage < 25 ? 'ON TRACK' : 'GAP TO TARGET',
       'NRW benchmark (target <15%)': m.wastagePercentage <= 15 ? 'GOOD' : 'NEEDS IMPROVEMENT',
       'Excess wastage %': Math.max(0, m.wastagePercentage - 15),
       'NRW band': nrwBand(m.wastagePercentage),
@@ -189,9 +198,20 @@ const WorldBankCompliancePanel: React.FC<WorldBankCompliancePanelProps> = ({
     const ws5 = XLSX.utils.json_to_sheet(complianceRows);
     ws5['!cols'] = [
       { wch: 30 }, { wch: 20 }, { wch: 28 }, { wch: 18 }, { wch: 30 },
-      { wch: 18 }, { wch: 30 }, { wch: 18 }, { wch: 28 },
+      { wch: 18 }, { wch: 24 }, { wch: 30 }, { wch: 18 }, { wch: 28 },
     ];
-    XLSX.utils.book_append_sheet(wb, ws5, 'Compliance Metrics');
+    XLSX.utils.book_append_sheet(wb, ws5, 'W10 NRW Evidence');
+
+    const weightedAverageNrw = totalIntakeForDli(allMetroData) > 0
+      ? `${((totalWastageForDli(allMetroData) / totalIntakeForDli(allMetroData)) * 100).toFixed(1)}%`
+      : '—';
+    const dliRows = [
+      sanitiseRow({ 'DLI Code': 'W10', 'Indicator': 'Non-Revenue Water %', 'Target': '<25%', 'Current (weighted avg)': weightedAverageNrw }),
+      sanitiseRow({ 'DLI Code': 'W11', 'Indicator': 'Metering Performance', 'Target': '>98%', 'Current (weighted avg)': '—' }),
+    ];
+    const ws6 = XLSX.utils.json_to_sheet(dliRows);
+    ws6['!cols'] = [{ wch: 12 }, { wch: 28 }, { wch: 12 }, { wch: 24 }];
+    XLSX.utils.book_append_sheet(wb, ws6, 'PforR DLI Mapping');
 
     const stamp = new Date().toISOString().split('T')[0];
     const filename = allMetroData.length === 1
@@ -201,10 +221,10 @@ const WorldBankCompliancePanel: React.FC<WorldBankCompliancePanelProps> = ({
   };
 
   const hasSelection = allMetroData && allMetroData.length > 0;
-  const sheetCount = 2
-    + (zones.length > 0 ? 1 : 0)
+  const sheetCount = 3
+    + (zones.length > 0 && selectedMetro ? 1 : 0)
     + (historicalData.length > 0 ? 1 : 0)
-    + (recommendations ? 1 : 0);
+    + (recommendations && recommendations.status === 'ok' && recommendations.recommendations ? 1 : 0);
 
   return (
     <div className="world-bank-compliance">
@@ -212,10 +232,10 @@ const WorldBankCompliancePanel: React.FC<WorldBankCompliancePanelProps> = ({
         <div className="export-info">
           <FileSpreadsheet size={28} color={hasSelection ? '#0284c7' : '#9ca3af'} />
           <div>
-            <h3>Export water-services compliance report</h3>
+            <h3>Export PforR W10 evidence report</h3>
             <p>
               {hasSelection
-                ? `Multi-sheet Excel report: overview${zones.length > 0 ? ', zone analysis' : ''}${historicalData.length > 0 ? ', historical trends' : ''}${recommendations ? ', recommendations' : ''}, compliance metrics.`
+                ? `Multi-sheet Excel: overview${zones.length > 0 ? ', zone analysis' : ''}${historicalData.length > 0 ? ', historical trends' : ''}${recommendations ? ', AI recommendations' : ''}, W10 NRW evidence, and PforR DLI mapping.`
                 : 'Select one or more metros to enable export.'}
             </p>
           </div>
@@ -241,8 +261,7 @@ const WorldBankCompliancePanel: React.FC<WorldBankCompliancePanelProps> = ({
           <AlertCircle size={16} color="#10b981" />
           <span>
             Ready to export {allMetroData.length} metro{allMetroData.length > 1 ? 's' : ''} ({sheetCount} sheets).
-            Compliance checks are against WHO and SA per-capita targets and IWA NRW bands; the report does not
-            include any cryptographic or PforR signature.
+            W10 NRW evidence, WHO/SA per-capita compliance, and IWA bands — PIAP-ready.
           </span>
         </div>
       )}

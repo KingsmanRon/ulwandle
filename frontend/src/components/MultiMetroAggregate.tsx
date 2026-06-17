@@ -155,11 +155,11 @@ const MultiMetroAggregate: React.FC<MultiMetroAggregateProps> = ({ allMetroData 
             <strong>Lowest wastage:</strong> {lowestWastage.metro} at {lowestWastage.wastagePercentage.toFixed(1)}% NRW
           </li>
           <li>
-            <strong>Daily water-loss value:</strong> Approximately R{(totalWastage * 400).toLocaleString()}
-            <span className="insight-note"> (at R400/ML bulk-water cost)</span>
+            <strong>Daily water-loss value:</strong> Approximately R{(totalWastage * 12000).toLocaleString()}
+            <span className="insight-note"> (at R12/kL replacement cost)</span>
           </li>
           <li>
-            <strong>Potential annual saving:</strong> R{((totalWastage * 400 * 365) / 1_000_000).toFixed(1)}M
+            <strong>Potential annual saving:</strong> R{((totalWastage * 12000 * 365) / 1_000_000).toFixed(1)}M
             <span className="insight-note"> if wastage reduced by 50%</span>
           </li>
         </ul>

@@ -173,12 +173,23 @@ export interface MetroWaterData {
   stressLevel: WaterStressLevel;
 }
 
+const REAL_NRW_PCT: Record<MetroId, number> = {
+  johannesburg: 46.2,
+  cape_town: 24.0,
+  ekurhuleni: 41.9,
+  ethekwini: 58.7,
+  tshwane: 39.0,
+  nelson_mandela_bay: 48.66,
+  buffalo_city: 47.0,
+  mangaung: 47.0,
+};
+
 export function generateSyntheticMetroWaterData(metro: Metro): MetroWaterData {
   const seasonalVar = Math.sin(Date.now() / 86_400_000 / 7) * 0.15;
   const randomVar = (Math.random() - 0.5) * 0.1;
 
   const intake = metro.baseIntakeMlPerDay * (1 + seasonalVar + randomVar);
-  const wastagePercent = 15 + Math.random() * 20; // 15–35% — typical SA NRW range
+  const wastagePercent = REAL_NRW_PCT[metro.id] ?? 35;
   const wastage = intake * (wastagePercent / 100);
   const usage = intake - wastage;
   const perCapita = (usage * 1_000_000) / metro.population;

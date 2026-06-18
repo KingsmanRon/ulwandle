@@ -275,7 +275,7 @@ const METRO_SYSTEMS: Record<string, MetroSystem> = {
       { id: 'b5', type: 'treatment', name: 'Amatola Water bulk', quality: 'inter-basin transfer', x: 60, y: 50, status: 'normal' },
       { id: 'b6', type: 'treatment', name: 'Nahoon WTW', quality: 'coastal supply', x: 88, y: 50, status: 'normal' },
       { id: 'b7', type: 'reservoir', name: 'East London urban', capacity: 'Umzonyana primary', x: 25, y: 82, status: 'normal' },
-      { id: 'b8', type: 'reservoir', name: 'King William\'s Town', capacity: 'Amatola supply', x: 60, y: 82, status: 'normal' },
+      { id: 'b8', type: 'reservoir', name: 'Qonce (King William\'s Town)', capacity: 'Amatola supply', x: 60, y: 82, status: 'normal' },
       { id: 'b9', type: 'reservoir', name: 'Beacon Bay / Gonubie', capacity: 'Nahoon supply', x: 88, y: 82, status: 'normal' },
     ],
     connections: [

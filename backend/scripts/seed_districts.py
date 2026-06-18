@@ -1,10 +1,11 @@
 """
-Seed District rows for all 8 South African metros using real Stats SA
-Census 2022 Main Place populations.
+Seed District rows for all 8 South African metros.
 
 Idempotent: safe to re-run. Each call upserts by ``code``. Status defaults
 to GREEN — it only changes when real water-quality readings arrive at
-``/api/v1/water-quality/readings`` (see ``app.api.water_quality``).
+``/api/v1/water-quality/readings`` (see ``app.api.water_quality``). GREEN
+here therefore means "no telemetry yet", NOT "certified compliant"; see the
+dashboard note below.
 
 Run:
     python -m scripts.seed_districts
@@ -12,22 +13,44 @@ Run:
 Source attribution
 ==================
 
-Population: Stats SA Census 2022 Main Place dataset (release 2023-10-10),
-aggregated via citypopulation.de where direct Stats SA pages weren't
-available. Same source already cited by ``seed_metros.py``.
+Population (locality rows): Stats SA **Census 2011** Main Place totals,
+via citypopulation.de / adrianfrith.com. These are the LATEST official
+place-level census figures that exist — Census 2022 was NOT released at
+the named-place / Main Place level. citypopulation.de publishes South
+African places for the 2001 and 2011 censuses only; municipalities go to
+2022. Census 2022 also carried a ~31% undercount and Stats SA flagged
+inconsistent data below ward level, so there is no reliable 2022 figure
+for Soweto, Khayelitsha, Mdantsane, etc. The 2011 numbers here are
+therefore correct and FINAL at this granularity — not placeholders.
+(An earlier version of this docstring attributed these to "Census 2022";
+that was wrong and has been corrected.)
+
+Current Census 2022 figures DO exist at the metro level, but they are NOT
+duplicated here. They live authoritatively in the ``metros`` table
+(see ``scripts.seed_metros`` -> ``Metro.population`` / ``population_as_of``)
+and are surfaced with full source attribution by
+``/api/v1/metros/baseline``. Surface those on the metro header and keep the
+2011 figures on the locality rows; do not mix the two vintages silently.
+The two APPROX rows (Pretoria Central, Gqeberha Central) are sub-areas with
+no official census figure at all and stay estimates regardless of census
+year.
 
 Centroid latitude/longitude: rounded to 4 decimal places from public map
 references (OpenStreetMap / Google Maps centroids of the Main Place).
 
-A handful of smaller township populations are noted as approximate where
-Stats SA's Main Place breakdown groups them with neighbouring areas —
-those rows leave ``population`` at the citypopulation.de aggregate but
-flag the caveat in inline comments. The rest are direct Census 2022
-Main Place figures.
-
 This file is the *reference* layer for the District Overview. It does
 NOT seed time-series readings — those would come from a future utility
 SCADA feed (see ``Dashboard.tsx`` footer note on the operational gap).
+
+Dashboard note
+==============
+Because status defaults to GREEN until telemetry arrives, an all-GREEN
+board reads to a viewer as "everything is compliant" when it actually
+means "nothing is monitored yet". A NO_DATA / UNMONITORED member on
+``DistrictStatus`` (with a distinct UI colour) would separate the
+unmonitored state from a passing one. That is an enum + Alembic
+``ALTER TYPE`` + UI change touching status aggregation in several places,
+so it is intentionally left out of this seed (tracked below).
 """
 
 from __future__ import annotations
@@ -35,11 +58,41 @@ from __future__ import annotations
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from app.db.database import SessionLocal
-from app.models.models import District, DistrictStatus
+from app.models.models import District, DistrictStatus  # noqa: F401  (status default documented above)
+
+
+# ---------------------------------------------------------------------------
+# CORRECTIONS (2026-06-18) — codes intentionally left UNCHANGED. ``code`` is the
+# upsert conflict key and the FK target from water-quality readings; renaming a
+# code would orphan existing telemetry. Only display names / populations changed.
+#
+#   * BCM-KWT  "King William's Town" -> "Qonce" (officially renamed 2021).
+#   * TSH-PTA  "Pretoria" -> "Pretoria Central"; 741,300 re-scoped. That figure
+#              was greater-Pretoria and read as the parent of Mamelodi /
+#              Atteridgeville / Soshanguve (their own rows below), so the
+#              dashboard's summed district population double-counted them.
+#              340,000 is an APPROX placeholder for the central core — replace
+#              with the central-Pretoria Main Place when sourced.
+#   * NMB-GQH  "Gqeberha" -> "Gqeberha Central"; 391,000 (whole-city) double-
+#              counted New Brighton / KwaZakhele / Motherwell, which are already
+#              their own rows. 120,000 is an APPROX placeholder for the core.
+#   * NMB-WLM  Walmer added so southern Gqeberha is covered without a parent row.
+#   * TSH-HMK  comment death toll corrected to 23+ (some counts up to 32; was
+#              "15+").
+#
+# STILL OPEN (deliberately NOT done here — out of scope for a seed change):
+#   - Add NO_DATA / UNMONITORED to DistrictStatus so green != "unmonitored"
+#     (enum + migration + UI; see Dashboard note above).
+#   - Model/table is `District`, but these are localities / supply zones, not
+#     Category-C district municipalities. A later rename (MonitoringZone /
+#     SupplyZone) removes that terminology clash.
+#   - Heidedal (MAN-HDL) is a Bloemfontein suburb and nests inside MAN-BFN;
+#     kept for recognisability. Fold in if you want strict non-overlap.
+# ---------------------------------------------------------------------------
 
 
 # Each entry mirrors the District model columns. Population is the
-# Census 2022 Main Place total. Coordinates are centroids.
+# Census 2011 Main Place total (see attribution). Coordinates are centroids.
 DISTRICTS: list[dict] = [
     # === City of Johannesburg (JHB) — Gauteng ===
     {"code": "JHB-SOW", "name": "Soweto",
@@ -102,9 +155,14 @@ DISTRICTS: list[dict] = [
      "population": 37_750, "latitude": -29.8587, "longitude": 31.0218},
 
     # === City of Tshwane (TSH) — Gauteng ===
-    {"code": "TSH-PTA", "name": "Pretoria",
+    # Renamed "Pretoria" -> "Pretoria Central". The old 741,300 spanned greater
+    # Pretoria, which made this read as the parent of the township rows below
+    # and double-counted them in the dashboard population total. 340,000 is an
+    # APPROX placeholder for the central + inner suburbs — replace with the
+    # central-Pretoria Census Main Place figure when sourced.
+    {"code": "TSH-PTA", "name": "Pretoria Central",
      "municipality": "City of Tshwane", "province": "Gauteng",
-     "population": 741_300, "latitude": -25.7479, "longitude": 28.2293},
+     "population": 340_000, "latitude": -25.7479, "longitude": 28.2293},
     {"code": "TSH-SSH", "name": "Soshanguve",
      "municipality": "City of Tshwane", "province": "Gauteng",
      "population": 422_000, "latitude": -25.5167, "longitude": 28.1000},
@@ -117,9 +175,11 @@ DISTRICTS: list[dict] = [
     {"code": "TSH-ATR", "name": "Atteridgeville",
      "municipality": "City of Tshwane", "province": "Gauteng",
      "population": 64_425, "latitude": -25.7833, "longitude": 28.0500},
-    # Hammanskraal — site of the 2023 cholera outbreak (15+ deaths).
-    # Population from Census 2022 Main Place; can be a useful demo when
-    # discussing SANS 241 telemetry and the kill-switch use case.
+    # Hammanskraal — site of the May 2023 cholera outbreak (23+ confirmed
+    # deaths; some counts up to 32). Rooiwal WWTW effluent contaminated the
+    # Apies River / Temba supply; ~20 years without reliable potable water and
+    # only partial remediation (Klipdrift package-plant Phase 1) to date.
+    # Strong demo for SANS 241 telemetry and the kill-switch use case.
     {"code": "TSH-HMK", "name": "Hammanskraal",
      "municipality": "City of Tshwane", "province": "Gauteng",
      "population": 70_000, "latitude": -25.4000, "longitude": 28.2833},
@@ -145,15 +205,23 @@ DISTRICTS: list[dict] = [
      "population": 127_967, "latitude": -26.1500, "longitude": 28.4000},
 
     # === Nelson Mandela Bay (NMB) — Eastern Cape ===
-    {"code": "NMB-GQH", "name": "Gqeberha",
+    # Renamed "Gqeberha" -> "Gqeberha Central". The old 391,000 was the whole
+    # city and double-counted New Brighton / KwaZakhele / Motherwell, which are
+    # their own rows below. 120,000 is an APPROX placeholder for the central
+    # core — replace with the central-Gqeberha Census Main Place figure.
+    {"code": "NMB-GQH", "name": "Gqeberha Central",
      "municipality": "Nelson Mandela Bay", "province": "Eastern Cape",
-     "population": 391_000, "latitude": -33.9615, "longitude": 25.6022},
+     "population": 120_000, "latitude": -33.9615, "longitude": 25.6022},
     {"code": "NMB-UTH", "name": "Kariega (Uitenhage)",
      "municipality": "Nelson Mandela Bay", "province": "Eastern Cape",
      "population": 132_000, "latitude": -33.7559, "longitude": 25.4017},
     {"code": "NMB-MTW", "name": "Motherwell",
      "municipality": "Nelson Mandela Bay", "province": "Eastern Cape",
      "population": 113_229, "latitude": -33.7667, "longitude": 25.6333},
+    # Walmer added so southern Gqeberha is covered without a whole-city parent.
+    {"code": "NMB-WLM", "name": "Walmer",
+     "municipality": "Nelson Mandela Bay", "province": "Eastern Cape",
+     "population": 70_000, "latitude": -33.9833, "longitude": 25.5833},
     {"code": "NMB-KZK", "name": "KwaZakhele",
      "municipality": "Nelson Mandela Bay", "province": "Eastern Cape",
      "population": 65_000, "latitude": -33.8500, "longitude": 25.5667},
@@ -171,7 +239,9 @@ DISTRICTS: list[dict] = [
     {"code": "BCM-MDN", "name": "Mdantsane",
      "municipality": "Buffalo City", "province": "Eastern Cape",
      "population": 196_059, "latitude": -32.9667, "longitude": 27.7833},
-    {"code": "BCM-KWT", "name": "King William's Town",
+    # Code kept as BCM-KWT (stable upsert/FK key); officially renamed to Qonce
+    # in 2021.
+    {"code": "BCM-KWT", "name": "Qonce",
      "municipality": "Buffalo City", "province": "Eastern Cape",
      "population": 35_309, "latitude": -32.8833, "longitude": 27.4000},
     {"code": "BCM-ZWL", "name": "Zwelitsha",
@@ -194,6 +264,9 @@ DISTRICTS: list[dict] = [
     {"code": "MAN-TNC", "name": "Thaba Nchu",
      "municipality": "Mangaung", "province": "Free State",
      "population": 86_920, "latitude": -29.2167, "longitude": 26.8333},
+    # NOTE: Heidedal is a suburb of Bloemfontein and therefore nests inside
+    # MAN-BFN. Kept for recognisability; fold into MAN-BFN for strict
+    # non-overlap.
     {"code": "MAN-HDL", "name": "Heidedal",
      "municipality": "Mangaung", "province": "Free State",
      "population": 40_000, "latitude": -29.1333, "longitude": 26.2333},

@@ -6,8 +6,9 @@ import enum
 from datetime import datetime, timezone
 
 from sqlalchemy import (
-    Column, Integer, String, Float, Boolean, DateTime,
-    ForeignKey, Text, Enum as SQLEnum, JSON, Index
+    BigInteger, Boolean, CheckConstraint, Column, Date, DateTime, LargeBinary,
+    Enum as SQLEnum, Float, ForeignKey, Index, Integer, JSON, Numeric,
+    String, Text, UniqueConstraint,
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -526,3 +527,145 @@ class DataSource(Base):
     last_status = Column(String(40))
     last_error = Column(Text)
     rows_last_run = Column(Integer)
+
+
+# ---------- W10 and W11 evidence ----------
+
+class EvidenceSubmission(Base):
+    """Immutable source import and its approval state."""
+    __tablename__ = "evidence_submissions"
+    __table_args__ = (
+        UniqueConstraint(
+            "metro_id", "reporting_period_start", "reporting_period_end", "version",
+            name="uq_evidence_submission_period_version",
+        ),
+        CheckConstraint(
+            "reporting_period_start <= reporting_period_end",
+            name="ck_evidence_submission_period",
+        ),
+        CheckConstraint(
+            "status IN ('draft', 'approved', 'superseded')",
+            name="ck_evidence_submission_status",
+        ),
+        Index(
+            "ix_evidence_submission_metro_status_period",
+            "metro_id", "status", "reporting_period_end",
+        ),
+    )
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    metro_id = Column(
+        String(64), ForeignKey("metros.id", ondelete="RESTRICT"), nullable=False,
+    )
+    reporting_period_start = Column(Date, nullable=False)
+    reporting_period_end = Column(Date, nullable=False)
+    version = Column(Integer, nullable=False)
+    status = Column(String(20), nullable=False, default="draft")
+
+    source_name = Column(String(200), nullable=False)
+    source_url = Column(String(500))
+    source_filename = Column(String(255), nullable=False)
+    source_sha256 = Column(String(64), nullable=False)
+    source_content = Column(LargeBinary, nullable=False)
+    notes = Column(Text)
+
+    created_by_id = Column(
+        Integer, ForeignKey("users.id", ondelete="RESTRICT"), nullable=False, index=True,
+    )
+    approved_by_id = Column(
+        Integer, ForeignKey("users.id", ondelete="RESTRICT"), index=True,
+    )
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    approved_at = Column(DateTime(timezone=True))
+
+    records = relationship(
+        "EvidenceMonthlyRecord",
+        back_populates="submission",
+        cascade="all, delete-orphan",
+        order_by="EvidenceMonthlyRecord.period_start",
+    )
+    calculation = relationship(
+        "EvidenceCalculation",
+        back_populates="submission",
+        cascade="all, delete-orphan",
+        uselist=False,
+    )
+
+
+class EvidenceMonthlyRecord(Base):
+    """Normalised monthly evidence values imported from one source file."""
+    __tablename__ = "evidence_monthly_records"
+    __table_args__ = (
+        UniqueConstraint(
+            "submission_id", "period_start",
+            name="uq_evidence_monthly_submission_period",
+        ),
+        CheckConstraint(
+            "system_input_volume_kl > 0",
+            name="ck_evidence_monthly_positive_input",
+        ),
+        CheckConstraint(
+            "billed_authorised_consumption_kl >= 0 "
+            "AND billed_authorised_consumption_kl <= system_input_volume_kl",
+            name="ck_evidence_monthly_billed_range",
+        ),
+        CheckConstraint(
+            "total_connections > 0",
+            name="ck_evidence_monthly_positive_connections",
+        ),
+        CheckConstraint(
+            "connections_billed_actual_readings >= 0 "
+            "AND connections_billed_actual_readings <= total_connections",
+            name="ck_evidence_monthly_metered_range",
+        ),
+    )
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    submission_id = Column(
+        BigInteger,
+        ForeignKey("evidence_submissions.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    period_start = Column(Date, nullable=False)
+    system_input_volume_kl = Column(Numeric(18, 3), nullable=False)
+    billed_authorised_consumption_kl = Column(Numeric(18, 3), nullable=False)
+    total_connections = Column(Integer, nullable=False)
+    connections_billed_actual_readings = Column(Integer, nullable=False)
+    source_row_number = Column(Integer, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    submission = relationship("EvidenceSubmission", back_populates="records")
+
+
+class EvidenceCalculation(Base):
+    """Frozen calculation snapshot created only when a submission is approved."""
+    __tablename__ = "evidence_calculations"
+    __table_args__ = (
+        CheckConstraint(
+            "w10_nrw_pct >= 0 AND w10_nrw_pct <= 100",
+            name="ck_evidence_calculation_w10_range",
+        ),
+        CheckConstraint(
+            "w11_metering_pct >= 0 AND w11_metering_pct <= 100",
+            name="ck_evidence_calculation_w11_range",
+        ),
+    )
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    submission_id = Column(
+        BigInteger,
+        ForeignKey("evidence_submissions.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+    )
+    methodology_version = Column(String(40), nullable=False)
+    input_sha256 = Column(String(64), nullable=False)
+    system_input_volume_kl = Column(Numeric(20, 3), nullable=False)
+    billed_authorised_consumption_kl = Column(Numeric(20, 3), nullable=False)
+    connection_months = Column(BigInteger, nullable=False)
+    actual_meter_reading_connection_months = Column(BigInteger, nullable=False)
+    w10_nrw_pct = Column(Numeric(7, 3), nullable=False)
+    w11_metering_pct = Column(Numeric(7, 3), nullable=False)
+    calculated_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    submission = relationship("EvidenceSubmission", back_populates="calculation")

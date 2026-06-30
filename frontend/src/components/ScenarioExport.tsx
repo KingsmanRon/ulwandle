@@ -3,7 +3,7 @@ import { AlertCircle, Download, FileSpreadsheet } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { Metro, MetroWaterData } from '../constants/metros';
 import { ClaudeRecommendationsData } from './ClaudeRecommendations';
-import './WorldBankCompliance.css';
+import './ScenarioExport.css';
 
 interface ZoneData {
   zone_id: string;
@@ -25,7 +25,7 @@ interface HistoricalPoint {
   wastage: number;
 }
 
-interface WorldBankCompliancePanelProps {
+interface ScenarioExportProps {
   allMetroData: MetroWaterData[];
   selectedMetro?: Metro | null;
   zones?: ZoneData[];
@@ -46,7 +46,7 @@ function sanitiseRow<T extends Record<string, unknown>>(row: T): T {
   ) as T;
 }
 
-const WorldBankCompliancePanel: React.FC<WorldBankCompliancePanelProps> = ({
+const ScenarioExport: React.FC<ScenarioExportProps> = ({
   allMetroData,
   selectedMetro,
   zones = [],
@@ -163,7 +163,7 @@ const WorldBankCompliancePanel: React.FC<WorldBankCompliancePanelProps> = ({
     + (recommendations?.status === 'ok' && recommendations.recommendations ? 1 : 0);
 
   return (
-    <div className="world-bank-compliance">
+    <div className="scenario-export">
       <div className="export-header">
         <div className="export-info">
           <FileSpreadsheet size={28} color={hasSelection ? '#0284c7' : '#9ca3af'} />
@@ -205,4 +205,4 @@ const WorldBankCompliancePanel: React.FC<WorldBankCompliancePanelProps> = ({
   );
 };
 
-export default WorldBankCompliancePanel;
+export default ScenarioExport;

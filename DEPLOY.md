@@ -83,7 +83,7 @@ Save the output — you'll paste it into Render in a minute.
 9. Once green, verify:
    ```sh
    curl https://ulwandle-backend.onrender.com/health
-   # expect: {"status":"ok","version":"1.1.0"}
+   # expect: {"status":"ok","version":"1.2.0","revision":"<git-sha>"}
    ```
 
 ### Bootstrap the first admin

@@ -9,6 +9,7 @@ Hardening summary:
 """
 
 import logging
+import os
 from contextlib import asynccontextmanager
 
 import jwt as pyjwt
@@ -21,7 +22,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
-from app.api import alerts, dashboard, data_sources, districts, kill_switch, metros, monitoring, predictions, recommendations, water_quality
+from app.api import alerts, dashboard, data_sources, districts, evidence, kill_switch, metros, monitoring, predictions, recommendations, water_quality
 from app.auth import router as auth_router
 from app.auth.security import decode_token
 from app.core.config import settings
@@ -37,6 +38,11 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s %(name)s %(message)s",
 )
 logger = logging.getLogger(__name__)
+DEPLOY_REVISION = (
+    os.getenv("RENDER_GIT_COMMIT")
+    or os.getenv("GIT_COMMIT_SHA")
+    or "unknown"
+)
 
 
 # key_func honours X-Forwarded-For behind the proxy (see app.core.net) so limits
@@ -110,7 +116,11 @@ async def unhandled(request: Request, exc: Exception):
 async def health():
     # DB-free on purpose: this is Render's healthCheckPath, so a transient DB
     # blip must not fail the deploy / kill the container.
-    return {"status": "ok", "version": settings.APP_VERSION}
+    return {
+        "status": "ok",
+        "version": settings.APP_VERSION,
+        "revision": DEPLOY_REVISION,
+    }
 
 
 @app.get("/ready", tags=["Health"])
@@ -122,7 +132,12 @@ async def ready():
     db = SessionLocal()
     try:
         db.execute(text("SELECT 1"))
-        return {"status": "ready", "db": "ok", "version": settings.APP_VERSION}
+        return {
+            "status": "ready",
+            "db": "ok",
+            "version": settings.APP_VERSION,
+            "revision": DEPLOY_REVISION,
+        }
     except Exception:
         logger.exception("readiness check: DB unreachable")
         return JSONResponse({"status": "degraded", "db": "down"}, status_code=503)
@@ -191,3 +206,4 @@ app.include_router(dashboard.router, prefix="/api/v1/dashboard", tags=["Dashboar
 app.include_router(metros.router, prefix="/api/v1/metros", tags=["Metros"])
 app.include_router(data_sources.router, prefix="/api/v1/data-sources", tags=["Data Sources"])
 app.include_router(recommendations.router, prefix="/api/v1/recommendations", tags=["AI Recommendations"])
+app.include_router(evidence.router, prefix="/api/v1/evidence", tags=["Evidence"])

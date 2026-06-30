@@ -69,6 +69,34 @@ export const apiService = {
   getComplianceSummary: async () =>
     (await apiClient.get("/api/v1/water-quality/summary")).data as WaterQualitySummary,
 
+  getEvidenceSubmissions: async (metroId?: string) =>
+    (await apiClient.get("/api/v1/evidence/submissions",
+      { params: { metro_id: metroId } })).data as EvidenceListResponse,
+  importEvidence: async (input: EvidenceImportInput) => {
+    const form = new FormData();
+    form.append("metro_id", input.metroId);
+    form.append("source_name", input.sourceName);
+    if (input.sourceUrl) form.append("source_url", input.sourceUrl);
+    if (input.notes) form.append("notes", input.notes);
+    form.append("file", input.file);
+    return (await apiClient.post("/api/v1/evidence/import", form, {
+      headers: { "Content-Type": "multipart/form-data" },
+    })).data as EvidenceSubmission;
+  },
+  approveEvidence: async (submissionId: number) =>
+    (await apiClient.post(
+      `/api/v1/evidence/submissions/${submissionId}/approve`,
+    )).data as EvidenceSubmission,
+  downloadEvidenceTemplate: async () =>
+    (await apiClient.get("/api/v1/evidence/template", {
+      responseType: "blob",
+    })).data as Blob,
+  exportEvidence: async (submissionId: number) =>
+    (await apiClient.get(
+      `/api/v1/evidence/submissions/${submissionId}/export`,
+      { responseType: "blob" },
+    )).data as Blob,
+
   // Metros — mix of real (population, NRW, dam levels) + synthetic
   // (topology, zones, leak detections). Real-data endpoints carry full
   // SourceRef attribution; synthetic ones do not.
@@ -160,6 +188,53 @@ export interface PredictionSummary {
 export interface PredictionsResponse {
   count: number;
   predictions: PredictionSummary[];
+}
+
+export type EvidenceStatus = "draft" | "approved" | "superseded";
+
+export interface EvidenceCalculation {
+  methodology_version: string;
+  input_sha256: string;
+  system_input_volume_kl: number;
+  billed_authorised_consumption_kl: number;
+  connection_months: number;
+  actual_meter_reading_connection_months: number;
+  w10_nrw_pct: number;
+  w11_metering_pct: number;
+  calculated_at: string;
+}
+
+export interface EvidenceSubmission {
+  id: number;
+  metro_id: string;
+  reporting_period_start: string;
+  reporting_period_end: string;
+  version: number;
+  status: EvidenceStatus;
+  source_name: string;
+  source_url?: string | null;
+  source_filename: string;
+  source_sha256: string;
+  notes?: string | null;
+  created_by_id: number;
+  approved_by_id?: number | null;
+  created_at: string;
+  approved_at?: string | null;
+  record_count: number;
+  calculation?: EvidenceCalculation | null;
+}
+
+export interface EvidenceListResponse {
+  count: number;
+  submissions: EvidenceSubmission[];
+}
+
+export interface EvidenceImportInput {
+  metroId: string;
+  sourceName: string;
+  sourceUrl?: string;
+  notes?: string;
+  file: File;
 }
 
 export interface MetroBaseline {

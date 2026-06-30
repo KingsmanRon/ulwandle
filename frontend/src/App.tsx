@@ -29,7 +29,8 @@ import {
 const MetroDashboard = lazy(() => import("./components/MetroDashboard"));
 const MetroZoneMap = lazy(() => import("./components/MetroZoneMap"));
 const WaterNetworkVisualization = lazy(() => import("./components/WaterNetworkVisualization"));
-const WorldBankCompliancePanel = lazy(() => import("./components/WorldBankCompliance"));
+const ScenarioExport = lazy(() => import("./components/ScenarioExport"));
+const EvidenceWorkspace = lazy(() => import("./components/EvidenceWorkspace"));
 const MetroBaselinePanel = lazy(() => import("./components/MetroBaselinePanel"));
 
 const OPERATIONS_PREVIEW_ENABLED = process.env.REACT_APP_ENABLE_OPERATIONS === "true";
@@ -256,19 +257,20 @@ const App: React.FC = () => {
       case "reports":
         body = (
           <div className="stacked-panels">
-            <ClaudeRecommendationsPanel
-              recommendations={recommendations}
-              loading={recommendationsLoading}
-              onRefresh={() => activeMetro?.id && fetchRecommendations(activeMetro.id)}
-            />
-            {OPERATIONS_PREVIEW_ENABLED && <ShutdownNotification metroData={activeMetroData} />}
-            <WorldBankCompliancePanel
+            <EvidenceWorkspace metro={activeMetro} />
+            <ScenarioExport
               allMetroData={selectedMetroData}
               selectedMetro={activeMetro}
               zones={activeMetroZones}
               recommendations={recommendations}
               historicalData={historicalData}
             />
+            <ClaudeRecommendationsPanel
+              recommendations={recommendations}
+              loading={recommendationsLoading}
+              onRefresh={() => activeMetro?.id && fetchRecommendations(activeMetro.id)}
+            />
+            {OPERATIONS_PREVIEW_ENABLED && <ShutdownNotification metroData={activeMetroData} />}
           </div>
         );
         break;

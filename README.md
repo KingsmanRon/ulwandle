@@ -49,6 +49,18 @@ or contact us for read-only credentials on the hosted demo.
 
 ## Feature detail
 
+### W10 and W11 evidence workspace
+
+The Reports section accepts a twelve month CSV containing system input volume,
+billed authorised consumption, total connections, and connections billed from
+actual meter readings.
+
+Each import receives a SHA256 source fingerprint and immutable version number.
+A different supervisor or administrator must approve the draft. Approval
+freezes the deterministic W10 and W11 result and enables a ZIP evidence pack
+containing the original source file, source lineage, normalised monthly records,
+approval identities, methodology version, and calculations.
+
 The features below are operational scaffolding for a future municipal
 integration. They do not represent current telemetry, actuator, or notification
 coverage.

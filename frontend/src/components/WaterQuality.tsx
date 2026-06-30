@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { apiService } from '../services/apiService';
+import { apiService, WaterQualitySummary } from '../services/apiService';
 
 const WaterQuality: React.FC = () => {
-  const [summary, setSummary] = useState<any>(null);
+  const [summary, setSummary] = useState<WaterQualitySummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,19 +36,20 @@ const WaterQuality: React.FC = () => {
         <>
           <div className="stats-row">
             <div className="stat">Total Districts: {summary.total_districts}</div>
-            <div className="stat status-green">Green: {summary.green}</div>
-            <div className="stat status-yellow">Yellow: {summary.yellow}</div>
-            <div className="stat status-red">Red: {summary.red}</div>
+            <div className="stat status-unmonitored">Unmonitored: {summary.status_counts.unmonitored}</div>
+            <div className="stat status-green">Green: {summary.status_counts.green}</div>
+            <div className="stat status-yellow">Yellow: {summary.status_counts.yellow}</div>
+            <div className="stat status-red">Red: {summary.status_counts.red}</div>
           </div>
           <div className="districts-list">
-            {summary.districts?.map((district: any) => (
+            {summary.districts.map((district) => (
               <div key={district.id} className={`district-quality status-${district.status}`}>
                 <h3>{district.name}</h3>
                 <p>{district.municipality}, {district.province}</p>
                 {district.latest_reading && (
                   <div className="reading">
-                    <p>pH: {district.latest_reading.ph || 'N/A'}</p>
-                    <p>TDS: {district.latest_reading.tds || 'N/A'} mg/L</p>
+                    <p>pH: {district.latest_reading.ph ?? 'N/A'}</p>
+                    <p>TDS: {district.latest_reading.tds ?? 'N/A'} mg/L</p>
                     <p>Meets Standards: {district.latest_reading.meets_standards ? '✓' : '✗'}</p>
                   </div>
                 )}

@@ -2,7 +2,7 @@
 #
 # Usage:
 #   1) Render Dashboard → New + → Blueprint
-#   2) Connect this repo, select branch `main`
+#   2) Connect this repo, select branch `claude/add-claude-api-ulwandle-01D452VrTid1RnXu4Mso9LfK`
 #   3) Render auto-detects this file and provisions the service
 #   4) Fill in the secrets it prompts for (marked `sync: false` below)
 #

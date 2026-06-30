@@ -34,8 +34,8 @@ const LoginPage: React.FC = () => {
           <h1 className="pitch-title">Ulwandle Tech</h1>
           <p className="pitch-tag">Resource Allocation &amp; Compliance</p>
           <p className="pitch-lede">
-            Compliance-grade water-loss reporting, live dam levels, and
-            AI-driven action plans for South African metros.
+            Source-backed metro water intelligence, current dam readings, and
+            traceable data provenance for South African metros.
           </p>
           <ul className="pitch-proofs">
             <li>
@@ -48,15 +48,15 @@ const LoginPage: React.FC = () => {
             <li>
               <span className="proof-dot" aria-hidden="true" />
               <span>
-                <strong>SANS 241 &amp; National Water Act aligned.</strong>{" "}
-                One-click World Bank PforR compliance export.
+                <strong>Evidence workflow under development.</strong>{" "}
+                Demo workbooks cannot be submitted as W10 or W11 evidence.
               </span>
             </li>
             <li>
               <span className="proof-dot" aria-hidden="true" />
               <span>
-                <strong>Dual-control kill switch.</strong> Ed25519-signed
-                valve operations with a full audit trail.
+                <strong>Operational controls are preview only.</strong> Sensor
+                and valve features require a municipal integration before use.
               </span>
             </li>
           </ul>

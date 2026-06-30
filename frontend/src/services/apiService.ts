@@ -64,10 +64,10 @@ export const apiService = {
 
   getPredictions:       async (districtId?: number, hours = 24) =>
     (await apiClient.get("/api/v1/predictions/predictions",
-      { params: { district_id: districtId, hours } })).data,
+      { params: { district_id: districtId, hours } })).data as PredictionsResponse,
 
   getComplianceSummary: async () =>
-    (await apiClient.get("/api/v1/water-quality/standards")).data,
+    (await apiClient.get("/api/v1/water-quality/summary")).data as WaterQualitySummary,
 
   // Metros — mix of real (population, NRW, dam levels) + synthetic
   // (topology, zones, leak detections). Real-data endpoints carry full
@@ -116,6 +116,50 @@ export interface SourceRef {
   as_of: string;
   url?: string | null;
   caveat?: string | null;
+}
+
+export type DistrictStatus = "unmonitored" | "green" | "yellow" | "red";
+
+export interface WaterQualityReadingSummary {
+  id: number;
+  ph?: number | null;
+  tds?: number | null;
+  turbidity?: number | null;
+  temperature?: number | null;
+  chlorine?: number | null;
+  meets_standards: boolean;
+  recorded_at: string;
+}
+
+export interface WaterQualityDistrictSummary {
+  id: number;
+  name: string;
+  municipality: string;
+  province: string;
+  status: DistrictStatus;
+  latest_reading?: WaterQualityReadingSummary | null;
+}
+
+export interface WaterQualitySummary {
+  standard: string;
+  total_districts: number;
+  status_counts: Record<DistrictStatus, number>;
+  districts: WaterQualityDistrictSummary[];
+}
+
+export interface PredictionSummary {
+  id: number;
+  prediction_type: string;
+  district_id?: number | null;
+  confidence_score?: number | null;
+  prediction_horizon?: string | null;
+  created_at: string;
+  summary?: string | null;
+}
+
+export interface PredictionsResponse {
+  count: number;
+  predictions: PredictionSummary[];
 }
 
 export interface MetroBaseline {

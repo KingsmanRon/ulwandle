@@ -29,6 +29,18 @@ class PredictionRequest(BaseModel):
     historical_hours: int = Field(default=168, ge=1, le=24 * 30)
 
 
+def _prediction_view(prediction: Prediction) -> dict:
+    return {
+        "id": prediction.id,
+        "prediction_type": prediction.prediction_type,
+        "district_id": prediction.district_id,
+        "confidence_score": prediction.confidence_score,
+        "prediction_horizon": prediction.prediction_horizon,
+        "created_at": prediction.created_at.isoformat(),
+        "summary": prediction.claude_analysis,
+    }
+
+
 @router.post("/analyze")
 async def analyze(
     body: PredictionRequest,
@@ -119,13 +131,7 @@ def list_predictions(
     rows = q.order_by(Prediction.created_at.desc()).limit(100).all()
     return {
         "count": len(rows),
-        "predictions": [
-            {"id": p.id, "type": p.prediction_type, "district_id": p.district_id,
-             "confidence": p.confidence_score, "horizon": p.prediction_horizon,
-             "created_at": p.created_at.isoformat(),
-             "summary": p.claude_analysis}
-            for p in rows
-        ],
+        "predictions": [_prediction_view(prediction) for prediction in rows],
     }
 
 

@@ -1,13 +1,13 @@
 # Ulwandle Tech — Resource Allocation & Compliance (RAC)
 
-**Compliance-grade water-loss reporting, live dam levels, and AI-driven
-action plans for South African metros.**
+**Source-backed metro water intelligence, current dam readings, and traceable
+data provenance for South African metros.**
 
 South African municipalities lose roughly **47% of treated water** before it
 reaches a paying customer — somewhere in the order of **R17 billion per year**
 across the eight metros, on a R12/kL replacement-cost basis. Ulwandle RAC
-turns that number into a daily, sourced, auditable dashboard, and a
-Claude-generated action plan a city manager can act on this week.
+turns those public baselines into a sourced dashboard with freshness indicators
+and an advisory action plan.
 
 ![Ulwandle RAC dashboard](docs/dashboard-preview.svg)
 
@@ -18,25 +18,26 @@ Claude-generated action plan a city manager can act on this week.
 - **One headline number, on day one.** The dashboard opens with the estimated
   rand-value of non-revenue water across your portfolio. The assumption (tariff
   × population × per-capita × NRW%) is shown inline and editable.
-- **Every figure is sourced.** Population from Stats SA Census 2022. NRW from
-  DWS Drop reports. Dam levels scraped daily from capetown.gov.za and weekly
-  from dws.gov.za — refresh timestamps visible to the operator.
-- **Compliance-ready exports.** SANS 241 quality dashboard and a one-click
-  World Bank Program-for-Results compliance report.
-- **Safe by construction.** Dual-control, Ed25519-signed kill-switch
-  operations; HMAC-gated sensor ingestion; rate-limited valve API; full audit
-  trail. Built so a procurement reviewer can sign off.
+- **Sourced overview figures.** Population, NRW baselines, and dam readings in
+  the main overview carry source references and dates. Representative metro,
+  zone, and network screens are labelled as illustrative.
+- **Truthful demo exports.** Scenario workbooks identify every generated value
+  as illustrative and state that they are not valid for W10, W11, PIAP, audit,
+  regulatory submission, or independent verification.
+- **Operational preview behind a flag.** Sensor ingestion, water quality,
+  predictions, and valve controls remain disabled in the production sales demo
+  until a municipal integration supplies real telemetry.
 - **Deployable in a day.** Free-tier-friendly: Vercel + Render + Neon +
   Upstash + Anthropic. See [`DEPLOY.md`](DEPLOY.md).
 
 ## Who it's for
 
-- **Municipal water utilities** running 100k+ connections that need defensible
-  NRW reporting and want to move from spreadsheets to a live system.
+- **Municipal water utilities** that need a traceable path from approved source
+  records to defensible NRW reporting.
 - **National and provincial water departments** (DWS, provincial COGTAs) that
   need a portfolio view across metros.
-- **Multilateral funders** (World Bank PforR, AFD, AfDB) that require
-  outcome-linked, audited compliance evidence.
+- **Implementation partners and assurance teams** that need visible source
+  lineage and repeatable evidence workflows.
 
 ## Try the live demo
 
@@ -47,6 +48,10 @@ or contact us for read-only credentials on the hosted demo.
 ---
 
 ## Feature detail
+
+The features below are operational scaffolding for a future municipal
+integration. They do not represent current telemetry, actuator, or notification
+coverage.
 
 ### Water-loss detection
 - Real-time flow monitoring across the distribution network
@@ -193,9 +198,9 @@ ALERT_EMAIL=alerts@ulwandle.tech
 SMS_API_KEY=your_sms_api_key
 ```
 
-## South Africa Compliance
+## South African regulatory context
 
-This system is designed to comply with:
+The product is being designed to support evidence workflows connected to:
 - SANS 241: Drinking water standards
 - Water Services Act (Act No. 108 of 1997)
 - National Water Act (Act No. 36 of 1998)

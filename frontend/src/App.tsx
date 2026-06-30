@@ -20,7 +20,7 @@ import WaterQuality from "./components/WaterQuality";
 import {
   Metro,
   METROS,
-  generateSyntheticMetroWaterData,
+  buildRepresentativeMetroWaterData,
 } from "./constants/metros";
 
 // Lazy-loaded heavy panels. Each pulls a distinct chunk of vendor
@@ -31,6 +31,8 @@ const MetroZoneMap = lazy(() => import("./components/MetroZoneMap"));
 const WaterNetworkVisualization = lazy(() => import("./components/WaterNetworkVisualization"));
 const WorldBankCompliancePanel = lazy(() => import("./components/WorldBankCompliance"));
 const MetroBaselinePanel = lazy(() => import("./components/MetroBaselinePanel"));
+
+const OPERATIONS_PREVIEW_ENABLED = process.env.REACT_APP_ENABLE_OPERATIONS === "true";
 
 const LazyFallback: React.FC = () => <div className="loading">Loading…</div>;
 
@@ -92,11 +94,11 @@ const App: React.FC = () => {
   const activeMetro: Metro = selectedMetros[0] ?? METROS[0];
 
   const selectedMetroData = useMemo(
-    () => selectedMetros.map(generateSyntheticMetroWaterData),
+    () => selectedMetros.map(buildRepresentativeMetroWaterData),
     [selectedMetros],
   );
   const activeMetroData = useMemo(
-    () => generateSyntheticMetroWaterData(activeMetro),
+    () => buildRepresentativeMetroWaterData(activeMetro),
     [activeMetro],
   );
   const historicalData = useMemo(
@@ -107,7 +109,7 @@ const App: React.FC = () => {
   const metroStressLevels = useMemo(() => {
     const m = new Map<string, { level: string; wastage: number }>();
     for (const metro of METROS) {
-      const data = generateSyntheticMetroWaterData(metro);
+      const data = buildRepresentativeMetroWaterData(metro);
       m.set(metro.id, { level: data.stressLevel, wastage: data.wastagePercentage });
     }
     return m;
@@ -208,6 +210,7 @@ const App: React.FC = () => {
       case "overview":
         body = (
           <div className="stacked-panels">
+            <DemoDataPill note="Illustrative water-balance scenario. The Sources section contains the sourced metro baselines and latest available dam readings." />
             <SouthAfricaMap
               selectedMetros={selectedMetros}
               onMetroClick={handleMetroToggle}
@@ -258,7 +261,7 @@ const App: React.FC = () => {
               loading={recommendationsLoading}
               onRefresh={() => activeMetro?.id && fetchRecommendations(activeMetro.id)}
             />
-            <ShutdownNotification metroData={activeMetroData} />
+            {OPERATIONS_PREVIEW_ENABLED && <ShutdownNotification metroData={activeMetroData} />}
             <WorldBankCompliancePanel
               allMetroData={selectedMetroData}
               selectedMetro={activeMetro}
@@ -346,9 +349,9 @@ const App: React.FC = () => {
       <nav className="app-nav" aria-label="Main">
         {navButton("dashboard", "Dashboard")}
         {navButton("metros", "Metros")}
-        {navButton("monitoring", "Monitoring")}
-        {canSeeKillSwitch && navButton("killswitch", "Kill Switch")}
-        {navButton("settings", "Signing Key")}
+        {OPERATIONS_PREVIEW_ENABLED && navButton("monitoring", "Operations preview")}
+        {OPERATIONS_PREVIEW_ENABLED && canSeeKillSwitch && navButton("killswitch", "Kill Switch preview")}
+        {OPERATIONS_PREVIEW_ENABLED && navButton("settings", "Signing Key")}
       </nav>
 
       <main className="app-content">

@@ -45,7 +45,7 @@ def main() -> int:
                 municipality="City of Cape Town",
                 province="Western Cape",
                 population=50_000,
-                status=DistrictStatus.GREEN,
+                status=DistrictStatus.UNMONITORED,
                 latitude=-33.9249,
                 longitude=18.4241,
             )

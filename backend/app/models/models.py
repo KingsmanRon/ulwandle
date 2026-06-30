@@ -26,6 +26,7 @@ def _pg_enum(enum_cls):
 # ---------- Enums ----------
 
 class DistrictStatus(str, enum.Enum):
+    UNMONITORED = "unmonitored"
     GREEN = "green"
     YELLOW = "yellow"
     RED = "red"
@@ -140,7 +141,7 @@ class District(Base):
     province = Column(String(50), nullable=False)
     population = Column(Integer)
     area_km2 = Column(Float)
-    status = Column(_pg_enum(DistrictStatus), default=DistrictStatus.GREEN, nullable=False)
+    status = Column(_pg_enum(DistrictStatus), default=DistrictStatus.UNMONITORED, nullable=False)
 
     latitude = Column(Float)
     longitude = Column(Float)

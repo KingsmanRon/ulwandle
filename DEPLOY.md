@@ -64,7 +64,7 @@ Save the output — you'll paste it into Render in a minute.
 
 1. Render Dashboard → **New + → Blueprint**
 2. Connect GitHub → select repo `KingsmanRon/ulwandle`
-3. Branch: **`main`** (only after merging the security PR; otherwise use the security branch directly)
+3. Branch: **`claude/add-claude-api-ulwandle-01D452VrTid1RnXu4Mso9LfK`**
 4. Render auto-detects `render.yaml` at the repo root
 5. Render prompts for the six secrets — fill them in:
 
@@ -100,7 +100,7 @@ Enter a password (≥12 characters) twice.
 
 1. Vercel Dashboard → **Add New → Project**
 2. Import `KingsmanRon/ulwandle` from GitHub
-3. **Branch:** `main`
+3. **Branch:** `claude/add-claude-api-ulwandle-01D452VrTid1RnXu4Mso9LfK`
 4. **Configure these settings explicitly** — do not accept "Services" auto-detection:
 
 | Field | Value |
@@ -117,6 +117,7 @@ Enter a password (≥12 characters) twice.
 | Name | Value |
 |---|---|
 | `REACT_APP_API_URL` | `https://ulwandle-backend.onrender.com` *(your real Render URL)* |
+| `REACT_APP_ENABLE_OPERATIONS` | Leave unset for the sourced-data production demo; set to `true` only in an operational preview environment |
 
 Apply to all three: Production, Preview, Development.
 

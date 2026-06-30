@@ -1,7 +1,7 @@
 import React from 'react';
-import { Download, FileSpreadsheet, AlertCircle } from 'lucide-react';
+import { AlertCircle, Download, FileSpreadsheet } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { MetroWaterData, Metro } from '../constants/metros';
+import { Metro, MetroWaterData } from '../constants/metros';
 import { ClaudeRecommendationsData } from './ClaudeRecommendations';
 import './WorldBankCompliance.css';
 
@@ -33,13 +33,6 @@ interface WorldBankCompliancePanelProps {
   historicalData?: HistoricalPoint[];
 }
 
-// Defensive: any string starting with =, +, -, @ in a spreadsheet cell
-// can be interpreted as a formula by Excel/LibreOffice/Numbers (CSV
-// injection class — see CVE-2014-3524 family). Prefix such strings with
-// a single quote so the cell is treated as text. We apply this on every
-// string value that originates from anything other than a static
-// constant, since the synthetic data could one day include real user
-// content (zone names, recommendations) that an attacker influences.
 function sanitiseCell<T>(value: T): T {
   if (typeof value === 'string' && /^[=+\-@\t\r]/.test(value)) {
     return ("'" + value) as unknown as T;
@@ -48,26 +41,9 @@ function sanitiseCell<T>(value: T): T {
 }
 
 function sanitiseRow<T extends Record<string, unknown>>(row: T): T {
-  const out: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(row)) {
-    out[k] = sanitiseCell(v);
-  }
-  return out as T;
-}
-
-function totalIntakeForDli(rows: MetroWaterData[]): number {
-  return rows.reduce((sum, m) => sum + m.intake, 0);
-}
-
-function totalWastageForDli(rows: MetroWaterData[]): number {
-  return rows.reduce((sum, m) => sum + m.wastage, 0);
-}
-
-function nrwBand(wastagePercentage: number): string {
-  if (wastagePercentage < 15) return 'Best practice (<15%)';
-  if (wastagePercentage < 25) return 'Acceptable (15-25%)';
-  if (wastagePercentage < 30) return 'Poor (25-30%)';
-  return 'Critical (>30%)';
+  return Object.fromEntries(
+    Object.entries(row).map(([key, value]) => [key, sanitiseCell(value)]),
+  ) as T;
 }
 
 const WorldBankCompliancePanel: React.FC<WorldBankCompliancePanelProps> = ({
@@ -77,154 +53,114 @@ const WorldBankCompliancePanel: React.FC<WorldBankCompliancePanelProps> = ({
   recommendations,
   historicalData = [],
 }) => {
-
   const handleExcelExport = () => {
-    // Defensive: button is also disabled below when there's nothing to
-    // export, so this guard should never trip in practice.
-    if (!allMetroData || allMetroData.length === 0) return;
+    if (allMetroData.length === 0) return;
 
-    const wb = XLSX.utils.book_new();
+    const workbook = XLSX.utils.book_new();
 
-    // Sheet 1: Metro overview
-    const overviewRows = allMetroData.map(m => sanitiseRow({
-      'Metro': m.metro,
-      'Province': m.province,
-      'Population': m.population,
-      'Daily intake (ML)': m.intake,
-      'Actual usage (ML)': m.usage,
-      'Wastage (ML)': m.wastage,
-      'Wastage %': m.wastagePercentage,
-      'Per capita (L/day)': m.perCapita,
-      'Water stress level': m.stressLevel,
-      'Captured at': new Date(m.timestamp).toISOString(),
-    }));
-    const ws1 = XLSX.utils.json_to_sheet(overviewRows);
-    ws1['!cols'] = [
-      { wch: 30 }, { wch: 15 }, { wch: 12 }, { wch: 18 }, { wch: 18 },
-      { wch: 15 }, { wch: 12 }, { wch: 18 }, { wch: 20 }, { wch: 22 },
+    const notesSheet = XLSX.utils.json_to_sheet([
+      sanitiseRow({ Field: 'Data status', Value: 'ILLUSTRATIVE DEMO DATA' }),
+      sanitiseRow({ Field: 'Permitted use', Value: 'Product evaluation and workflow design only' }),
+      sanitiseRow({
+        Field: 'Not suitable for',
+        Value: 'W10, W11, PIAP, audit, regulatory submission, or independent verification',
+      }),
+      sanitiseRow({
+        Field: 'Required replacement data',
+        Value: 'Approved bulk supply, billed authorised consumption, connection, and actual meter reading records',
+      }),
+      sanitiseRow({ Field: 'Generated at', Value: new Date().toISOString() }),
+    ]);
+    notesSheet['!cols'] = [{ wch: 24 }, { wch: 100 }];
+    XLSX.utils.book_append_sheet(workbook, notesSheet, 'READ ME');
+
+    const overviewSheet = XLSX.utils.json_to_sheet(allMetroData.map(metro => sanitiseRow({
+      'Data status': 'ILLUSTRATIVE',
+      Metro: metro.metro,
+      Province: metro.province,
+      Population: metro.population,
+      'Daily intake (ML)': metro.intake,
+      'Modelled usage (ML)': metro.usage,
+      'Modelled loss (ML)': metro.wastage,
+      'Modelled loss %': metro.wastagePercentage,
+      'Modelled per capita (L/day)': metro.perCapita,
+      'Scenario stress level': metro.stressLevel,
+      'Generated at': new Date(metro.timestamp).toISOString(),
+    })));
+    overviewSheet['!cols'] = [
+      { wch: 18 }, { wch: 30 }, { wch: 15 }, { wch: 12 }, { wch: 18 },
+      { wch: 20 }, { wch: 20 }, { wch: 18 }, { wch: 28 }, { wch: 22 }, { wch: 24 },
     ];
-    XLSX.utils.book_append_sheet(wb, ws1, 'Metro Overview');
+    XLSX.utils.book_append_sheet(workbook, overviewSheet, 'Illustrative Overview');
 
-    // Sheet 2: Zone-level analysis (when a single metro is selected)
     if (zones.length > 0 && selectedMetro) {
-      const zoneRows = zones.map(z => sanitiseRow({
-        'Metro': selectedMetro.name,
-        'Zone ID': z.zone_id,
-        'Zone name': z.name,
-        'Population': z.population,
-        'Daily intake (ML)': z.daily_intake_ml,
-        'Daily usage (ML)': z.daily_usage_ml,
-        'Daily wastage (ML)': z.daily_wastage_ml,
-        'Wastage %': z.wastage_percentage,
-        'Active leaks': z.has_active_leaks ? 'YES' : 'NO',
-        'Leak count': z.leak_count,
-        'Priority score': z.priority_score,
-        'Estimated daily loss (R)': Math.round(z.daily_wastage_ml * 12000),
-        'Severity':
-          z.has_active_leaks && z.wastage_percentage > 30 ? 'CRITICAL' :
-          z.has_active_leaks || z.wastage_percentage > 25 ? 'HIGH' :
-          z.wastage_percentage > 20 ? 'MEDIUM' : 'LOW',
-      }));
-      const ws2 = XLSX.utils.json_to_sheet(zoneRows);
-      ws2['!cols'] = [
-        { wch: 30 }, { wch: 22 }, { wch: 35 }, { wch: 12 }, { wch: 18 },
-        { wch: 18 }, { wch: 18 }, { wch: 12 }, { wch: 14 }, { wch: 12 },
-        { wch: 16 }, { wch: 24 }, { wch: 12 },
+      const zoneSheet = XLSX.utils.json_to_sheet(zones.map(zone => sanitiseRow({
+        'Data status': 'ILLUSTRATIVE',
+        Metro: selectedMetro.name,
+        'Zone ID': zone.zone_id,
+        'Zone name': zone.name,
+        Population: zone.population,
+        'Daily intake (ML)': zone.daily_intake_ml,
+        'Modelled usage (ML)': zone.daily_usage_ml,
+        'Modelled loss (ML)': zone.daily_wastage_ml,
+        'Modelled loss %': zone.wastage_percentage,
+        'Sample active leaks': zone.has_active_leaks ? 'YES' : 'NO',
+        'Sample leak count': zone.leak_count,
+        'Scenario priority score': zone.priority_score,
+      })));
+      zoneSheet['!cols'] = [
+        { wch: 18 }, { wch: 30 }, { wch: 22 }, { wch: 35 }, { wch: 12 }, { wch: 18 },
+        { wch: 20 }, { wch: 20 }, { wch: 18 }, { wch: 22 }, { wch: 20 }, { wch: 24 },
       ];
-      XLSX.utils.book_append_sheet(wb, ws2, 'Zone Analysis');
+      XLSX.utils.book_append_sheet(workbook, zoneSheet, 'Illustrative Zones');
     }
 
-    // Sheet 3: Historical trends
     if (historicalData.length > 0) {
-      const histRows = historicalData.map(d => sanitiseRow({
-        'Period': d.day,
-        'Intake (ML)': d.intake,
-        'Usage (ML)': d.usage,
-        'Wastage (ML)': d.wastage,
-        'Wastage %': d.intake > 0 ? Number(((d.wastage / d.intake) * 100).toFixed(1)) : 0,
-      }));
-      const ws3 = XLSX.utils.json_to_sheet(histRows);
-      ws3['!cols'] = [{ wch: 15 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 12 }];
-      XLSX.utils.book_append_sheet(wb, ws3, 'Historical Trends');
-    }
-
-    // Sheet 4: AI recommendations (only when generation succeeded)
-    if (recommendations && recommendations.status === 'ok' && recommendations.recommendations) {
-      const recRows = recommendations.recommendations.map((r, i) => sanitiseRow({
-        'Priority': i + 1,
-        'Recommendation': r.title,
-        'Description': r.description,
-        'Impact': r.impact,
-        'Estimated cost': r.cost,
-        'Timeline': r.timeline,
-        'Key performance indicators': (r.kpis || []).join('; '),
-      }));
-      const ws4 = XLSX.utils.json_to_sheet(recRows);
-      ws4['!cols'] = [
-        { wch: 10 }, { wch: 35 }, { wch: 60 }, { wch: 25 },
-        { wch: 25 }, { wch: 20 }, { wch: 50 },
+      const trendsSheet = XLSX.utils.json_to_sheet(historicalData.map(point => sanitiseRow({
+        'Data status': 'ILLUSTRATIVE',
+        Period: point.day,
+        'Modelled intake (ML)': point.intake,
+        'Modelled usage (ML)': point.usage,
+        'Modelled loss (ML)': point.wastage,
+      })));
+      trendsSheet['!cols'] = [
+        { wch: 18 }, { wch: 15 }, { wch: 22 }, { wch: 22 }, { wch: 22 },
       ];
-      XLSX.utils.book_append_sheet(wb, ws4, 'AI Recommendations');
-
-      const summaryRows = [
-        {},
-        { 'Priority': 'SUMMARY' },
-        { 'Priority': 'Overall priority level:', 'Recommendation': recommendations.priority || '' },
-        { 'Priority': 'Potential savings:',      'Recommendation': recommendations.potential_savings || '' },
-        { 'Priority': 'ROI estimate:',           'Recommendation': recommendations.roi || '' },
-      ].map(row => sanitiseRow(row));
-      XLSX.utils.sheet_add_json(ws4, summaryRows, { skipHeader: true, origin: -1 });
+      XLSX.utils.book_append_sheet(workbook, trendsSheet, 'Illustrative Trends');
     }
 
-    // Sheet 5: W10 NRW evidence against published water-services standards.
-    // No claim of formal World Bank PforR scoring is implied — these
-    // checks are mechanical comparisons against thresholds: WHO basic
-    // water minimum, Statistics South Africa per-capita usage target,
-    // and the IWA-recommended NRW (non-revenue water) bands.
-    const WHO_MIN = 100;
-    const SA_TARGET = 173;
-    const complianceRows = allMetroData.map(m => sanitiseRow({
-      'Metro': m.metro,
-      'Per capita (L/day)': m.perCapita,
-      'WHO basic minimum (100 L)': m.perCapita >= WHO_MIN ? 'COMPLIANT' : 'NON-COMPLIANT',
-      'Gap to WHO minimum': Math.max(0, WHO_MIN - m.perCapita),
-      'SA per-capita target (173 L)': m.perCapita >= SA_TARGET ? 'ACHIEVED' : 'BELOW TARGET',
-      'Gap to SA target': Math.max(0, SA_TARGET - m.perCapita),
-      'W10 NRW target (<25%)': m.wastagePercentage < 25 ? 'ON TRACK' : 'GAP TO TARGET',
-      'NRW benchmark (target <15%)': m.wastagePercentage <= 15 ? 'GOOD' : 'NEEDS IMPROVEMENT',
-      'Excess wastage %': Math.max(0, m.wastagePercentage - 15),
-      'NRW band': nrwBand(m.wastagePercentage),
-    }));
-    const ws5 = XLSX.utils.json_to_sheet(complianceRows);
-    ws5['!cols'] = [
-      { wch: 30 }, { wch: 20 }, { wch: 28 }, { wch: 18 }, { wch: 30 },
-      { wch: 18 }, { wch: 24 }, { wch: 30 }, { wch: 18 }, { wch: 28 },
-    ];
-    XLSX.utils.book_append_sheet(wb, ws5, 'W10 NRW Evidence');
-
-    const weightedAverageNrw = totalIntakeForDli(allMetroData) > 0
-      ? `${((totalWastageForDli(allMetroData) / totalIntakeForDli(allMetroData)) * 100).toFixed(1)}%`
-      : '—';
-    const dliRows = [
-      sanitiseRow({ 'DLI Code': 'W10', 'Indicator': 'Non-Revenue Water %', 'Target': '<25%', 'Current (weighted avg)': weightedAverageNrw }),
-      sanitiseRow({ 'DLI Code': 'W11', 'Indicator': 'Metering Performance', 'Target': '>98%', 'Current (weighted avg)': '—' }),
-    ];
-    const ws6 = XLSX.utils.json_to_sheet(dliRows);
-    ws6['!cols'] = [{ wch: 12 }, { wch: 28 }, { wch: 12 }, { wch: 24 }];
-    XLSX.utils.book_append_sheet(wb, ws6, 'PforR DLI Mapping');
+    if (recommendations?.status === 'ok' && recommendations.recommendations) {
+      const recommendationsSheet = XLSX.utils.json_to_sheet(
+        recommendations.recommendations.map((item, index) => sanitiseRow({
+          'Data status': 'AI ADVISORY',
+          Priority: index + 1,
+          Recommendation: item.title,
+          Description: item.description,
+          Impact: item.impact,
+          'Estimated cost': item.cost,
+          Timeline: item.timeline,
+          'Key performance indicators': (item.kpis || []).join('; '),
+        })),
+      );
+      recommendationsSheet['!cols'] = [
+        { wch: 18 }, { wch: 10 }, { wch: 35 }, { wch: 60 },
+        { wch: 25 }, { wch: 25 }, { wch: 20 }, { wch: 50 },
+      ];
+      XLSX.utils.book_append_sheet(workbook, recommendationsSheet, 'AI Recommendations');
+    }
 
     const stamp = new Date().toISOString().split('T')[0];
     const filename = allMetroData.length === 1
-      ? `${allMetroData[0].metro.replace(/\s+/g, '_')}_water_report_${stamp}.xlsx`
-      : `SA_water_report_${allMetroData.length}_metros_${stamp}.xlsx`;
-    XLSX.writeFile(wb, filename);
+      ? `${allMetroData[0].metro.replace(/\s+/g, '_')}_illustrative_scenario_${stamp}.xlsx`
+      : `SA_illustrative_water_scenario_${allMetroData.length}_metros_${stamp}.xlsx`;
+    XLSX.writeFile(workbook, filename);
   };
 
-  const hasSelection = allMetroData && allMetroData.length > 0;
-  const sheetCount = 3
+  const hasSelection = allMetroData.length > 0;
+  const sheetCount = 2
     + (zones.length > 0 && selectedMetro ? 1 : 0)
     + (historicalData.length > 0 ? 1 : 0)
-    + (recommendations && recommendations.status === 'ok' && recommendations.recommendations ? 1 : 0);
+    + (recommendations?.status === 'ok' && recommendations.recommendations ? 1 : 0);
 
   return (
     <div className="world-bank-compliance">
@@ -232,10 +168,10 @@ const WorldBankCompliancePanel: React.FC<WorldBankCompliancePanelProps> = ({
         <div className="export-info">
           <FileSpreadsheet size={28} color={hasSelection ? '#0284c7' : '#9ca3af'} />
           <div>
-            <h3>Export PforR W10 evidence report</h3>
+            <h3>Export illustrative scenario workbook</h3>
             <p>
               {hasSelection
-                ? `Multi-sheet Excel: overview${zones.length > 0 ? ', zone analysis' : ''}${historicalData.length > 0 ? ', historical trends' : ''}${recommendations ? ', AI recommendations' : ''}, W10 NRW evidence, and PforR DLI mapping.`
+                ? `Excel workbook with explicit data notes, representative overview${zones.length > 0 ? ', sample zones' : ''}${historicalData.length > 0 ? ', sample trends' : ''}${recommendations?.status === 'ok' ? ', and AI advisory' : ''}.`
                 : 'Select one or more metros to enable export.'}
             </p>
           </div>
@@ -247,21 +183,21 @@ const WorldBankCompliancePanel: React.FC<WorldBankCompliancePanelProps> = ({
           type="button"
         >
           <Download size={18} />
-          Export report
+          Export scenario
         </button>
       </div>
       {!hasSelection && (
         <div className="export-help">
           <AlertCircle size={16} />
-          <span>The compliance Excel export becomes available once you select metros above.</span>
+          <span>The illustrative workbook becomes available once you select metros above.</span>
         </div>
       )}
       {hasSelection && (
-        <div className="export-ready">
-          <AlertCircle size={16} color="#10b981" />
+        <div className="export-help" role="note">
+          <AlertCircle size={16} />
           <span>
             Ready to export {allMetroData.length} metro{allMetroData.length > 1 ? 's' : ''} ({sheetCount} sheets).
-            W10 NRW evidence, WHO/SA per-capita compliance, and IWA bands — PIAP-ready.
+            This is demo data and is not valid for W10, W11, PIAP, audit, or independent verification.
           </span>
         </div>
       )}

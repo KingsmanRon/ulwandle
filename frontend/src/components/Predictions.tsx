@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { apiService } from '../services/apiService';
+import { apiService, PredictionSummary } from '../services/apiService';
 
 const Predictions: React.FC = () => {
-  const [predictions, setPredictions] = useState<any[]>([]);
+  const [predictions, setPredictions] = useState<PredictionSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,8 +37,8 @@ const Predictions: React.FC = () => {
         {predictions.map((pred) => (
           <div key={pred.id} className="prediction-card">
             <h3>{pred.prediction_type}</h3>
-            <p><strong>Confidence:</strong> {(pred.confidence_score * 100).toFixed(0)}%</p>
-            <p><strong>Horizon:</strong> {pred.prediction_horizon}</p>
+            <p><strong>Confidence:</strong> {pred.confidence_score == null ? 'Not available' : `${(pred.confidence_score * 100).toFixed(0)}%`}</p>
+            <p><strong>Horizon:</strong> {pred.prediction_horizon ?? 'Not available'}</p>
             <p><strong>Created:</strong> {new Date(pred.created_at).toLocaleString()}</p>
             {pred.summary && <p className="summary">{pred.summary}</p>}
           </div>

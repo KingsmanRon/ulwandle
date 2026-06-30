@@ -142,8 +142,8 @@ const Dashboard: React.FC = () => {
     <div className="dashboard">
       <h2>System Overview</h2>
       <p className="overview-subtitle">
-        Real per-metro reference data + live dam levels with full source citations.
-        Updated by scheduled scrapers — no manual data entry.
+        Sourced per-metro reference data and latest available dam readings with full source citations.
+        Dam readings are updated by scheduled scrapers and display freshness warnings.
       </p>
 
       {stats.staleDamCount > 0 && (
@@ -289,8 +289,8 @@ const Dashboard: React.FC = () => {
         </ul>
         <p className="footer-note">
           Network topology, sensor flow rates, and operational metrics
-          (districts, valves, leaks) are populated by SCADA integration —
-          not yet wired. The Metros tab shows what's live; this overview
+          (districts, valves, leaks) require SCADA integration and are not
+          connected to municipal systems. The Metros tab shows sourced data; this overview
           is the first place to look every morning.
         </p>
       </footer>

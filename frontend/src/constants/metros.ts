@@ -153,11 +153,11 @@ export const WATER_STANDARDS = {
   NRW_CRITICAL: 35,
 };
 
-// ---------- Synthetic per-metro water snapshot (transitional) ----------
+// ---------- Representative per-metro water scenario ----------
 //
-// Used by metro-overview UI components until the backend `/api/v1/metros`
-// endpoint is wired (Phase 6 of the rich-UI port). Once components fetch
-// real data, this generator should be deleted along with its callers.
+// Used only by screens explicitly labelled as demonstrations. The values are
+// deterministic so the same selected metro always produces the same scenario.
+// They are not observations and must never be used for regulatory evidence.
 
 export interface MetroWaterData {
   metroId: MetroId;
@@ -171,6 +171,7 @@ export interface MetroWaterData {
   wastagePercentage: number;  // 0–100
   perCapita: number;          // L/person/day
   stressLevel: WaterStressLevel;
+  dataStatus: 'illustrative';
 }
 
 const REAL_NRW_PCT: Record<MetroId, number> = {
@@ -184,11 +185,10 @@ const REAL_NRW_PCT: Record<MetroId, number> = {
   mangaung: 47.0,
 };
 
-export function generateSyntheticMetroWaterData(metro: Metro): MetroWaterData {
-  const seasonalVar = Math.sin(Date.now() / 86_400_000 / 7) * 0.15;
-  const randomVar = (Math.random() - 0.5) * 0.1;
+const REPRESENTATIVE_SCENARIO_TIMESTAMP = Date.UTC(2026, 0, 1);
 
-  const intake = metro.baseIntakeMlPerDay * (1 + seasonalVar + randomVar);
+export function buildRepresentativeMetroWaterData(metro: Metro): MetroWaterData {
+  const intake = metro.baseIntakeMlPerDay;
   const wastagePercent = REAL_NRW_PCT[metro.id] ?? 35;
   const wastage = intake * (wastagePercent / 100);
   const usage = intake - wastage;
@@ -199,12 +199,13 @@ export function generateSyntheticMetroWaterData(metro: Metro): MetroWaterData {
     metro: metro.name,
     province: metro.province,
     population: metro.population,
-    timestamp: Date.now(),
+    timestamp: REPRESENTATIVE_SCENARIO_TIMESTAMP,
     intake: parseFloat(intake.toFixed(2)),
     usage: parseFloat(usage.toFixed(2)),
     wastage: parseFloat(wastage.toFixed(2)),
     wastagePercentage: parseFloat(wastagePercent.toFixed(1)),
     perCapita: parseFloat(perCapita.toFixed(1)),
     stressLevel: getWaterStressLevel(perCapita),
+    dataStatus: 'illustrative',
   };
 }

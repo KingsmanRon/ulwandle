@@ -14,7 +14,8 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
+from sqlalchemy import and_, func
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user, require_roles
@@ -39,9 +40,16 @@ class WaterQualityCreate(BaseModel):
     temperature: Optional[float] = Field(default=None, ge=-10, le=100)
     chlorine: Optional[float] = Field(default=None, ge=0, le=50)
 
+    @model_validator(mode="after")
+    def require_measurement(self):
+        values = (self.ph, self.tds, self.turbidity, self.temperature, self.chlorine)
+        if all(value is None for value in values):
+            raise ValueError("At least one water-quality measurement is required")
+        return self
+
 
 class StatusOverride(BaseModel):
-    new_status: str = Field(pattern="^(green|yellow|red)$")
+    new_status: str = Field(pattern="^(unmonitored|green|yellow|red)$")
     note: Optional[str] = Field(default=None, max_length=500)
 
 
@@ -186,6 +194,65 @@ def standards():
     }
 
 
+def _reading_view(reading: WaterQualityReading) -> dict:
+    return {
+        "id": reading.id,
+        "ph": reading.ph,
+        "tds": reading.tds,
+        "turbidity": reading.turbidity,
+        "temperature": reading.temperature,
+        "chlorine": reading.chlorine,
+        "meets_standards": reading.meets_sans_241,
+        "recorded_at": reading.recorded_at.isoformat(),
+    }
+
+
+def _build_compliance_summary(
+    districts: list[District],
+    latest_by_district: dict[int, WaterQualityReading],
+) -> dict:
+    counts = {status.value: 0 for status in DistrictStatus}
+    district_rows = []
+    for district in districts:
+        counts[district.status.value] += 1
+        latest = latest_by_district.get(district.id)
+        district_rows.append({
+            "id": district.id,
+            "name": district.name,
+            "municipality": district.municipality,
+            "province": district.province,
+            "status": district.status.value,
+            "latest_reading": _reading_view(latest) if latest else None,
+        })
+    return {
+        "standard": "SANS 241",
+        "total_districts": len(districts),
+        "status_counts": counts,
+        "districts": district_rows,
+    }
+
+
+@router.get("/summary")
+def compliance_summary(
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
+):
+    districts = db.query(District).order_by(District.municipality, District.name).all()
+    latest_times = db.query(
+        WaterQualityReading.district_id.label("district_id"),
+        func.max(WaterQualityReading.recorded_at).label("recorded_at"),
+    ).group_by(WaterQualityReading.district_id).subquery()
+    latest_rows = db.query(WaterQualityReading).join(
+        latest_times,
+        and_(
+            WaterQualityReading.district_id == latest_times.c.district_id,
+            WaterQualityReading.recorded_at == latest_times.c.recorded_at,
+        ),
+    ).all()
+    latest_by_district = {reading.district_id: reading for reading in latest_rows}
+    return _build_compliance_summary(districts, latest_by_district)
+
+
 # ---------- Severity classification ----------
 
 # Severity thresholds expressed as multiples of the SANS 241 limit (or
@@ -211,6 +278,10 @@ def _classify_reading(body: "WaterQualityCreate") -> tuple[DistrictStatus, list[
     if body.turbidity is not None and body.turbidity > settings.TURBIDITY_MAX:
         violations.append(f"Turbidity exceeds limit: {body.turbidity}")
         if body.turbidity > settings.TURBIDITY_MAX * _TURBIDITY_SEVERE_MULTIPLIER:
+            severe = True
+    if body.chlorine is not None and not 0.2 <= body.chlorine <= 5.0:
+        violations.append(f"Chlorine out of range: {body.chlorine}")
+        if body.chlorine == 0 or body.chlorine > 10:
             severe = True
     if not violations:
         return DistrictStatus.GREEN, violations

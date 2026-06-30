@@ -104,6 +104,10 @@ code {
   border-left: 4px solid;
 }
 
+.district-quality.status-unmonitored {
+  border-left-color: #94a3b8;
+}
+
 .district-quality.status-green {
   border-left-color: #10b981;
 }

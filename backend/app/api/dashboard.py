@@ -22,6 +22,7 @@ def overview(db: Session = Depends(get_db), _user: User = Depends(get_current_us
     districts = db.query(District).all()
     district_stats = {
         "total": len(districts),
+        "unmonitored": sum(1 for d in districts if d.status == DistrictStatus.UNMONITORED),
         "green": sum(1 for d in districts if d.status == DistrictStatus.GREEN),
         "yellow": sum(1 for d in districts if d.status == DistrictStatus.YELLOW),
         "red": sum(1 for d in districts if d.status == DistrictStatus.RED),
@@ -42,7 +43,7 @@ def overview(db: Session = Depends(get_db), _user: User = Depends(get_current_us
     leaks = db.query(LeakDetection).filter(LeakDetection.is_repaired == False).all()  # noqa: E712
 
     return {
-        "system_status": "operational",
+        "system_status": "operational" if sensors else "unmonitored",
         "last_updated": datetime.now(timezone.utc).isoformat(),
         "districts": district_stats,
         "alerts": alert_stats,

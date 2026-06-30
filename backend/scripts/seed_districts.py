@@ -2,10 +2,8 @@
 Seed District rows for all 8 South African metros.
 
 Idempotent: safe to re-run. Each call upserts by ``code``. Status defaults
-to GREEN — it only changes when real water-quality readings arrive at
-``/api/v1/water-quality/readings`` (see ``app.api.water_quality``). GREEN
-here therefore means "no telemetry yet", NOT "certified compliant"; see the
-dashboard note below.
+to UNMONITORED and only changes when real water-quality readings arrive at
+``/api/v1/water-quality/readings`` (see ``app.api.water_quality``).
 
 Run:
     python -m scripts.seed_districts
@@ -44,13 +42,8 @@ SCADA feed (see ``Dashboard.tsx`` footer note on the operational gap).
 
 Dashboard note
 ==============
-Because status defaults to GREEN until telemetry arrives, an all-GREEN
-board reads to a viewer as "everything is compliant" when it actually
-means "nothing is monitored yet". A NO_DATA / UNMONITORED member on
-``DistrictStatus`` (with a distinct UI colour) would separate the
-unmonitored state from a passing one. That is an enum + Alembic
-``ALTER TYPE`` + UI change touching status aggregation in several places,
-so it is intentionally left out of this seed (tracked below).
+UNMONITORED is distinct from GREEN so an empty telemetry state can never be
+presented as a passing water-quality result.
 """
 
 from __future__ import annotations
@@ -58,7 +51,7 @@ from __future__ import annotations
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from app.db.database import SessionLocal
-from app.models.models import District, DistrictStatus  # noqa: F401  (status default documented above)
+from app.models.models import District
 
 
 # ---------------------------------------------------------------------------
@@ -80,9 +73,7 @@ from app.models.models import District, DistrictStatus  # noqa: F401  (status de
 #   * TSH-HMK  comment death toll corrected to 23+ (some counts up to 32; was
 #              "15+").
 #
-# STILL OPEN (deliberately NOT done here — out of scope for a seed change):
-#   - Add NO_DATA / UNMONITORED to DistrictStatus so green != "unmonitored"
-#     (enum + migration + UI; see Dashboard note above).
+# STILL OPEN:
 #   - Model/table is `District`, but these are localities / supply zones, not
 #     Category-C district municipalities. A later rename (MonitoringZone /
 #     SupplyZone) removes that terminology clash.

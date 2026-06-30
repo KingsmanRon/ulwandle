@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { apiService } from '../services/apiService';
+import { apiService, DistrictStatus } from '../services/apiService';
 
 interface District {
   id: number;
@@ -8,7 +8,7 @@ interface District {
   municipality: string;
   province: string;
   population: number | null;
-  status: 'green' | 'yellow' | 'red';
+  status: DistrictStatus;
 }
 
 const DistrictMap: React.FC = () => {
@@ -46,6 +46,7 @@ const DistrictMap: React.FC = () => {
         metro,
         items: items.slice().sort((a, b) => a.name.localeCompare(b.name)),
         counts: {
+          unmonitored: items.filter(d => d.status === 'unmonitored').length,
           green:  items.filter(d => d.status === 'green').length,
           yellow: items.filter(d => d.status === 'yellow').length,
           red:    items.filter(d => d.status === 'red').length,
@@ -80,6 +81,7 @@ const DistrictMap: React.FC = () => {
                 {counts.green  > 0 && <span className="metro-pill green">{counts.green} GREEN</span>}
                 {counts.yellow > 0 && <span className="metro-pill yellow">{counts.yellow} YELLOW</span>}
                 {counts.red    > 0 && <span className="metro-pill red">{counts.red} RED</span>}
+                {counts.unmonitored > 0 && <span className="metro-pill unmonitored">{counts.unmonitored} UNMONITORED</span>}
               </div>
             </summary>
             <div className="districts-grid">

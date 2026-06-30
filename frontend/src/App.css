@@ -194,6 +194,10 @@ body {
 }
 
 /* Status badges */
+.status-unmonitored {
+  color: #64748b;
+}
+
 .status-green {
   color: #10b981;
 }
@@ -218,6 +222,11 @@ body {
 .status-badge.green {
   background-color: #d1fae5;
   color: #065f46;
+}
+
+.status-badge.unmonitored {
+  background-color: #e2e8f0;
+  color: #334155;
 }
 
 .status-badge.yellow {
@@ -317,6 +326,7 @@ body {
 .metro-pill.green  { background: #d1fae5; color: #065f46; }
 .metro-pill.yellow { background: #fef3c7; color: #92400e; }
 .metro-pill.red    { background: #fee2e2; color: #991b1b; }
+.metro-pill.unmonitored { background: #e2e8f0; color: #334155; }
 
 .metro-group > .districts-grid {
   padding: 0 1.25rem 1.25rem;

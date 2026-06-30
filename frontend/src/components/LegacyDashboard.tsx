@@ -50,6 +50,7 @@ const LegacyDashboard: React.FC = () => {
           <h3>Districts</h3>
           <div className="stat-value">{overview?.districts?.total || 0}</div>
           <div className="stat-breakdown">
+            <span className="status-unmonitored">{overview?.districts?.unmonitored || 0} Unmonitored</span>
             <span className="status-green">✓ {overview?.districts?.green || 0} Green</span>
             <span className="status-yellow">⚠ {overview?.districts?.yellow || 0} Yellow</span>
             <span className="status-red">✗ {overview?.districts?.red || 0} Red</span>

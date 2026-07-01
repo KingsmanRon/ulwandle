@@ -148,7 +148,7 @@ coverage.
 - Docker & Docker Compose
 - Anthropic API Key (Claude)
 - Python 3.11+
-- Node.js 18+
+- Node.js 24+
 
 ### Installation
 

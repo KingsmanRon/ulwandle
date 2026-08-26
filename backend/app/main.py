@@ -48,13 +48,16 @@ DEPLOY_REVISION = (
 # key_func honours X-Forwarded-For behind the proxy (see app.core.net) so limits
 # are per-client, not shared across everyone behind Render's single egress IP.
 # storage_uri=Redis makes the limit counters shared across the 2 gunicorn
-# workers and durable across spin-downs; swallow_errors keeps a Redis hiccup
-# from 500-ing requests (fails open on limiting, not on the request).
+# workers and durable across spin-downs. SlowAPI 0.1.9's swallow_errors path
+# can leave request.state.view_rate_limit unset, which then crashes its own
+# middleware while injecting headers. The in-memory fallback keeps requests
+# available if Redis cannot be reached and avoids that broken path.
 limiter = Limiter(
     key_func=rate_limit_key,
     default_limits=[settings.RATE_LIMIT_DEFAULT],
     storage_uri=settings.REDIS_URL,
     swallow_errors=True,
+    in_memory_fallback_enabled=True,
 )
 
 
@@ -113,6 +116,7 @@ async def unhandled(request: Request, exc: Exception):
 # ---------- Health ----------
 
 @app.get("/health", tags=["Health"])
+@limiter.exempt
 async def health():
     # DB-free on purpose: this is Render's healthCheckPath, so a transient DB
     # blip must not fail the deploy / kill the container.
@@ -124,6 +128,7 @@ async def health():
 
 
 @app.get("/ready", tags=["Health"])
+@limiter.exempt
 async def ready():
     """Readiness probe that touches the DB. An external warm-ping against this
     keeps both the (free-tier, spin-down) web service and the (free-tier,

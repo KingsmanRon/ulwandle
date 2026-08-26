@@ -69,3 +69,30 @@ def test_current_html_table_extracts_this_week_column():
         "steenbras_lower": 49.6,
         "churchill": 100.5,
     }
+
+
+def test_niwis_json_maps_stations_and_uses_latest_date():
+    rows = []
+    for station, dam_id in dws_scraper.DWS_STATION_TO_DAM_ID.items():
+        rows.append({
+            "station": station,
+            "reservoir": dam_id,
+            "valuedate": "2026-08-10T00:00:00",
+            "dam_pc_fsc": 88.5,
+        })
+    as_of, readings = dws_scraper._extract_readings_from_niwis_json(
+        __import__("json").dumps(rows)
+    )
+    assert (as_of.year, as_of.month, as_of.day) == (2026, 8, 10)
+    assert len(readings) == 22
+    assert dict(readings)["vaal"] == 88.5
+
+
+def test_niwis_json_rejects_missing_expected_dam():
+    import pytest
+
+    with pytest.raises(ValueError, match="omitted expected dams"):
+        dws_scraper._extract_readings_from_niwis_json(
+            '[{"station":"C1R001","valuedate":"2026-08-10T00:00:00",'
+            '"dam_pc_fsc":101.0}]'
+        )

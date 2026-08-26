@@ -30,9 +30,7 @@ concurrency:
 
 jobs:
   scrape:
-    # DWS rejects the Azure egress used by GitHub's Ubuntu runners with HTTP
-    # 403. GitHub's hosted macOS runners use a different network path.
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:
       run:

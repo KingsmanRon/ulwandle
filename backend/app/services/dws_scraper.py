@@ -36,6 +36,7 @@ State of the Reservoirs on\\n2025-10-13"). Fallback: previous Monday.
 from __future__ import annotations
 
 import io
+import json
 import logging
 import re
 from datetime import datetime, timedelta, timezone
@@ -60,6 +61,10 @@ DWS_PROVINCE_URLS: dict[str, str] = {
     "KN": "https://www.dws.gov.za/Hydrology/Weekly/ProvinceWeek.aspx?region=KN",
     "WC": "https://www.dws.gov.za/Hydrology/Weekly/ProvinceWeek.aspx?region=WC",
 }
+DWS_NIWIS_API_URL = (
+    "https://www.dws.gov.za/niwis2/api/Request/"
+    "SurfaceWaterStorageDamTableDataChange"
+)
 SOURCE_NAME = "DWS Weekly State of Dams"
 SOURCE_KEY = "dws_weekly_dams"
 
@@ -246,6 +251,92 @@ def _fetch_current_readings(
     return next(iter(page_dates)), list(combined.items())
 
 
+def _extract_readings_from_niwis_json(
+    payload: str,
+) -> tuple[datetime, list[tuple[str, float]]]:
+    """Parse the official NIWIS national dam table response by station code."""
+    try:
+        rows = json.loads(payload)
+    except json.JSONDecodeError as exc:
+        raise ValueError("DWS NIWIS returned invalid JSON") from exc
+    if not isinstance(rows, list):
+        raise ValueError("DWS NIWIS response was not a row list")
+
+    readings: dict[str, float] = {}
+    dates: set[datetime] = set()
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        dam_id = DWS_STATION_TO_DAM_ID.get(str(row.get("station", "")))
+        if dam_id is None or dam_id in readings:
+            continue
+        try:
+            pct = float(row["dam_pc_fsc"])
+            as_of = datetime.fromisoformat(str(row["valuedate"]))
+        except (KeyError, TypeError, ValueError):
+            continue
+        if as_of.tzinfo is None:
+            as_of = as_of.replace(tzinfo=timezone.utc)
+        if 0.0 <= pct <= 200.0:
+            readings[dam_id] = pct
+            dates.add(as_of)
+
+    missing = set(DWS_STATION_TO_DAM_ID.values()).difference(readings)
+    if missing:
+        raise ValueError("DWS NIWIS omitted expected dams: " + ", ".join(sorted(missing)))
+    if not dates:
+        raise ValueError("DWS NIWIS contained no dated readings")
+    if len(dates) > 1:
+        logger.warning(
+            "dws_scraper: NIWIS target dams have mixed dates: %s",
+            ", ".join(sorted(value.date().isoformat() for value in dates)),
+        )
+    return max(dates), list(readings.items())
+
+
+def _fetch_niwis_readings(
+    client: httpx.Client | None = None,
+) -> tuple[datetime, list[tuple[str, float]]]:
+    """Fetch the official NIWIS national table used when weekly pages block cloud IPs."""
+    own = client is None
+    c = client or httpx.Client(timeout=120.0, follow_redirects=True)
+    today = datetime.now(timezone.utc)
+    previous_month = today.replace(day=1) - timedelta(days=1)
+    start = previous_month.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    if today.month == 12:
+        end = today.replace(year=today.year + 1, month=1, day=1)
+    else:
+        end = today.replace(month=today.month + 1, day=1)
+    try:
+        response = c.get(
+            DWS_NIWIS_API_URL,
+            params={
+                "areaKey": "/national/Provinces",
+                "startDate": start.isoformat(),
+                "endDate": end.isoformat(),
+            },
+            headers={"User-Agent": "Ulwandle/1.0 (+ingest)", "Accept": "application/json"},
+        )
+        response.raise_for_status()
+        return _extract_readings_from_niwis_json(response.text)
+    finally:
+        if own:
+            c.close()
+
+
+def _fetch_official_readings() -> tuple[datetime, list[tuple[str, float]]]:
+    """Prefer current weekly pages, then fall back to DWS's official NIWIS API."""
+    try:
+        return _fetch_current_readings()
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code != 403:
+            raise
+        logger.warning(
+            "dws_scraper: weekly pages returned 403; using official NIWIS API"
+        )
+        return _fetch_niwis_readings()
+
+
 def _extract_readings_from_text(text: str) -> tuple[datetime, list[tuple[str, float]]]:
     """Parse already-extracted PDF text. Split out from ``_extract_readings``
     so the fragile, format-dependent parsing (station codes, last-decimal,
@@ -340,7 +431,7 @@ def run_once() -> int:
     db = SessionLocal()
     try:
         try:
-            as_of, readings = _fetch_current_readings()
+            as_of, readings = _fetch_official_readings()
         except Exception as exc:
             _record_run(db, status="error", rows=0, error=str(exc)[:1000])
             db.commit()

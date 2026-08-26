@@ -1,8 +1,7 @@
 """
 City of Cape Town daily dam levels scraper.
 
-Pulls the public dashboard at:
-    https://www.capetown.gov.za/.../this-weeks-dam-levels
+Pulls the public City of Cape Town dam levels release page.
 
 Format observed (verified 2026-05-04):
 
@@ -44,9 +43,7 @@ from app.services.notifications import notify_ops
 logger = logging.getLogger(__name__)
 
 COCT_DASHBOARD_URL = (
-    "https://www.capetown.gov.za/Family%20and%20home/"
-    "Residential-utility-services/Residential-water-and-sanitation-services/"
-    "this-weeks-dam-levels"
+    "https://web1.capetown.gov.za/web1/newsandnotices/Home/Release/dam-levels"
 )
 SOURCE_NAME = "City of Cape Town — Daily Dam Levels"
 SOURCE_KEY = "coct_daily_dams"
@@ -146,6 +143,15 @@ def _parse_as_of(text: str) -> datetime:
     return today
 
 
+def _decode_html(body: bytes, declared_charset: str = "utf-8") -> str:
+    """Decode a page whose server currently labels Windows text as UTF-8."""
+    decoded = body.decode(declared_charset, errors="replace")
+    if "\ufffd" not in decoded:
+        return decoded
+    fallback = body.decode("cp1252", errors="replace")
+    return fallback if fallback.count("\ufffd") < decoded.count("\ufffd") else decoded
+
+
 def _fetch_html() -> str:
     """Fetch the City of Cape Town dam-levels dashboard.
 
@@ -161,7 +167,7 @@ def _fetch_html() -> str:
     )
     with urllib.request.urlopen(req, timeout=60) as resp:
         charset = resp.headers.get_content_charset() or "utf-8"
-        return resp.read().decode(charset, errors="replace")
+        return _decode_html(resp.read(), charset)
 
 
 def _extract_readings(html: str) -> tuple[datetime, list[tuple[str, float, float | None]]]:

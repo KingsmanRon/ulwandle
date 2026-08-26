@@ -1,10 +1,10 @@
 name: DWS Weekly Dam Levels
 
-# Pulls the canonical DWS Weekly State of Dams PDF and writes one
+# Pulls the current DWS provincial State of Dams tables and writes one
 # DamStorageReading per matched dam into the production Neon DB.
 #
 # Schedule: Mondays at 06:00 UTC (08:00 SAST). DWS publishes the new
-# Weekly.pdf every Monday morning, so this hits a fresh file each week.
+# provincial update every Monday morning.
 #
 # Manual trigger: Actions tab → "DWS Weekly Dam Levels" → "Run workflow".
 #
@@ -36,9 +36,9 @@ jobs:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: "pip"

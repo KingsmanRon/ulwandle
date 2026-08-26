@@ -1,9 +1,8 @@
 """
 DWS Weekly State of Dams scraper.
 
-Downloads the canonical Weekly.pdf and extracts storage % per dam, matching
-against the dams in our `dams` table by name. Writes one
-DamStorageReading per matched dam.
+Downloads the current provincial State of Dams tables and extracts storage
+percentage per dam. Writes one DamStorageReading per matched dam.
 
 Idempotent: the (dam_id, as_of, source) unique constraint prevents
 duplicate inserts on re-run for the same week.
@@ -43,6 +42,7 @@ from datetime import datetime, timedelta, timezone
 
 import httpx
 import pdfplumber
+from bs4 import BeautifulSoup
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from app.db.database import SessionLocal
@@ -52,7 +52,14 @@ from app.services.notifications import notify_ops
 
 logger = logging.getLogger(__name__)
 
-DWS_WEEKLY_URL = "https://www.dws.gov.za/Hydrology/Weekly/Weekly.pdf"
+DWS_WEEKLY_URL = "https://www.dws.gov.za/Hydrology/Weekly/Storage.aspx"
+DWS_LEGACY_PDF_URL = "https://www.dws.gov.za/Hydrology/Weekly/Weekly.pdf"
+DWS_PROVINCE_URLS: dict[str, str] = {
+    "EC": "https://www.dws.gov.za/Hydrology/Weekly/ProvinceWeek.aspx?region=EC",
+    "FS": "https://www.dws.gov.za/Hydrology/Weekly/ProvinceWeek.aspx?region=FS",
+    "KN": "https://www.dws.gov.za/Hydrology/Weekly/ProvinceWeek.aspx?region=KN",
+    "WC": "https://www.dws.gov.za/Hydrology/Weekly/ProvinceWeek.aspx?region=WC",
+}
 SOURCE_NAME = "DWS Weekly State of Dams"
 SOURCE_KEY = "dws_weekly_dams"
 
@@ -90,6 +97,34 @@ DWS_STATION_TO_DAM_ID: dict[str, str] = {
     "U3R001": "hazelmere",
 }
 
+# Names in the current provincial HTML tables. These pages are the maintained
+# DWS source and, unlike Weekly.pdf, are accessible from GitHub Actions.
+DWS_NAME_TO_DAM_ID: dict[str, str] = {
+    "vaal": "vaal",
+    "sterkfontein": "sterkfontein",
+    "bloemhof": "bloemhof",
+    "welbedacht": "welbedacht",
+    "voelvlei": "voelvlei",
+    "wemmershoek": "wemmershoek",
+    "berg river": "berg_river",
+    "steenbras lower": "steenbras_lower",
+    "steenbras upper": "steenbras_upper",
+    "theewaterskloof": "theewaterskloof",
+    "kromrivier": "churchill",
+    "impofu": "impofu",
+    "kouga": "kouga",
+    "groendal": "groendal",
+    "laing": "laing",
+    "bridle drift": "bridle_drift",
+    "wriggleswade": "wriggleswade",
+    "midmar": "midmar",
+    "nagle": "nagle",
+    "albert falls": "albert_falls",
+    "inanda": "inanda",
+    "hazelmere": "hazelmere",
+}
+EXPECTED_DWS_DAM_IDS = set(DWS_NAME_TO_DAM_ID.values())
+
 # Station code regex matches a body row's station identifier:
 #   one upper-case letter, optional 1-2 digits, "R", three digits.
 # The `\b` boundaries avoid matching codes inside words.
@@ -100,6 +135,13 @@ _STATION_RE = re.compile(r"\b([A-Z]\d{0,2}R\d{3})\b")
 _DECIMAL_RE = re.compile(r"\d+\.\d+")
 # ISO date on the cover page: "Weekly State of the Reservoirs on\n2025-10-13"
 _ISO_DATE_RE = re.compile(r"\b(\d{4}-\d{2}-\d{2})\b")
+
+
+def _normalise_dam_name(value: str) -> str:
+    value = value.replace("–", "-").replace("—", "-")
+    value = re.sub(r"\s+dam\s*$", "", value, flags=re.IGNORECASE)
+    value = value.replace("-", " ").lower()
+    return re.sub(r"\s+", " ", value).strip()
 
 
 def _parse_as_of(text: str) -> datetime:
@@ -122,12 +164,86 @@ def _fetch_pdf(client: httpx.Client | None = None) -> bytes:
     own = client is None
     c = client or httpx.Client(timeout=60.0, follow_redirects=True)
     try:
-        resp = c.get(DWS_WEEKLY_URL)
+        resp = c.get(DWS_LEGACY_PDF_URL)
         resp.raise_for_status()
         return resp.content
     finally:
         if own:
             c.close()
+
+
+def _extract_readings_from_html(html: str) -> tuple[datetime, list[tuple[str, float]]]:
+    """Parse one current DWS provincial State of Dams page.
+
+    The maintained page has columns for Dam, FSC, This Week, Last Week and
+    Last Year. Header positions are discovered instead of assumed so that
+    harmless presentation changes do not shift the percentage column.
+    """
+    soup = BeautifulSoup(html, "html.parser")
+    page_text = soup.get_text(" ", strip=True)
+    as_of = _parse_as_of(page_text)
+    readings: dict[str, float] = {}
+
+    for table in soup.find_all("table"):
+        this_week_index: int | None = None
+        for row in table.find_all("tr"):
+            cells = [
+                cell.get_text(" ", strip=True)
+                for cell in row.find_all(["td", "th"], recursive=False)
+            ]
+            if not cells:
+                continue
+            normalised_cells = [re.sub(r"\s+", " ", cell).strip().lower()
+                                for cell in cells]
+            if "this week" in normalised_cells:
+                this_week_index = normalised_cells.index("this week")
+                continue
+            if this_week_index is None or len(cells) <= this_week_index:
+                continue
+            dam_id = DWS_NAME_TO_DAM_ID.get(_normalise_dam_name(cells[0]))
+            if dam_id is None or dam_id in readings:
+                continue
+            match = re.search(r"\d{1,3}(?:[.,]\d+)?", cells[this_week_index])
+            if match is None:
+                continue
+            try:
+                pct = float(match.group(0).replace(",", "."))
+            except ValueError:
+                continue
+            if 0.0 <= pct <= 200.0:
+                readings[dam_id] = pct
+
+    return as_of, list(readings.items())
+
+
+def _fetch_current_readings(
+    client: httpx.Client | None = None,
+) -> tuple[datetime, list[tuple[str, float]]]:
+    """Fetch all four relevant provincial pages and combine their readings."""
+    own = client is None
+    c = client or httpx.Client(timeout=60.0, follow_redirects=True)
+    combined: dict[str, float] = {}
+    page_dates: set[datetime] = set()
+    try:
+        for province, url in DWS_PROVINCE_URLS.items():
+            response = c.get(url, headers={"User-Agent": "Ulwandle/1.0 (+ingest)"})
+            response.raise_for_status()
+            as_of, readings = _extract_readings_from_html(response.text)
+            if not readings:
+                raise ValueError(f"DWS {province} page contained no recognised dams")
+            page_dates.add(as_of)
+            combined.update(readings)
+    finally:
+        if own:
+            c.close()
+
+    if len(page_dates) != 1:
+        dates = ", ".join(sorted(value.date().isoformat() for value in page_dates))
+        raise ValueError(f"DWS province pages disagree on reporting date: {dates}")
+    missing = EXPECTED_DWS_DAM_IDS.difference(combined)
+    if missing:
+        raise ValueError("DWS pages omitted expected dams: " + ", ".join(sorted(missing)))
+    return next(iter(page_dates)), list(combined.items())
 
 
 def _extract_readings_from_text(text: str) -> tuple[datetime, list[tuple[str, float]]]:
@@ -224,8 +340,7 @@ def run_once() -> int:
     db = SessionLocal()
     try:
         try:
-            pdf_bytes = _fetch_pdf()
-            as_of, readings = _extract_readings(pdf_bytes)
+            as_of, readings = _fetch_current_readings()
         except Exception as exc:
             _record_run(db, status="error", rows=0, error=str(exc)[:1000])
             db.commit()
@@ -248,8 +363,8 @@ def run_once() -> int:
         db.commit()
         logger.info("dws_scraper: wrote %d readings as_of=%s", written, as_of.isoformat())
         if status != "ok":
-            notify_ops("DWS weekly dam scraper matched 0 known dams — the "
-                       "Weekly.pdf layout or station codes likely changed. Dam "
+            notify_ops("DWS weekly dam scraper matched 0 known dams. The "
+                       "State of Dams page layout or dam names likely changed. Dam "
                        "levels will go stale until fixed.", level="error")
         return written
     finally:

@@ -51,3 +51,26 @@ def test_header_and_total_rows_ignored():
 def test_as_of_date_parsed_from_long_form():
     as_of, _ = _read()
     assert (as_of.year, as_of.month, as_of.day) == (2026, 6, 3)
+
+
+def test_current_release_table_layout_is_supported():
+    html = """
+    <html><body><p>Dam levels as at 25 August 2026</p>
+      <table>
+        <tr><th>Dam</th><th>Capacity when full</th><th>25 August 2026</th></tr>
+        <tr><td>Berg River</td><td>130 010</td><td>91.1</td></tr>
+        <tr><td>Voëlvlei</td><td>164 095</td><td>60.6</td></tr>
+      </table>
+    </body></html>
+    """
+    as_of, readings = coct_scraper._extract_readings(html)
+    assert (as_of.year, as_of.month, as_of.day) == (2026, 8, 25)
+    assert readings == [
+        ("berg_river", 91.1, 130010.0),
+        ("voelvlei", 60.6, 164095.0),
+    ]
+
+
+def test_mislabelled_windows_encoding_preserves_voelvlei():
+    body = "Voëlvlei".encode("cp1252")
+    assert coct_scraper._decode_html(body, "utf-8") == "Voëlvlei"

@@ -44,3 +44,28 @@ def test_unknown_station_codes_ignored():
     _as_of, readings = dws_scraper._extract_readings_from_text(
         "Z9R999 SomeUnknownDam River 1 XX 100.000 50.0 51.0 52.0")
     assert readings == []
+
+
+def test_current_html_table_extracts_this_week_column():
+    html = """
+    <html><body>
+      <h2>State of Dams on 2026-08-24</h2>
+      <table>
+        <tr><th>Dam</th><th>River</th><th>Photo</th><th>Indicators</th>
+            <th>FSC</th><th>This Week</th><th>Last Week</th><th>Last Year</th></tr>
+        <tr><td>Berg River Dam</td><td>Berg</td><td></td><td></td>
+            <td>127.1</td><td>91.0</td><td>90.2</td><td>77.1</td></tr>
+        <tr><td>Steenbras-Lower Dam</td><td>Steenbras</td><td></td><td></td>
+            <td>33.5</td><td>49.6</td><td>48.1</td><td>72.0</td></tr>
+        <tr><td>Kromrivier Dam</td><td>Krom</td><td></td><td></td>
+            <td>35.9</td><td>100.5</td><td>99.1</td><td>80.0</td></tr>
+      </table>
+    </body></html>
+    """
+    as_of, readings = dws_scraper._extract_readings_from_html(html)
+    assert (as_of.year, as_of.month, as_of.day) == (2026, 8, 24)
+    assert dict(readings) == {
+        "berg_river": 91.0,
+        "steenbras_lower": 49.6,
+        "churchill": 100.5,
+    }

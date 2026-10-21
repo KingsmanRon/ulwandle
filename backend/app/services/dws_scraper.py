@@ -58,9 +58,22 @@ DWS_LEGACY_PDF_URL = "https://www.dws.gov.za/Hydrology/Weekly/Weekly.pdf"
 DWS_PROVINCE_URLS: dict[str, str] = {
     "EC": "https://www.dws.gov.za/Hydrology/Weekly/ProvinceWeek.aspx?region=EC",
     "FS": "https://www.dws.gov.za/Hydrology/Weekly/ProvinceWeek.aspx?region=FS",
+    # Vaal Dam (C1R001) straddles the Gauteng/Free State boundary and is the
+    # headline reservoir of the Integrated Vaal River System that supplies
+    # Gauteng. DWS reports it under GP in some weeks and FS in others, so we
+    # fetch both and de-duplicate by station code.
+    "GP": "https://www.dws.gov.za/Hydrology/Weekly/ProvinceWeek.aspx?region=GP",
     "KN": "https://www.dws.gov.za/Hydrology/Weekly/ProvinceWeek.aspx?region=KN",
+    # Bloemhof (C9R002) sits on the North West/Free State border.
+    "NW": "https://www.dws.gov.za/Hydrology/Weekly/ProvinceWeek.aspx?region=NW",
     "WC": "https://www.dws.gov.za/Hydrology/Weekly/ProvinceWeek.aspx?region=WC",
 }
+
+# A run that reaches at least this many dams is worth persisting. Below it we
+# treat the fetch as failed so the caller falls through to the NIWIS API.
+# Rationale: a weekly government page dropping one reservoir is routine; a page
+# returning an interstitial or a changed layout yields near-zero matches.
+MIN_VIABLE_DAM_READINGS = 5
 DWS_NIWIS_API_URL = (
     "https://www.dws.gov.za/niwis2/api/Request/"
     "SurfaceWaterStorageDamTableDataChange"
@@ -229,26 +242,53 @@ def _fetch_current_readings(
     c = client or httpx.Client(timeout=60.0, follow_redirects=True)
     combined: dict[str, float] = {}
     page_dates: set[datetime] = set()
+    failures: list[str] = []
     try:
         for province, url in DWS_PROVINCE_URLS.items():
-            response = c.get(url, headers={"User-Agent": "Ulwandle/1.0 (+ingest)"})
-            response.raise_for_status()
-            as_of, readings = _extract_readings_from_html(response.text)
+            # One province failing must not zero out the other five. DWS
+            # rotates which provinces are published early on a Monday and
+            # occasionally 403s a single region, so we collect per-page
+            # failures and judge the run on total coverage instead.
+            try:
+                response = c.get(url, headers={"User-Agent": "Ulwandle/1.0 (+ingest)"})
+                response.raise_for_status()
+                as_of, readings = _extract_readings_from_html(response.text)
+            except Exception as exc:  # noqa: BLE001 - per-page isolation
+                failures.append(f"{province}: {type(exc).__name__}: {exc}")
+                continue
             if not readings:
-                raise ValueError(f"DWS {province} page contained no recognised dams")
+                failures.append(f"{province}: no recognised dams on page")
+                continue
             page_dates.add(as_of)
             combined.update(readings)
     finally:
         if own:
             c.close()
 
-    if len(page_dates) != 1:
+    if failures:
+        logger.warning("dws_scraper: province pages degraded -> %s", "; ".join(failures))
+
+    if len(combined) < MIN_VIABLE_DAM_READINGS:
+        raise ValueError(
+            f"DWS province pages yielded only {len(combined)} dam readings "
+            f"(minimum {MIN_VIABLE_DAM_READINGS}); "
+            + ("; ".join(failures) if failures else "no page-level errors reported")
+        )
+
+    if len(page_dates) > 1:
         dates = ", ".join(sorted(value.date().isoformat() for value in page_dates))
-        raise ValueError(f"DWS province pages disagree on reporting date: {dates}")
+        logger.warning(
+            "dws_scraper: province pages disagree on reporting date (%s); using latest",
+            dates,
+        )
     missing = EXPECTED_DWS_DAM_IDS.difference(combined)
     if missing:
-        raise ValueError("DWS pages omitted expected dams: " + ", ".join(sorted(missing)))
-    return next(iter(page_dates)), list(combined.items())
+        # Non-fatal. A dam we cannot see this week is a data gap to report,
+        # not a reason to discard the dams we can see.
+        logger.warning(
+            "dws_scraper: pages omitted expected dams: %s", ", ".join(sorted(missing))
+        )
+    return max(page_dates), list(combined.items())
 
 
 def _extract_readings_from_niwis_json(
@@ -283,7 +323,16 @@ def _extract_readings_from_niwis_json(
 
     missing = set(DWS_STATION_TO_DAM_ID.values()).difference(readings)
     if missing:
-        raise ValueError("DWS NIWIS omitted expected dams: " + ", ".join(sorted(missing)))
+        # Non-fatal, same reasoning as the province-page path: report the gap,
+        # keep the readings we did get.
+        logger.warning(
+            "dws_scraper: NIWIS omitted expected dams: %s", ", ".join(sorted(missing))
+        )
+    if len(readings) < MIN_VIABLE_DAM_READINGS:
+        raise ValueError(
+            f"DWS NIWIS yielded only {len(readings)} dam readings "
+            f"(minimum {MIN_VIABLE_DAM_READINGS})"
+        )
     if not dates:
         raise ValueError("DWS NIWIS contained no dated readings")
     if len(dates) > 1:
@@ -328,13 +377,25 @@ def _fetch_official_readings() -> tuple[datetime, list[tuple[str, float]]]:
     """Prefer current weekly pages, then fall back to DWS's official NIWIS API."""
     try:
         return _fetch_current_readings()
-    except httpx.HTTPStatusError as exc:
-        if exc.response.status_code != 403:
-            raise
+    except Exception as exc:  # noqa: BLE001 - deliberate: any primary failure falls back
+        # Previously this only fell back on a literal HTTP 403. In practice the
+        # weekly pages fail in several other ways from cloud runners - connect
+        # timeouts, an interstitial served with HTTP 200 that parses to zero
+        # dams, or a partial province outage - and none of those reached the
+        # fallback. The NIWIS API exists precisely to cover "the weekly pages
+        # did not work", so trigger it on any primary failure and only surface
+        # an error if NIWIS fails too.
         logger.warning(
-            "dws_scraper: weekly pages returned 403; using official NIWIS API"
+            "dws_scraper: weekly pages unavailable (%s: %s); using official NIWIS API",
+            type(exc).__name__,
+            exc,
         )
-        return _fetch_niwis_readings()
+        try:
+            return _fetch_niwis_readings()
+        except Exception as niwis_exc:
+            raise RuntimeError(
+                f"both DWS sources failed - weekly pages: {exc}; NIWIS: {niwis_exc}"
+            ) from niwis_exc
 
 
 def _extract_readings_from_text(text: str) -> tuple[datetime, list[tuple[str, float]]]:
